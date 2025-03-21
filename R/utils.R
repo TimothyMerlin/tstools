@@ -88,7 +88,71 @@ getGlobalXInfo <- function(tsl, tsr, fill_up, fill_up_start, dt, manual_ticks) {
 }
 
 
+getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt,
+                                    manual_ticks) {
+  global_x <- list()
 
+  if (!is.null(tsr)) {
+    all_ts <- c(tsl, tsr)
+  } else {
+    all_ts <- tsl
+  }
+
+  if (is.null(manual_ticks)) {
+    if (fill_up) {
+      all_ts <- lapply(all_ts, fill_year_with_nas, fill_up_start = fill_up_start)
+    }
+
+    global_x$x_range <- range(unlist(lapply(all_ts, time)))
+
+    # Set the lower bound to correspond with a quarterly tick, for pretties
+    global_x$x_range[1] <- trunc(global_x$x_range[1] * 4) / 4
+    global_x$x_range[2] <- trunc(global_x$x_range[2] * 4 + 0.76) / 4
+
+    # Yearly tick positions
+    global_x$yearly_tick_pos <-
+      seq(floor(global_x$x_range[1]), global_x$x_range[2] + tick_dt, tick_dt)
+
+    # labels
+    labels <-
+      seq(global_x$x_range[1], global_x$x_range[2] + label_dt, label_dt)
+
+    global_x$year_labels_start <- ifelse(global_x$yearly_tick_pos %in% labels,
+      global_x$yearly_tick_pos, ""
+    )
+  } else {
+    global_x$x_range <- range(manual_ticks)
+    global_x$yearly_tick_pos <- manual_ticks
+    global_x$year_labels_start <- manual_ticks
+  }
+
+  global_x$min_year <- trunc(global_x$x_range[1])
+  global_x$max_year <- trunc(global_x$x_range[2]) + 1
+
+  if (tick_dt == 1) {
+    global_x$quarterly_tick_pos <- seq(
+      from = global_x$min_year,
+      to = global_x$max_year,
+      by = .25
+    )
+    # global_x$year_labels_middle_q <-
+    #  ifelse(global_x$quarterly_tick_pos - floor(global_x$quarterly_tick_pos) == 0.5,
+    #    as.character(floor(global_x$quarterly_tick_pos)),
+    #    NA
+    #  )
+    # global_x$year_labels_middle_m <- ifelse(global_x$monthly_tick_pos -
+    #                                       floor(global_x$monthly_tick_pos) == 0.5,
+    #                                     as.character(floor(global_x$monthly_tick_pos)),
+    #                                      NA)
+  } else {
+    # global_x$quarterly_tick_pos <- NA
+    # global_x$year_labels_middle_q <- NA
+    global_x$quarterly_tick_pos <- NULL
+    global_x$year_labels_middle_q <- NULL
+  }
+
+  global_x
+}
 
 # Make sure right axis object is of appropriate class.
 sanitizeTsr <- function(tsr) {

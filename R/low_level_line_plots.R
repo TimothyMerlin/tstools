@@ -44,6 +44,88 @@ draw_ts_lines <- function(x, theme = NULL, bandplot = FALSE) {
   }
 }
 
+
+#' @importFrom stats ts.union
+draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NULL) {
+  nts <- length(x)
+  op <- rep(theme$show_points, ceiling(nts / length(theme$show_points)))
+  ops <- rep(theme$point_symbol, ceiling(nts / length(theme$point_symbol)))
+
+  # "harmonize" all ts, range wise
+  if (bandplot) {
+    x_mat <- do.call(ts.union, x)
+    x_mat[is.na(x_mat)] <- 0
+    x <- as.list(x_mat)
+  }
+
+  band_low <- rep(0, length(x[[1]]))
+
+  for (i in 1:nts) {
+    xx <- as.numeric(time(x[[i]]))
+    yy <- x[[i]]
+    frq <- frequency(x[[i]])
+
+    if (theme$line_to_middle) {
+      xx <- xx + (1 / frq) / 2
+    }
+
+    if (theme$NA_continue_line[i]) {
+      yy_na <- is.na(yy)
+      xx <- xx[!yy_na]
+      yy <- yy[!yy_na]
+    }
+
+    df <- data.frame(
+      time = as.numeric(time(x[[i]])),
+      value = as.numeric(x[[i]]),
+      line_colors = rep(theme$line_colors[i], each = length(time(x[[i]]))),
+      interval = ifelse(rep(as.numeric(time(x[[i]])), each = nts) <= 1975, "in_sample", "forecast")
+    )
+    # Ensure 'interval' is a factor with the correct levels
+    df$interval <- factor(df$interval, levels = c("forecast", "in_sample"))
+    unique_group_id <- paste0(format(Sys.time(), "%Y%m%d%H%M%S"), "_", i)
+
+    if (!bandplot) {
+      # Create the custom text for hover outside aes()
+      df$text <- if (!is.null(scale)) {
+        paste("value:", df$value / scale)
+      } else {
+        paste("value:", df$value)
+      }
+      p <- p + geom_line(
+        data = df,
+        aes(
+          x = time,
+          y = value,
+          group = unique_group_id
+          # text = text,
+        ),
+        color = theme$line_colors[i],
+        size = theme$lwd[i]
+      )
+
+      # Optionally add points
+      if (theme$show_points[i]) {
+        p <- p + geom_point(
+          data = df,
+          aes(x = time, y = value),
+          shape = theme$point_symbol[i]
+        )
+      }
+    } else {
+      band_high <- band_low + yy
+      df_band <- data.frame(time = xx, ymin = band_low, ymax = band_high)
+      p <- p + geom_ribbon(
+        data = df_band,
+        aes(x = time, ymin = ymin, ymax = ymax),
+        fill = theme$band_fill_color[i]
+      )
+      band_low <- band_high # Update band_low for cumulative stacking
+    }
+  }
+  p
+}
+
 #' @importFrom graphics lines
 draw_sum_as_line <- function(x, theme = NULL) {
   xx <- as.numeric(time(x))
