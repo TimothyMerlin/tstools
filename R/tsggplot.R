@@ -2,13 +2,21 @@
 #'
 #' Conveniently plot time series.
 #'
-#' @param ... multiple objects of class ts or a list of time series. All objects passed through the ... parameter relate to the standard left y-axis.
+#' @param ... multiple objects of class ts or a list of time series. All objects
+#'        passed through the ... parameter relate to the standard left y-axis.
 #' @param tsr list of time series objects of class ts.
 #' @param ci list of confidence intervals for time series
-#' @param left_as_bar logical should the series that relate to the left bar be drawn as (stacked) bar charts?
-#' @param group_bar_chart logical should a bar chart be grouped instead of stacked?
-#' @param relative_bar_chart logical Should time series be normalized such that bars range from 0 to 1? Defaults to FALSE. That way every sub bar (time series) is related to the global max. Hence do not expect every single bar to reach 1. This works for stacked and grouped charts and does not change anything but the scale of the chart.
-#' @param left_as_band logical Should the time series assigned to the left axis be displayed as stacked area charts?
+#' @param left_as_bar logical should the series that relate to the left bar be
+#'        drawn as (stacked) bar charts?
+#' @param group_bar_chart logical should a bar chart be grouped instead of
+#'        stacked?
+#' @param relative_bar_chart logical Should time series be normalized such that
+#'        bars range from 0 to 1? Defaults to FALSE. That way every sub bar
+#'        (time series) is related to the global max. Hence do not expect every
+#'        single bar to reach 1. This works for stacked and grouped charts and
+#'        does not change anything but the scale of the chart.
+#' @param left_as_band logical Should the time series assigned to the left axis
+#'        be displayed as stacked area charts?
 #' @param plot_title character title to be added to the plot
 #' @param plot_subtitle character subtitle to be added to the plot
 #' @param plot_subtitle_r character second subtitle to be added at the top right
@@ -19,11 +27,16 @@
 #' @param manual_value_ticks_l numeric vector, forcing ticks to the left y-axis
 #' @param manual_value_ticks_r numeric vector, forcing ticks to the right y-axis
 #' @param manual_ticks_x numeric vector, forcing ticks on the x axis
-#' @param theme list of default plot output parameters. Defaults to NULL, which leads to \code{\link{init_tsplot_theme}} being called. Please see the vignette for details about tweaking themes.
-#' @param auto_legend logical should legends be printed automatically, defaults to TRUE.
-#' @param output_format character Should the plot be drawn on screen or written to a file? Possible values are "plot" for screen output and "pdf". Default "plot"
-#' @param filename character Path to the file to be written if \code{output_format} is "pdf". Default "tsplot.pdf"
-#' @param close_graphics_device logical Should the graphics device of the output file be closed after \code{tsplot}? Set this to FALSE to be able to make modifications to the plot after \code{tsplot} finishes. Default TRUE
+#' @param theme list of default plot output parameters. Defaults to NULL, which
+#'        leads to \code{\link{init_tsggplot_theme}} being called. Please see
+#'        the vignette for details about tweaking themes.
+#' @param auto_legend logical should legends be printed automatically, defaults
+#'        to TRUE.
+#' @param output_format character Should the plot be drawn on screen or written
+#'        to a file? Possible values are "plot" for screen output and "pdf".
+#'        Default "plot"
+#' @param filename character Path to the file to be written if
+#'        \code{output_format} is "pdf". Default "tsplot.pdf"
 #'
 #' @importFrom graphics rect axis box title mtext strheight
 #' @importFrom grDevices dev.off pdf
@@ -50,8 +63,7 @@ tsggplot <- function(...,
                      theme = NULL,
                      auto_legend = TRUE,
                      output_format = "plot",
-                     filename = "tsplot",
-                     close_graphics_device = TRUE) {
+                     filename = "tsplot") {
   UseMethod("tsggplot")
 }
 
@@ -76,8 +88,7 @@ tsggplot.ts <- function(...,
                         theme = NULL,
                         auto_legend = TRUE,
                         output_format = "plot",
-                        filename = "tsplot",
-                        close_graphics_device = TRUE) {
+                        filename = "tsplot") {
   li <- list(...)
   tsggplot(li,
     tsr = tsr,
@@ -125,8 +136,7 @@ tsggplot.mts <- function(...,
                          theme = NULL,
                          auto_legend = TRUE,
                          output_format = "plot",
-                         filename = "tsplot",
-                         close_graphics_device = TRUE) {
+                         filename = "tsplot") {
   li <- list(...)
   if (length(li) > 1) {
     stop("If you use multivariate time series objects (mts), make sure to pass only one object per axis. Place all time series you want to plot on one y-axis in one mts object or list of time series.")
@@ -259,24 +269,6 @@ tsggplot.list <- function(...,
   theme$NA_continue_line <- expand_param(theme, "NA_continue_line")
   theme$ci_colors <- expand_param(theme, "ci_colors")
 
-  # OPEN CORRECT GRAPHICS DEVICE
-  #
-  #  if (output_format != "plot") {
-  #    if (!grepl(sprintf("[.]%s$", output_format), filename)) {
-  #      filename <- sprintf("%s.%s", filename, output_format)
-  #    }
-  #
-  #    output_dim <- `if`(theme$output_wide, c(10 + 2 / 3, 6), c(8, 6))
-  #
-  #    if (output_format == "pdf") {
-  #      pdf(filename, width = output_dim[1], height = output_dim[2])
-  #    }
-  #
-  #    if (close_graphics_device) {
-  #      on.exit(dev.off())
-  #    }
-  #  }
-
   if (left_as_bar && relative_bar_chart) {
     # Normalize ts
     if (group_bar_chart) {
@@ -292,12 +284,12 @@ tsggplot.list <- function(...,
   # Set default names for legend if none provided
   right_name_start <- 0
   if (is.null(names(tsl))) {
-    names(tsl) <- paste0("series_", 1:length(tsl))
+    names(tsl) <- paste0("series_", seq_along(tsl))
     right_name_start <- length(tsl)
   }
   if (is.null(names(tsr)) && !is.null(tsr)) {
     if (is.list(tsr)) {
-      names(tsr) <- paste0("series_", 1:length(tsr) + right_name_start)
+      names(tsr) <- paste0("series_", seq_along(tsr) + right_name_start)
     } else {
       tsr <- list(tsr)
       names(tsr) <- paste0("series_", right_name_start + 1)
@@ -932,7 +924,7 @@ tsggplot.list <- function(...,
       width = 20,
       height = 10
     )
+  } else {
+    p
   }
-
-  p
 }
