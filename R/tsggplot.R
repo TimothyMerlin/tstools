@@ -17,9 +17,16 @@
 #'        does not change anything but the scale of the chart.
 #' @param left_as_band logical Should the time series assigned to the left axis
 #'        be displayed as stacked area charts?
-#' @param plot_title character title to be added to the plot
-#' @param plot_subtitle character subtitle to be added to the plot
-#' @param plot_subtitle_r character second subtitle to be added at the top right
+#' @param labs A named list containing plot text elements. Valid elements are:
+#'        \code{title} for the main title, \code{subtitle} for the subtitle
+#'        below the title, \code{caption} for the text in the bottom-right
+#'        corner, \code{tag} for the label at the top-left of the plot,
+#'        \code{alt} and \code{alt_insight} for alt-text generation (see
+#'        \code{\link{get_alt_text}} for examples). You may also provide
+#'        additional name-value pairs corresponding to aesthetics. See
+#'        \code{\link[ggplot2]{labs}} for further details.
+#'        Use \code{y_right} to set the label of the right-side y-axis
+#'        (secondary axis), if present.
 #' @param find_ticks_function function to compute ticks.
 #' @param overall_xlim integer overall x-axis limits, defaults to NULL.
 #' @param overall_ylim integer overall y-axis limits, defaults to NULL.
@@ -38,9 +45,10 @@
 #' @param filename character Path to the file to be written if
 #'        \code{output_format} is "pdf". Default "tsplot.pdf"
 #'
-#' @importFrom graphics rect axis box title mtext strheight
-#' @importFrom grDevices dev.off pdf
 #' @import ggplot2
+#'
+#' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
+#'          caption, tag)
 #'
 #' @export
 tsggplot <- function(...,
@@ -50,9 +58,7 @@ tsggplot <- function(...,
                      group_bar_chart = FALSE,
                      relative_bar_chart = FALSE,
                      left_as_band = FALSE,
-                     plot_title = NULL,
-                     plot_subtitle = NULL,
-                     plot_subtitle_r = NULL,
+                     labs = NULL,
                      find_ticks_function = "findTicks",
                      overall_xlim = NULL,
                      overall_ylim = NULL,
@@ -75,9 +81,7 @@ tsggplot.ts <- function(...,
                         group_bar_chart = FALSE,
                         relative_bar_chart = FALSE,
                         left_as_band = FALSE,
-                        plot_title = NULL,
-                        plot_subtitle = NULL,
-                        plot_subtitle_r = NULL,
+                        labs = NULL,
                         find_ticks_function = "findTicks",
                         overall_xlim = NULL,
                         overall_ylim = NULL,
@@ -97,9 +101,7 @@ tsggplot.ts <- function(...,
     group_bar_chart = group_bar_chart,
     relative_bar_chart = relative_bar_chart,
     left_as_band = left_as_band,
-    plot_title = plot_title,
-    plot_subtitle = plot_subtitle,
-    plot_subtitle_r = plot_subtitle_r,
+    labs = labs,
     find_ticks_function = find_ticks_function,
     manual_date_ticks = manual_date_ticks,
     overall_xlim = overall_xlim,
@@ -110,8 +112,7 @@ tsggplot.ts <- function(...,
     auto_legend = auto_legend,
     theme = theme,
     output_format = output_format,
-    filename = filename,
-    close_graphics_device = close_graphics_device
+    filename = filename
   )
 }
 
@@ -123,9 +124,7 @@ tsggplot.mts <- function(...,
                          group_bar_chart = FALSE,
                          relative_bar_chart = FALSE,
                          left_as_band = FALSE,
-                         plot_title = NULL,
-                         plot_subtitle = NULL,
-                         plot_subtitle_r = NULL,
+                         labs = NULL,
                          find_ticks_function = "findTicks",
                          overall_xlim = NULL,
                          overall_ylim = NULL,
@@ -156,9 +155,7 @@ create a ts out of a row of a data.frame? Converting to single ts.")
       group_bar_chart = group_bar_chart,
       relative_bar_chart = relative_bar_chart,
       left_as_band = left_as_band,
-      plot_title = plot_title,
-      plot_subtitle = plot_subtitle,
-      plot_subtitle_r = plot_subtitle_r,
+      labs = labs,
       find_ticks_function = find_ticks_function,
       overall_xlim = overall_xlim,
       overall_ylim = overall_ylim,
@@ -169,8 +166,7 @@ create a ts out of a row of a data.frame? Converting to single ts.")
       auto_legend = auto_legend,
       theme = theme,
       output_format = output_format,
-      filename = filename,
-      close_graphics_device = close_graphics_device
+      filename = filename
     )
   }
 }
@@ -183,9 +179,7 @@ tsggplot.list <- function(...,
                           group_bar_chart = FALSE,
                           relative_bar_chart = FALSE,
                           left_as_band = FALSE,
-                          plot_title = NULL,
-                          plot_subtitle = NULL,
-                          plot_subtitle_r = NULL,
+                          labs = NULL,
                           find_ticks_function = "findTicks",
                           overall_xlim = NULL,
                           overall_ylim = NULL,
@@ -197,8 +191,7 @@ tsggplot.list <- function(...,
                           quiet = TRUE,
                           auto_legend = TRUE,
                           output_format = "plot",
-                          filename = "tsplot",
-                          close_graphics_device = TRUE) {
+                          filename = "tsplot") {
   tsl <- c(...)
 
   if (inherits(tsr, "ts")) {
@@ -479,70 +472,63 @@ tsggplot.list <- function(...,
   # xaxs = theme$xaxs,
   # yaxs = theme$yaxs
   # )
+  theme_args <- list(
+    panel.background = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text = element_text(size = 13),
+    axis.ticks.length = theme$axis_ticks_length,
+    axis.minor.ticks.length = theme$axis_minor_ticks_length,
+    text = element_text(family = "sans")
+  )
+
+  if (is.null(labs$x)) {
+    theme_args$axis.title.x <- element_blank()
+  }
+  if (is.null(labs$y)) {
+    theme_args$axis.title.y <- element_blank()
+  }
+  if (!is.null(labs$y_right)) {
+    theme_args$axis.title.y.right <- element_text()
+  }
+
+  # Conditionally add grid and axis elements
+  theme_args$panel.grid.major.x <- if (theme$grids_x_show) {
+    element_line(color = theme$grids_x_color, size = theme$grids_x_lwd)
+  } else {
+    element_blank()
+  }
+
+  theme_args$panel.grid.major.y <- if (theme$grids_y_show) {
+    element_line(color = theme$grids_y_color, size = theme$grids_y_lwd)
+  } else {
+    element_blank()
+  }
+
+  theme_args$axis.line.x <- if (theme$axis_x_show) {
+    element_line(color = theme$axis_x_color, linewidth = theme$axis_x_lwd)
+  } else {
+    element_blank()
+  }
+
+  theme_args$axis.line.y <- if (theme$axis_y_show) {
+    element_line(color = theme$axis_y_color, linewidth = theme$axis_y_lwd)
+  } else {
+    element_blank()
+  }
+
+  # Axis text position/visibility
+  if (theme$axis_x_label_pos == "mid") {
+    theme_args$axis.text.x <- element_text(hjust = 0)
+  }
+  theme_args$axis.text.y <- if (theme$axis_y_show) {
+    element_text()
+  } else {
+    element_blank()
+  }
+
   p <- ggplot() +
-    theme(
-      panel.background = element_blank(),
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      axis.ticks.y = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.grid.major.x = {
-        if (theme$grids_x_show) {
-          element_line(
-            color = theme$grids_x_color,
-            size = theme$grids_x_lwd
-          )
-        } else {
-          element_blank()
-        }
-      },
-      panel.grid.major.y = {
-        if (theme$grids_y_show) {
-          element_line(
-            color = theme$grids_y_color,
-            size = theme$grids_y_lwd
-          )
-        } else {
-          element_blank()
-        }
-      },
-      axis.line.x = {
-        if (theme$axis_x_show) {
-          element_line(
-            color = theme$axis_x_color,
-            linewidth = theme$axis_x_lwd
-          )
-        } else {
-          element_blank()
-        }
-      },
-      axis.line.y = {
-        if (theme$axis_y_show) {
-          element_line(
-            color = theme$axis_y_color,
-            linewidth = theme$axis_y_lwd
-          )
-        } else {
-          element_blank()
-        }
-      },
-      axis.text = element_text(size = 13),
-      axis.text.x = {
-        if (theme$axis_x_label_pos == "mid") {
-          element_text(hjust = 0)
-        }
-      },
-      axis.text.y = {
-        if (theme$axis_y_show) {
-          element_text()
-        } else {
-          element_blank()
-        }
-      },
-      axis.ticks.length = theme$axis_ticks_length,
-      axis.minor.ticks.length = theme$axis_minor_ticks_length,
-      text = element_text(family = "sans")
-    )
+    do.call(ggplot2::theme, theme_args)
 
   #  if (theme$highlight_window) {
   #    hlw_start <- theme$highlight_window_start
@@ -708,7 +694,6 @@ tsggplot.list <- function(...,
   if (theme$axis_y_show) {
     p <- p +
       scale_y_continuous(
-        name = "left",
         limits = {
           if (theme$axis_y_left_show && theme$axis_y_right_show && !is.null(tsr)) {
             range(left_y$y_range, scaled_tsr, 0)
@@ -729,10 +714,10 @@ tsggplot.list <- function(...,
         sec.axis = {
           if (theme$axis_y_right_show && !is.null(tsr)) {
             sec_axis(
-              name = "right",
-              transform = ~ scale(., left_min, left_max, right_min, right_max),
-              label = right_y$y_ticks,
-              breaks = right_y$y_ticks
+              name = labs$y_right,
+              transform = ~ scale(., left_min, left_max, right_min, right_max)
+              # labels = right_y$y_ticks,
+              # breaks = right_y$y_ticks
             )
           } else {
             waiver()
@@ -908,11 +893,11 @@ tsggplot.list <- function(...,
 
   # # add title and subtitle
   # add_title(plot_title, plot_subtitle, plot_subtitle_r, theme)
-
-  # # return axes and tick info, as well as theme maybe?
-  # if (!quiet) {
-  #   output <- list(left_range = tsl_r, right_range = tsr_r)
-  # }
+  # add title and subtitle
+  if (!is.null(labs)) {
+    lab_args <- labs[!vapply(labs, is.null, logical(1))]
+    p <- p + do.call(ggplot2::labs, lab_args)
+  }
 
   if (output_format != "plot") {
     if (!grepl(sprintf("[.]%s$", output_format), filename)) {

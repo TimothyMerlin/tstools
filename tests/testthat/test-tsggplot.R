@@ -7,8 +7,20 @@ test_that("tsggplot", {
 
   tsggplot(tsl)
 
+  # plot title and subtitle
+  labs <- list(
+    x = "Engine displacement (litres)",
+    y = "Highway miles per gallon",
+    y_right = "Medication per kilogram",
+    title = "Air Passengers",
+    subtitle = "In thousands",
+    caption = "(based on data from ...)",
+    tag = "A"
+  )
+  tsggplot(tsl, labs = labs)
+
   tstools::tsplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson))
-  tsggplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson))
+  tsggplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson), labs = labs)
 
   # bar
   t <- tstools::init_tsplot_theme(x_tick_dt = 2)
