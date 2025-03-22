@@ -5,19 +5,17 @@
 \title{Initiate Default Theme}
 \usage{
 init_tsggplot_theme(
-  axis_minor_ticks_length = ggplot2::rel(0.5),
-  axis_ticks_length = ggplot2::unit(10, "pt"),
-  axis_y_color = colors$ETH_Grey$`40`,
-  axis_y_lwd = 0.5,
-  axis_y_show = TRUE,
-  axis_y_left_show = TRUE,
-  axis_y_right_show = TRUE,
-  axis_x_color = "black",
+  axis.line.x = element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
+  axis.line.y = element_line(),
+  axis.line.y.left = ggplot2::element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
+  axis.line.y.right = ggplot2::element_line(color = colors$ETH_Grey$`40`, linewidth =
+    0.5),
+  axis.minor.ticks.length = ggplot2::rel(0.5),
+  axis.minor.ticks.x.bottom = ggplot2::element_line(),
+  axis.ticks.length = ggplot2::unit(10, "pt"),
+  axis.ticks.x.bottom = ggplot2::element_line(),
   axis_x_label_dt = 2,
   axis_x_label_pos = "start",
-  axis_x_lwd = 0.5,
-  axis_x_show = TRUE,
-  axis_x_left_show = TRUE,
   axis_x_tick_dt = 1,
   auto_bottom_margin = FALSE,
   band_fill_color = c(ETH_Petrol = colors$ETH_Petrol$`100`, ETH_Petrol_60 =
@@ -117,53 +115,93 @@ init_tsggplot_theme(
 )
 }
 \arguments{
-\item{axis_y_show}{logical: should y axis be shown. Defaults to TRUE}
+\item{axis.line.x}{Appearance of bottom x-axis line, defined using
+[ggplot2::element_line()]. Use to control line color, width, etc.
+Set to [ggplot2::element_blank()] to hide the y-axis.}
 
-\item{axis_y_left_show}{logical: should left y axis be shown. Defaults to TRUE.}
+\item{axis.line.y}{Appearance of left y-axis line, defined using
+[ggplot2::element_line()]. Use to control line color, width, etc.
+Overrides axis.line.y.left and axis.line.y.right if set other than
+[ggplot2::element_line()].
+Set to [ggplot2::element_blank()] to hide the y-axis.}
 
-\item{axis_y_right_show}{logical: should right y axis be shown. Defaults to TRUE.}
+\item{axis.line.y.left}{Appearance of left y-axis line, defined using
+[ggplot2::element_line()]. Use to control line color, width, etc.}
 
-\item{axis_x_label_dt}{numeric The distance between labels on the x axis in years. Defaults to 2.}
+\item{axis.line.y.right}{Appearance of right y-axis line, defined using
+[ggplot2::element_line()]. Use to control line color, width, etc.}
 
-\item{axis_x_label_pos}{character, denotes where the x-axis label is at. defaults to "mid", alternative value: "start".}
+\item{axis.minor.ticks.length}{Length of minor axis ticks, set relative to
+`axis.ticks.length` using [ggplot2::rel()].}
 
-\item{axis_x_show}{logical: should x axis be shown. Defaults to TRUE}
+\item{axis.minor.ticks.x.bottom}{Appearance of bottom x-axis minor ticks,
+defined using [ggplot2::element_line()]. Use to style or enable minor
+ticks.}
 
-\item{axis_x_tick_dt}{numeric The distance between ticks on the x axis in years. The first tick will always be at the start of the plotted time series. If neq 1 then quarterly ticks will be not be shown. Defaults to 1.}
+\item{axis.ticks.length}{Length of major axis ticks. Set using
+[ggplot2::unit()], e.g., `unit(10, "pt")`.}
 
-\item{auto_bottom_margin}{logical Should the bottom margin be automatically calculated? This will be overridden if margins[1] is not NA. Default FALSE}
+\item{axis.ticks.x.bottom}{Appearance of bottom x-axis major ticks, defined
+using [ggplot2::element_line()]. Use to control line color, width, etc.}
 
-\item{band_fill_color}{character vector of hex colors for the bands if left_as_band == TRUE.}
+\item{axis_x_label_dt}{numeric The distance between labels on the x axis in
+years. Defaults to 2.}
 
-\item{bar_border}{character hex colors for the border around bars in bar charts.}
+\item{axis_x_label_pos}{character, denotes where the x-axis label is at.
+defaults to "mid", alternative value: "start".}
 
-\item{bar_border_lwd}{numeric The line width of the borders of bars in barplots. Default 1}
+\item{axis_x_tick_dt}{numeric The distance between ticks on the x axis in
+years. The first tick will always be at the start of the plotted time
+series. If neq 1 then quarterly ticks will not be shown. Defaults to 1.}
 
-\item{bar_fill_color}{character vector of hex colors for the bars if left_as_bar == TRUE}
+\item{auto_bottom_margin}{logical Should the bottom margin be automatically
+calculated? This will be overridden if margins[1] is not NA. Default FALSE}
 
-\item{bar_gap}{numeric The width of the gap between bars, in \% of space alloted to the bar.}
+\item{band_fill_color}{character vector of hex colors for the bands if
+left_as_band == TRUE.}
 
-\item{bar_group_gap}{numeric The width of the gap between groups of bars if group_bar_chart is TRUE.}
+\item{bar_border}{character hex colors for the border around bars in bar
+charts.}
 
-\item{ci_alpha}{Numeric 0-255, numeric 0-1 or hey 00-FF, transparency of the confidence interval bands}
+\item{bar_border_lwd}{numeric The line width of the borders of bars in
+barplots. Default 1}
 
-\item{ci_colors}{Named colors or hex values Colors of the confidence interval bands}
+\item{bar_fill_color}{character vector of hex colors for the bars if
+left_as_bar == TRUE}
 
-\item{ci_legend_label}{character A formatting template for how the ci bands should be labeled May contain the
-placeholders. '\%ci_value\%' will be replaced with the ci label. '\%series\%' (will be replaced with the series name)
-exactly once. Defaults to '\%ci_value\% ci for \%series\%'}
+\item{bar_gap}{numeric The width of the gap between bars, in \% of space
+allotted to the bar.}
 
-\item{default_bottom_margin}{numeric The bottom margin to use when margins[1] is NA but neither auto_legend nor auto_bottom_margin are true. Default 3}
+\item{bar_group_gap}{numeric The width of the gap between groups of bars if
+group_bar_chart is TRUE.}
 
-\item{fill_up_start}{logical should the start of the year also be filled? Has no effect if fill_year_with_nas == FALSE. Default FALSE}
+\item{ci_alpha}{Numeric 0-255, numeric 0-1 or hex 00-FF, transparency of
+the confidence interval bands}
 
-\item{fill_year_with_nas}{logical should year be filled up with missing in order to plot the entire year on the axis. Defaults to TRUE,}
+\item{ci_colors}{Named colors or hex values Colors of the confidence
+interval bands}
+
+\item{ci_legend_label}{character A formatting template for how the ci bands
+should be labeled. May contain the placeholders. '\%ci_value\%' will be
+replaced with the ci label. '\%series\%' (will be replaced with the series
+name) exactly once. Defaults to '\%ci_value\% ci for \%series\%'}
+
+\item{default_bottom_margin}{numeric The bottom margin to use when
+margins[1] is NA but neither auto_legend nor auto_bottom_margin are true.
+Default 3}
+
+\item{fill_up_start}{logical should the start of the year also be filled?
+Has no effect if fill_year_with_nas == FALSE. Default FALSE}
+
+\item{fill_year_with_nas}{logical should year be filled up with missing in
+order to plot the entire year on the axis. Defaults to TRUE,}
 
 \item{grids_x_color}{character hex color of grids. Defaults to gray.}
 
 \item{grids_x_count}{integer vector preferred x grid counts c(5,6,8,10).}
 
-\item{grids_x_count_strict}{logical should we strictly stick to preferred x grid count? Defaults to FALSE.}
+\item{grids_x_count_strict}{logical should we strictly stick to preferred x
+grid count? Defaults to FALSE.}
 
 \item{grids_x_lwd}{integer line width of the x grids. Defaults to 0.5.}
 
@@ -175,43 +213,59 @@ exactly once. Defaults to '\%ci_value\% ci for \%series\%'}
 
 \item{grids_y_show}{logical should y_grids be shown. Defaults to TRUE.}
 
-\item{highlight_color}{character hex color code of highlight background, defaults to "#e9e9e9".}
+\item{highlight_color}{character hex color code of highlight background,
+defaults to "#e9e9e9".}
 
-\item{highlight_window}{logical should a particular time span be highlighted by different background color. Defaults to FALSE.}
+\item{highlight_window}{logical should a particular time span be
+highlighted by different background color. Defaults to FALSE.}
 
-\item{highlight_window_end}{integer vector highlight window start position, defaults to NA.,}
+\item{highlight_window_end}{integer vector highlight window start position,
+defaults to NA.,}
 
-\item{highlight_window_freq}{integer frequency of the highlight window definition, defaults to 4.}
+\item{highlight_window_freq}{integer frequency of the highlight window
+definition, defaults to 4.}
 
-\item{highlight_window_start}{integer vector highlight window start position, defaults to NA.}
+\item{highlight_window_start}{integer vector highlight window start
+position, defaults to NA.}
 
-\item{highlight_y_values}{numeric Vector of y values to highlight with a bold line}
+\item{highlight_y_values}{numeric Vector of y values to highlight with a
+bold line}
 
-\item{highlight_y_lwd}{integer Line width of the lines to highlight y values}
+\item{highlight_y_lwd}{integer Line width of the lines to highlight y
+values}
 
 \item{highlight_y_color}{character Color of the lines to highlight y values}
 
-\item{legend_all_left}{logical Should all legend entries be drawn on the left side of the plot? Default FALSE}
+\item{legend_all_left}{logical Should all legend entries be drawn on the
+left side of the plot? Default FALSE}
 
-\item{legend_box_size}{numeric The size of the squares denoting bar colors in the legend. Default 2}
+\item{legend_box_size}{numeric The size of the squares denoting bar colors
+in the legend. Default 2}
 
 \item{legend_col}{integer number of columns for the legend, defaults to 3.}
 
-\item{legend_font_size}{numeric passed on to the \code{cex} parameter of \code{\link{legend}}, defaults to 1}
+\item{legend_font_size}{numeric passed on to the \code{cex} parameter of
+\code{\link{legend}}, defaults to 1}
 
-\item{legend_intersp_x}{numeric same as base \code{\link{legend}} parameter, defaults to 1}
+\item{legend_intersp_x}{numeric same as base \code{\link{legend}}
+parameter, defaults to 1}
 
-\item{legend_intersp_y}{numeric same as base \code{\link{legend}} parameter, defaults to 1}
+\item{legend_intersp_y}{numeric same as base \code{\link{legend}}
+parameter, defaults to 1}
 
-\item{legend_margin_bottom}{numeric Distance between bottom of legend and bottom of graphic in \% of device height, default 5}
+\item{legend_margin_bottom}{numeric Distance between bottom of legend and
+bottom of graphic in \% of device height, default 5}
 
-\item{legend_margin_top}{numeric Distance between bottom of plot and top of legends \% of device height, defaults to 12}
+\item{legend_margin_top}{numeric Distance between bottom of plot and top of
+legends \% of device height, defaults to 12}
 
-\item{legend_seg.len}{numeric Length of the line segments in the legend. Default 2}
+\item{legend_seg.len}{numeric Length of the line segments in the legend.
+Default 2}
 
 \item{line_colors}{character vector of hex colors for 6 lines.}
 
-\item{line_to_middle}{logical try to put a line into the middle of the plot. defaults to TRUE.}
+\item{line_to_middle}{logical try to put a line into the middle of the
+plot. defaults to TRUE.}
 
 \item{lty}{integer vector line type defaults to 1.}
 
@@ -229,98 +283,141 @@ exactly once. Defaults to '\%ci_value\% ci for \%series\%'}
 
 \item{lwd_yearly_ticks}{numeric, width of yearly ticks, defaults to 1.5.}
 
-\item{margins}{integer vector defaults to c(NA, 4, 3, 3) + 0.1. Set margins[1] to NA to automatically determine the bottom margin such that the legend fits (if either auto_legend or auto_bottom_margin are TRUE)}
+\item{margins}{integer vector defaults to c(NA, 4, 3, 3) + 0.1. Set
+margins[1] to NA to automatically determine the bottom margin such that the
+legend fits (if either auto_legend or auto_bottom_margin are TRUE)}
 
-\item{NA_continue_line}{boolean If true, NA values in time series are ignored and a continuous line is drawn. Multiple values to turn this behavior on/off for individual series are supported. Default FALSE}
+\item{NA_continue_line}{boolean If true, NA values in time series are
+ignored and a continuous line is drawn. Multiple values to turn this
+behavior on/off for individual series are supported. Default FALSE}
 
-\item{output_wide}{logical Should the output file be in a wide format (16:9) or (4:3)? Only if output_format is not "plot". Default FALSE}
+\item{output_wide}{logical Should the output file be in a wide format
+(16:9) or (4:3)? Only if output_format is not "plot". Default FALSE}
 
-\item{point_symbol}{integer or character The symbol to use for marking data points. Multiple values can be supplied to set the symbol for each individual series See \code{pch} in \code{?par}. Default 1:18}
+\item{point_symbol}{integer or character The symbol to use for marking data
+points. Multiple values can be supplied to set the symbol for each
+individual series See \code{pch} in \code{?par}. Default 1:18}
 
 \item{pointsize}{Numeric Point size of text, in 1/72 of an inch}
 
 \item{preferred_y_gap_sizes}{numeric c(25, 20, 15, 10, 5, 2.5, 1, 0.5),}
 
-\item{quarterly_ticks}{logical, should quarterly ticks be shown. Defaults to TRUE.}
+\item{quarterly_ticks}{logical, should quarterly ticks be shown. Defaults
+to TRUE.}
 
-\item{range_must_not_cross_zero}{logical automatic range finders are forced to do not find ranges below zero. Defaults to TRUE.}
+\item{range_must_not_cross_zero}{logical automatic range finders are forced
+to do not find ranges below zero. Defaults to TRUE.}
 
-\item{show_points}{boolean Whether to draw the symbol specified by point_symbol at the data points. Multiple values can be supplied to enable/disable showing points for each individual series Default FALSE}
+\item{show_points}{boolean Whether to draw the symbol specified by
+point_symbol at the data points. Multiple values can be supplied to
+enable/disable showing points for each individual series Default FALSE}
 
-\item{subtitle_adj}{numeric same as base \code{\link{plot}} parameter, defaults to 0.}
+\item{subtitle_adj}{numeric same as base \code{\link{plot}} parameter,
+defaults to 0.}
 
-\item{subtitle_adj_r}{numeric same as base \code{\link{plot}} parameter, defaults to .9}
+\item{subtitle_adj_r}{numeric same as base \code{\link{plot}} parameter,
+defaults to .9}
 
-\item{subtitle_cex}{numeric same as base \code{\link{plot}} parameter, defaults to 1.}
+\item{subtitle_cex}{numeric same as base \code{\link{plot}} parameter,
+defaults to 1.}
 
-\item{subtitle_margin}{numeric How far above the plot the title is placed in \% of the device height. Defaults to 2.}
+\item{subtitle_margin}{numeric How far above the plot the title is placed
+in \% of the device height. Defaults to 2.}
 
-\item{subtitle_outer}{logical same as base \code{\link{plot}} parameter, defaults to TRUE}
+\item{subtitle_outer}{logical same as base \code{\link{plot}} parameter,
+defaults to TRUE}
 
-\item{subtitle_transform}{function to transform the subtitle, defaults to "toupper",}
+\item{subtitle_transform}{function to transform the subtitle, defaults to
+"toupper",}
 
-\item{sum_as_line}{logical should the sum of stacked time series be displayed as a line on top of stacked bar charts. Defaults to FALSE,}
+\item{sum_as_line}{logical should the sum of stacked time series be
+displayed as a line on top of stacked bar charts. Defaults to FALSE,}
 
-\item{sum_legend}{character Label for the sum line, defaults to "sum". Set to NULL to not label the line at all.}
+\item{sum_legend}{character Label for the sum line, defaults to "sum". Set
+to NULL to not label the line at all.}
 
-\item{sum_line_color}{character hex color of of sum_as_line, defaults "#91056a".}
+\item{sum_line_color}{character hex color of of sum_as_line, defaults
+"#91056a".}
 
 \item{sum_line_lty}{integer line type of sum_as_line, defaults to 1.}
 
 \item{sum_line_lwd}{integer line width of sum_as_line, defaults to 3.}
 
-\item{tcl_quarterly_ticks}{numeric, length of quarterly ticks. See tcl_yearly_ticks, defaults to -0.4}
+\item{tcl_quarterly_ticks}{numeric, length of quarterly ticks. See
+tcl_yearly_ticks, defaults to -0.4}
 
-\item{tcl_y_ticks}{numeric Length of y ticks, see \code{tcl_yearly_ticks}. Default -0.75}
+\item{tcl_y_ticks}{numeric Length of y ticks, see \code{tcl_yearly_ticks}.
+Default -0.75}
 
-\item{tcl_yearly_ticks}{numeric, length of yearly ticks. Analogous to \code{cex} for \code{\link{axis}}. defaults to -0.75.}
+\item{tcl_yearly_ticks}{numeric, length of yearly ticks. Analogous to
+\code{cex} for \code{\link{axis}}. defaults to -0.75.}
 
-\item{title_adj}{numeric, same as base \code{\link{plot}} parameter, defaults to 0.}
+\item{title_adj}{numeric, same as base \code{\link{plot}} parameter,
+defaults to 0.}
 
-\item{title_cex.main}{numeric, same as base \code{\link{plot}} parameter defaults to 1}
+\item{title_cex.main}{numeric, same as base \code{\link{plot}} parameter
+defaults to 1}
 
-\item{title_margin}{numeric How far above the plot the title is placed in \% of the device height. Default 8}
+\item{title_margin}{numeric How far above the plot the title is placed in
+\% of the device height. Default 8}
 
 \item{title_outer}{logical, currently undocumented. Defaults to TRUE.}
 
 \item{title_transform}{function to transform the title, defaults to NA.}
 
-\item{total_bar_margin_pct}{numeric definition as in base plot, defaults to "i", defaults to .2,}
+\item{total_bar_margin_pct}{numeric definition as in base plot, defaults to
+"i", defaults to .2,}
 
-\item{use_bar_gap_in_groups}{logical Should there be gaps of size bar_gap between the bars in a group if group_bar_chart = TRUE? Default FALSE}
+\item{use_bar_gap_in_groups}{logical Should there be gaps of size bar_gap
+between the bars in a group if group_bar_chart = TRUE? Default FALSE}
 
 \item{use_box}{logical use a box around the plot.}
 
 \item{xaxs}{character axis definition as in base plot, defaults to "i".}
 
-\item{y_las}{integer, same as base \code{\link{plot}} parameter defaults to 2.}
+\item{y_las}{integer, same as base \code{\link{plot}} parameter defaults to
+2.}
 
 \item{y_range_min_size}{= NULL  ,}
 
-\item{y_tick_force_integers}{logical Should y ticks be forced (rounded down) to whole numbers? Default FALSE}
+\item{y_tick_force_integers}{logical Should y ticks be forced (rounded
+down) to whole numbers? Default FALSE}
 
-\item{y_tick_margin}{numeric, minimal percentage of horizontal grid that needs to be clean, i.e., without lines or bars. Defaults to 0.15 (15 percent).}
+\item{y_tick_margin}{numeric, minimal percentage of horizontal grid that
+needs to be clean, i.e., without lines or bars. Defaults to 0.15 (15
+percent).}
 
 \item{yaxs}{character axis definition as in base plot, defaults to "i".}
 
-\item{show_left_y_axis}{logical: should left y axis be shown, defaults to TRUE.}
+\item{show_left_y_axis}{logical: should left y axis be shown, defaults to
+TRUE.}
 }
 \description{
-The \code{\link{tsplot}} methods provide a theme argument which is used to pass on a plethora of useful defaults. These defaults are essentially stored in a list. Sometimes the user may want to tweak some of these defaults while keeping most of them.
-Hence the init_tsplot_theme function create a fresh list object containing default values for lot of different layout parameters etc. By replacing single elements of the list and passing the entire list to the plot function, single aspects can be tweaked while keeping most defaults. Init defaultTheme does not need any parameters.
+The \code{\link{tsggplot}} methods provide a theme argument which is used to
+pass on a plethora of useful defaults. These defaults are essentially
+stored in a list. Sometimes the user may want to tweak some of these
+defaults while keeping most of them. Hence the init_tsplot_theme function
+creates a fresh list object containing default values for a lot of
+different layout parameters etc. By replacing single elements of the list
+and passing the entire list to the plot function, single aspects can be
+tweaked while keeping most defaults. Init defaultTheme does not need any
+parameters.
 }
 \details{
-Themes are essentially list that contain \code{\link{par}} parameters. Below all items are listed, some of them with comments.
-The per-line parameters (\code{line_colors, lwd, lty, show_points, point_symbol}) are recycled if more time series than elements on the corresponding
-theme vectors are supplied. e.g. if four time series are plotted but only two line_colors are supplied, the first and third series have the first color,
-while the second and fourth series have the second color.
-The list contains the following elements:
+Themes are essentially lists that contain \code{\link{par}} parameters.
+Below all items are listed, some of them with comments. The per-line
+parameters (\code{line_colors, lwd, lty, show_points, point_symbol}) are
+recycled if more time series than elements on the corresponding theme
+vectors are supplied. e.g. if four time series are plotted but only two
+line_colors are supplied, the first and third series have the first color,
+while the second and fourth series have the second color. The list contains
+the following elements:
 }
 \examples{
 \dontrun{
 # create a list
 data(KOF)
-tt <- init_tsplot_theme()
+tt <- init_tsggplot_theme()
 # adjust a single element
 tt$highlight_window <- TRUE
 # pass the list to tsplot

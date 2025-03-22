@@ -307,6 +307,18 @@ init_tsplot_print_theme <- function(
 #' the following elements:
 #' @param auto_bottom_margin logical Should the bottom margin be automatically
 #' calculated? This will be overridden if margins[1] is not NA. Default FALSE
+#' @param axis.line.x Appearance of bottom x-axis line, defined using
+#' [ggplot2::element_line()]. Use to control line color, width, etc.
+#' Set to [ggplot2::element_blank()] to hide the y-axis.
+#' @param axis.line.y Appearance of left y-axis line, defined using
+#' [ggplot2::element_line()]. Use to control line color, width, etc.
+#' Overrides axis.line.y.left and axis.line.y.right if set other than
+#' [ggplot2::element_line()].
+#' Set to [ggplot2::element_blank()] to hide the y-axis.
+#' @param axis.line.y.left Appearance of left y-axis line, defined using
+#' [ggplot2::element_line()]. Use to control line color, width, etc.
+#' @param axis.line.y.right Appearance of right y-axis line, defined using
+#' [ggplot2::element_line()]. Use to control line color, width, etc.
 #' @param axis.minor.ticks.length Length of minor axis ticks, set relative to
 #' `axis.ticks.length` using [ggplot2::rel()].
 #' @param axis.minor.ticks.x.bottom Appearance of bottom x-axis minor ticks,
@@ -321,12 +333,6 @@ init_tsplot_print_theme <- function(
 #' series. If neq 1 then quarterly ticks will not be shown. Defaults to 1.
 #' @param axis_x_label_dt numeric The distance between labels on the x axis in
 #' years. Defaults to 2.
-#' @param axis_x_show logical: should x axis be shown. Defaults to TRUE
-#' @param axis_y_show logical: should y axis be shown. Defaults to TRUE
-#' @param axis_y_left_show logical: should left y axis be shown. Defaults to
-#' TRUE.
-#' @param axis_y_right_show logical: should right y axis be shown. Defaults to
-#' TRUE.
 #' @param band_fill_color character vector of hex colors for the bands if
 #' left_as_band == TRUE.
 #' @param bar_border character hex colors for the border around bars in bar
@@ -495,21 +501,25 @@ init_tsplot_print_theme <- function(
 #' @author Merlin Scherer
 #' @export
 init_tsggplot_theme <- function(
+    axis.line.x = element_line(
+      color = colors$ETH_Grey$`40`,
+      linewidth = 0.5
+    ),
+    axis.line.y = element_line(),
+    axis.line.y.left = ggplot2::element_line(
+      color = colors$ETH_Grey$`40`,
+      linewidth = 0.5
+    ),
+    axis.line.y.right = ggplot2::element_line(
+      color = colors$ETH_Grey$`40`,
+      linewidth = 0.5
+    ),
     axis.minor.ticks.length = ggplot2::rel(0.5),
     axis.minor.ticks.x.bottom = ggplot2::element_line(),
     axis.ticks.length = ggplot2::unit(10, "pt"),
     axis.ticks.x.bottom = ggplot2::element_line(),
-    axis_y_color = colors$ETH_Grey$`40`,
-    axis_y_lwd = 0.5,
-    axis_y_show = TRUE,
-    axis_y_left_show = TRUE,
-    axis_y_right_show = TRUE,
-    axis_x_color = "black",
     axis_x_label_dt = 2,
     axis_x_label_pos = "start",
-    axis_x_lwd = 0.5,
-    axis_x_show = TRUE,
-    axis_x_left_show = TRUE,
     axis_x_tick_dt = 1,
     auto_bottom_margin = FALSE,
     band_fill_color = c(

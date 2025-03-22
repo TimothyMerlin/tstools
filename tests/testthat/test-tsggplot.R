@@ -149,7 +149,7 @@ test_that("tsggplot ticks", {
   )
 
   # Check if the theme attributes are applied correctly
-  expect_equal(p$theme$axis.minor.ticks.length, ggplot2::unit(20, "pt"))
+  expect_equal(p$theme$axis.minor.ticks.length, ggplot2::unit(15, "pt"))
   expect_equal(
     p$theme$axis.minor.ticks.x.bottom,
     structure(list(
@@ -162,6 +162,93 @@ test_that("tsggplot ticks", {
     p$theme$axis.ticks.x.bottom,
     structure(list(
       colour = "red", linewidth = 3, linetype = NULL,
+      lineend = NULL, arrow = FALSE, inherit.blank = FALSE
+    ), class = c("element_line", "element"))
+  )
+})
+
+test_that("tsggplot axis", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.line.x = element_line(color = "blue", linewidth = 2),
+    axis.line.y.left = element_line(color = "red", linewidth = 1),
+    axis.line.y.right = element_line(color = "green", linewidth = 3)
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  # Check if the theme attributes are applied correctly
+  expect_equal(
+    p$theme$axis.line.x,
+    structure(list(
+      colour = "blue", linewidth = 2, linetype = NULL,
+      lineend = NULL, arrow = FALSE, inherit.blank = FALSE
+    ), class = c("element_line", "element"))
+  )
+  expect_equal(
+    p$theme$axis.line.y.left,
+    structure(list(
+      colour = "red", linewidth = 1, linetype = NULL,
+      lineend = NULL, arrow = FALSE, inherit.blank = FALSE
+    ), class = c("element_line", "element"))
+  )
+  expect_equal(
+    p$theme$axis.line.y.right,
+    structure(list(
+      colour = "green", linewidth = 3, linetype = NULL,
+      lineend = NULL, arrow = FALSE, inherit.blank = FALSE
+    ), class = c("element_line", "element"))
+  )
+})
+
+test_that("tsggplot hide y axis", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.line.y = element_blank()
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  expect_equal(
+    p$theme$axis.line.y,
+    structure(list(), class = c("element_blank", "element"))
+  )
+})
+
+test_that("tsggplot hide x axis", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.line.x = element_blank()
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  expect_equal(
+    p$theme$axis.line.x,
+    structure(list(), class = c("element_blank", "element"))
+  )
+})
+
+test_that("tsggplot y axis overrides left and right", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.line.y = element_line(color = "red")
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  expect_equal(
+    p$theme$axis.line.y,
+    structure(list(
+      colour = "red", linewidth = NULL, linetype = NULL,
       lineend = NULL, arrow = FALSE, inherit.blank = FALSE
     ), class = c("element_line", "element"))
   )

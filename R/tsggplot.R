@@ -473,6 +473,8 @@ tsggplot.list <- function(...,
   # yaxs = theme$yaxs
   # )
   theme_args <- list(
+    axis.line.x = theme$axis.line.x,
+    axis.line.y = theme$axis.line.y,
     axis.minor.ticks.length = theme$axis.minor.ticks.length,
     axis.minor.ticks.x.bottom = theme$axis.minor.ticks.x.bottom,
     axis.text = element_text(size = 13),
@@ -507,14 +509,18 @@ tsggplot.list <- function(...,
     element_blank()
   }
 
-  theme_args$axis.line.x <- if (theme$axis_x_show) {
-    element_line(color = theme$axis_x_color, linewidth = theme$axis_x_lwd)
-  } else {
-    element_blank()
-  }
-
-  theme_args$axis.line.y <- if (theme$axis_y_show) {
-    element_line(color = theme$axis_y_color, linewidth = theme$axis_y_lwd)
+  if (!inherits(theme$axis.line.y, "element_blank")) {
+    # If the y-axis line theme is not identical to the default ggplot2
+    # element_line
+    if (!identical(theme$axis.line.y, ggplot2::element_line())) {
+      # Assign the y-axis line theme to both left and right y-axis line
+      # arguments
+      theme_args$axis.line.y.left <- theme$axis.line.y
+      theme_args$axis.line.y.right <- theme$axis.line.y
+    } else {
+      theme_args$axis.line.y.left <- theme$axis.line.y.left
+      theme_args$axis.line.y.right <- theme$axis.line.y.right
+    }
   } else {
     element_blank()
   }
@@ -523,11 +529,13 @@ tsggplot.list <- function(...,
   if (theme$axis_x_label_pos == "mid") {
     theme_args$axis.text.x <- element_text(hjust = 0)
   }
-  theme_args$axis.text.y <- if (theme$axis_y_show) {
-    element_text()
-  } else {
-    element_blank()
-  }
+
+  theme_args$axis.text.y <-
+    if (!inherits(theme$axis.line.y, "element_blank")) {
+      element_text()
+    } else {
+      element_blank()
+    }
 
   p <- ggplot() +
     do.call(ggplot2::theme, theme_args)
@@ -693,28 +701,39 @@ tsggplot.list <- function(...,
     #  }
   }
 
-  if (theme$axis_y_show) {
+  if (!inherits(theme$axis.line.y, "element_blank")) {
     p <- p +
       scale_y_continuous(
         limits = {
-          if (theme$axis_y_left_show && theme$axis_y_right_show && !is.null(tsr)) {
+          if (!inherits(theme$axis.line.y.left, "element_blank") &&
+            inherits(theme$axis.line.y.right, "element_blank") &&
+            !is.null(tsr)) {
             range(left_y$y_range, scaled_tsr, 0)
-          } else if (theme$axis_y_left_show) {
+          } else if (!inherits(theme$axis.line.y.left, "element_blank")) {
             range(left_y$y_range, 0)
           } else {
             NULL
           }
         },
         labels = {
-          if (theme$axis_y_left_show) left_y$y_ticks else NULL
+          if (!inherits(theme$axis.line.y.left, "element_blank")) {
+            left_y$y_ticks
+          } else {
+            NULL
+          }
         },
         breaks = {
-          if (theme$axis_y_left_show) left_y$y_ticks else NULL
+          if (!inherits(theme$axis.line.y.left, "element_blank")) {
+            left_y$y_ticks
+          } else {
+            NULL
+          }
         },
         minor = NULL,
         # RIGHT Y-Axis
         sec.axis = {
-          if (theme$axis_y_right_show && !is.null(tsr)) {
+          if (!inherits(theme$axis.line.y.right, "element_blank") &&
+            !is.null(tsr)) {
             sec_axis(
               name = labs$y_right,
               transform = ~ scale(., left_min, left_max, right_min, right_max)
@@ -747,7 +766,7 @@ tsggplot.list <- function(...,
   # )
 
   # Global X-Axis ###################
-  if (theme$axis_x_show) {
+  if (!inherits(theme$axis.line.x, "element_blank")) {
     p <- p +
       scale_x_continuous(
         breaks = global_x$yearly_tick_pos,
