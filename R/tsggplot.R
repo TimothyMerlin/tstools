@@ -473,12 +473,14 @@ tsggplot.list <- function(...,
   # yaxs = theme$yaxs
   # )
   theme_args <- list(
-    panel.background = element_blank(),
-    axis.ticks.y = element_blank(),
-    panel.grid.minor = element_blank(),
+    axis.minor.ticks.length = theme$axis.minor.ticks.length,
+    axis.minor.ticks.x.bottom = theme$axis.minor.ticks.x.bottom,
     axis.text = element_text(size = 13),
-    axis.ticks.length = theme$axis_ticks_length,
-    axis.minor.ticks.length = theme$axis_minor_ticks_length,
+    axis.ticks.length = theme$axis.ticks.length,
+    axis.ticks.y = element_blank(),
+    axis.ticks.x.bottom = theme$axis.ticks.x.bottom,
+    panel.background = element_blank(),
+    panel.grid.minor = element_blank(),
     text = element_text(family = "sans")
   )
 
