@@ -612,6 +612,13 @@ init_tsggplot_theme <- function(
     margins = c(NA, 7, 12, 7),
     NA_continue_line = FALSE,
     output_wide = FALSE,
+    plot.title = element_text(
+      size = 20,
+      face = "bold"
+    ),
+    plot.subtitle = element_text(size = 13),
+    plot.caption = element_text(),
+    plot.tag = element_text(size = 13),
     point_symbol = 1:18,
     pointsize = 12,
     preferred_y_gap_sizes = c(25, 20, 15, 10, 5, 2.5, 1, 0.5),

@@ -89,7 +89,13 @@ test_that("tsggplot sets custom labels correctly", {
     caption = "(based on data from ...)",
     tag = "A"
   )
-  p <- tsggplot(tsl, labs = labs)
+  t <- init_tsggplot_theme(
+    plot.title = element_text(size = 30, face = "bold"),
+    plot.subtitle = element_text(size = 20),
+    plot.caption = element_text(size = 25),
+    plot.tag = element_text(size = 15)
+  )
+  p <- tsggplot(tsl, labs = labs, theme = t)
 
   # Check if the labels are set correctly
   expect_equal(p$labels$x, labs$x)
@@ -99,6 +105,40 @@ test_that("tsggplot sets custom labels correctly", {
   expect_equal(p$labels$subtitle, labs$subtitle)
   expect_equal(p$labels$caption, labs$caption)
   expect_equal(p$labels$tag, labs$tag)
+
+  # Check if the theme attributes are applied correctly
+  expect_equal(
+    p$theme$plot.title,
+    structure(list(
+      family = NULL, face = "bold", colour = NULL, size = 30,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+  expect_equal(
+    p$theme$plot.subtitle,
+    structure(list(
+      family = NULL, face = NULL, colour = NULL, size = 20,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+  expect_equal(
+    p$theme$plot.caption,
+    structure(list(
+      family = NULL, face = NULL, colour = NULL, size = 25,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+  expect_equal(
+    p$theme$plot.tag,
+    structure(list(
+      family = NULL, face = NULL, colour = NULL, size = 15,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
 })
 
 test_that("tsggplot applies custom themes correctly", {

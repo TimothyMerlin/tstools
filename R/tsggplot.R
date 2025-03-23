@@ -485,6 +485,10 @@ tsggplot.list <- function(...,
     axis.ticks.x.bottom = theme$axis.ticks.x.bottom,
     panel.background = element_blank(),
     panel.grid.minor = element_blank(),
+    plot.title = theme$plot.title,
+    plot.subtitle = theme$plot.subtitle,
+    plot.caption = theme$plot.caption,
+    plot.tag = theme$plot.tag,
     text = element_text(family = "sans")
   )
 
