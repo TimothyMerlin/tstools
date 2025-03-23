@@ -533,20 +533,13 @@ tsggplot.list <- function(...,
       theme_args$axis.text.y.left <- theme$axis.text.y.left
       theme_args$axis.text.y.right <- theme$axis.text.y.right
     }
-  }
 
-  # Axis text position
-  if (theme$axis.text.x.pos == "mid") {
-    theme_args$axis.text.x <-
-      modifyList(theme_args$axis.text.x, list(hjust = 0), keep.null = TRUE)
-  }
-
-  theme_args$axis.text.y <-
-    if (!inherits(theme$axis.line.y, "element_blank")) {
-      element_text()
-    } else {
-      element_blank()
+    # Axis text position
+    if (theme$axis.text.x.pos == "mid") {
+      theme_args$axis.text.x <-
+        modifyList(theme_args$axis.text.x, list(hjust = 0), keep.null = TRUE)
     }
+  }
 
   p <- ggplot() +
     do.call(ggplot2::theme, theme_args)

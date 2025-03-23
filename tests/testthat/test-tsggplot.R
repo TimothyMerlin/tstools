@@ -256,6 +256,19 @@ test_that("tsggplot axis text", {
   )
 })
 
+test_that("tsggplot hide axis text", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.text = element_blank()
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  expect_true(inherits(p$theme$axis.text, "element_blank"))
+})
+
 test_that("tsggplot x and y axis text", {
   tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
   t <- init_tsggplot_theme(
