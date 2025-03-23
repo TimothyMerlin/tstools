@@ -7,15 +7,18 @@
 init_tsggplot_theme(
   axis.line.x = element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
   axis.line.y = element_line(),
-  axis.line.y.left = ggplot2::element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
-  axis.line.y.right = ggplot2::element_line(color = colors$ETH_Grey$`40`, linewidth =
-    0.5),
-  axis.minor.ticks.length = ggplot2::rel(0.5),
-  axis.minor.ticks.x.bottom = ggplot2::element_line(),
-  axis.ticks.length = ggplot2::unit(10, "pt"),
-  axis.ticks.x.bottom = ggplot2::element_line(),
+  axis.line.y.left = element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
+  axis.line.y.right = element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
+  axis.minor.ticks.length = rel(0.5),
+  axis.minor.ticks.x.bottom = element_line(),
+  axis.text = element_text(),
+  axis.text.x = element_text(hjust = 0, size = 13),
+  axis.text.x.pos = "start",
+  axis.text.y.left = element_text(size = 13),
+  axis.text.y.right = element_text(size = 13),
+  axis.ticks.length = unit(10, "pt"),
+  axis.ticks.x.bottom = element_line(),
   axis_x_label_dt = 2,
-  axis_x_label_pos = "start",
   axis_x_tick_dt = 1,
   auto_bottom_margin = FALSE,
   band_fill_color = c(ETH_Petrol = colors$ETH_Petrol$`100`, ETH_Petrol_60 =
@@ -138,6 +141,23 @@ Set to [ggplot2::element_blank()] to hide the y-axis.}
 defined using [ggplot2::element_line()]. Use to style or enable minor
 ticks.}
 
+\item{axis.text}{An `element_text` object applied to all axis text
+elements (x and y), unless overridden. Set to `element_blank()` to
+remove all axis text.}
+
+\item{axis.text.x}{An `element_text` object specifying styling for
+x-axis text labels (e.g., `hjust`, `size`, `angle`).}
+
+\item{axis.text.x.pos}{A string indicating the horizontal alignment
+of x-axis text. Use `"mid"` to center-align (`hjust = 0`), or
+`"start"` for default alignment.}
+
+\item{axis.text.y.left}{An `element_text` object specifying styling
+for left y-axis text labels.}
+
+\item{axis.text.y.right}{An `element_text` object specifying styling
+for right y-axis text labels.}
+
 \item{axis.ticks.length}{Length of major axis ticks. Set using
 [ggplot2::unit()], e.g., `unit(10, "pt")`.}
 
@@ -146,9 +166,6 @@ using [ggplot2::element_line()]. Use to control line color, width, etc.}
 
 \item{axis_x_label_dt}{numeric The distance between labels on the x axis in
 years. Defaults to 2.}
-
-\item{axis_x_label_pos}{character, denotes where the x-axis label is at.
-defaults to "mid", alternative value: "start".}
 
 \item{axis_x_tick_dt}{numeric The distance between ticks on the x axis in
 years. The first tick will always be at the start of the plotted time
@@ -421,11 +438,12 @@ tt <- init_tsggplot_theme()
 # adjust a single element
 tt$highlight_window <- TRUE
 # pass the list to tsplot
-tsplot(KOF$kofbarometer, theme = tt)
-# for more theme examples check the vignette
-vignette("tstools")
+tsggplot(KOF$kofbarometer, theme = tt)
 }
 
+}
+\seealso{
+\href{https://ggplot2.tidyverse.org/reference/theme.html}{ggplot2 theme vignette}
 }
 \author{
 Merlin Scherer

@@ -95,3 +95,6 @@ Conveniently plot time series.
 [ggplot2::labs()] for information on labels (title, subtitle,
          caption, tag)
 }
+\author{
+Merlin Scherer
+}

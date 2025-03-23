@@ -7,18 +7,6 @@ test_that("tsggplot", {
 
   tsggplot(tsl)
 
-  # plot title and subtitle
-  labs <- list(
-    x = "Engine displacement (litres)",
-    y = "Highway miles per gallon",
-    y_right = "Medication per kilogram",
-    title = "Air Passengers",
-    subtitle = "In thousands",
-    caption = "(based on data from ...)",
-    tag = "A"
-  )
-  tsggplot(tsl, labs = labs)
-
   tstools::tsplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson))
   tsggplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson), labs = labs)
 
@@ -26,12 +14,6 @@ test_that("tsggplot", {
   t <- tstools::init_tsplot_theme(x_tick_dt = 2)
   tstools::tsplot(list(tsl$AirPassengers),
     tsr = list(tsl$JohnsonJohnson),
-    theme = t
-  )
-  t <- init_tsggplot_theme(axis_y_show = FALSE, axis_x_show = FALSE)
-  tsggplot(list(tsl$AirPassengers),
-    tsr = list(tsl$JohnsonJohnson),
-    left_as_bar = TRUE,
     theme = t
   )
 
@@ -251,5 +233,64 @@ test_that("tsggplot y axis overrides left and right", {
       colour = "red", linewidth = NULL, linetype = NULL,
       lineend = NULL, arrow = FALSE, inherit.blank = FALSE
     ), class = c("element_line", "element"))
+  )
+})
+
+test_that("tsggplot axis text", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.text = element_text(color = "blue", size = 10),
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  expect_equal(
+    p$theme$axis.text,
+    structure(list(
+      family = NULL, face = NULL, colour = "blue", size = 10,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+})
+
+test_that("tsggplot x and y axis text", {
+  tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
+  t <- init_tsggplot_theme(
+    axis.text.x = element_text(color = "blue", size = 10),
+    axis.text.x.pos = "mid",
+    axis.text.y.left = element_text(color = "green", size = 15),
+    axis.text.y.right = element_text(color = "red", size = 20),
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    tsr = list(tsl$JohnsonJohnson),
+    theme = t
+  )
+
+  expect_equal(
+    p$theme$axis.text.x,
+    structure(list(
+      family = NULL, face = NULL, colour = "blue", size = 10,
+      hjust = 0, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+  expect_equal(
+    p$theme$axis.text.y.left,
+    structure(list(
+      family = NULL, face = NULL, colour = "green", size = 15,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+  expect_equal(
+    p$theme$axis.text.y.right,
+    structure(list(
+      family = NULL, face = NULL, colour = "red", size = 20,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
   )
 })

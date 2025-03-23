@@ -324,6 +324,18 @@ init_tsplot_print_theme <- function(
 #' @param axis.minor.ticks.x.bottom Appearance of bottom x-axis minor ticks,
 #' defined using [ggplot2::element_line()]. Use to style or enable minor
 #' ticks.
+#' @param axis.text An `element_text` object applied to all axis text
+#' elements (x and y), unless overridden. Set to `element_blank()` to
+#' remove all axis text.
+#' @param axis.text.x An `element_text` object specifying styling for
+#' x-axis text labels (e.g., `hjust`, `size`, `angle`).
+#' @param axis.text.x.pos A string indicating the horizontal alignment
+#' of x-axis text. Use `"mid"` to center-align (`hjust = 0`), or
+#' `"start"` for default alignment.
+#' @param axis.text.y.left An `element_text` object specifying styling
+#' for left y-axis text labels.
+#' @param axis.text.y.right An `element_text` object specifying styling
+#' for right y-axis text labels.
 #' @param axis.ticks.length Length of major axis ticks. Set using
 #' [ggplot2::unit()], e.g., `unit(10, "pt")`.
 #' @param axis.ticks.x.bottom Appearance of bottom x-axis major ticks, defined
@@ -384,8 +396,6 @@ init_tsplot_print_theme <- function(
 #' @param highlight_y_lwd integer Line width of the lines to highlight y
 #' values
 #' @param highlight_y_color character Color of the lines to highlight y values
-#' @param axis_x_label_pos character, denotes where the x-axis label is at.
-#' defaults to "mid", alternative value: "start".
 #' @param legend_all_left logical Should all legend entries be drawn on the
 #' left side of the plot? Default FALSE
 #' @param legend_box_size numeric The size of the squares denoting bar colors
@@ -493,10 +503,12 @@ init_tsplot_print_theme <- function(
 #' # adjust a single element
 #' tt$highlight_window <- TRUE
 #' # pass the list to tsplot
-#' tsplot(KOF$kofbarometer, theme = tt)
-#' # for more theme examples check the vignette
-#' vignette("tstools")
+#' tsggplot(KOF$kofbarometer, theme = tt)
 #' }
+#'
+#' @import ggplot2
+#'
+#' @seealso \href{https://ggplot2.tidyverse.org/reference/theme.html}{ggplot2 theme vignette}
 #'
 #' @author Merlin Scherer
 #' @export
@@ -506,20 +518,24 @@ init_tsggplot_theme <- function(
       linewidth = 0.5
     ),
     axis.line.y = element_line(),
-    axis.line.y.left = ggplot2::element_line(
+    axis.line.y.left = element_line(
       color = colors$ETH_Grey$`40`,
       linewidth = 0.5
     ),
-    axis.line.y.right = ggplot2::element_line(
+    axis.line.y.right = element_line(
       color = colors$ETH_Grey$`40`,
       linewidth = 0.5
     ),
-    axis.minor.ticks.length = ggplot2::rel(0.5),
-    axis.minor.ticks.x.bottom = ggplot2::element_line(),
-    axis.ticks.length = ggplot2::unit(10, "pt"),
-    axis.ticks.x.bottom = ggplot2::element_line(),
+    axis.minor.ticks.length = rel(0.5),
+    axis.minor.ticks.x.bottom = element_line(),
+    axis.text = element_text(),
+    axis.text.x = element_text(hjust = 0, size = 13),
+    axis.text.x.pos = "start",
+    axis.text.y.left = element_text(size = 13),
+    axis.text.y.right = element_text(size = 13),
+    axis.ticks.length = unit(10, "pt"),
+    axis.ticks.x.bottom = element_line(),
     axis_x_label_dt = 2,
-    axis_x_label_pos = "start",
     axis_x_tick_dt = 1,
     auto_bottom_margin = FALSE,
     band_fill_color = c(

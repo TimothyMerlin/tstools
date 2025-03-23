@@ -50,6 +50,8 @@
 #' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
 #'          caption, tag)
 #'
+#'
+#' @author Merlin Scherer
 #' @export
 tsggplot <- function(...,
                      tsr = NULL,
@@ -477,7 +479,7 @@ tsggplot.list <- function(...,
     axis.line.y = theme$axis.line.y,
     axis.minor.ticks.length = theme$axis.minor.ticks.length,
     axis.minor.ticks.x.bottom = theme$axis.minor.ticks.x.bottom,
-    axis.text = element_text(size = 13),
+    axis.text = theme$axis.text,
     axis.ticks.length = theme$axis.ticks.length,
     axis.ticks.y = element_blank(),
     axis.ticks.x.bottom = theme$axis.ticks.x.bottom,
@@ -512,7 +514,7 @@ tsggplot.list <- function(...,
   if (!inherits(theme$axis.line.y, "element_blank")) {
     # If the y-axis line theme is not identical to the default ggplot2
     # element_line
-    if (!identical(theme$axis.line.y, ggplot2::element_line())) {
+    if (!identical(theme$axis.line.y, element_line())) {
       # Assign the y-axis line theme to both left and right y-axis line
       # arguments
       theme_args$axis.line.y.left <- theme$axis.line.y
@@ -525,9 +527,18 @@ tsggplot.list <- function(...,
     element_blank()
   }
 
-  # Axis text position/visibility
-  if (theme$axis_x_label_pos == "mid") {
-    theme_args$axis.text.x <- element_text(hjust = 0)
+  if (!inherits(theme$axis.text, "element_blank")) {
+    if (identical(theme$axis.text, element_text())) {
+      theme_args$axis.text.x <- theme$axis.text.x
+      theme_args$axis.text.y.left <- theme$axis.text.y.left
+      theme_args$axis.text.y.right <- theme$axis.text.y.right
+    }
+  }
+
+  # Axis text position
+  if (theme$axis.text.x.pos == "mid") {
+    theme_args$axis.text.x <-
+      modifyList(theme_args$axis.text.x, list(hjust = 0), keep.null = TRUE)
   }
 
   theme_args$axis.text.y <-
