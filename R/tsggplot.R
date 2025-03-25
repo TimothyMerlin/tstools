@@ -275,7 +275,6 @@ tsggplot.list <- function(...,
     tsl <- lapply(tsl, "/", m)
   }
 
-
   # Set default names for legend if none provided
   right_name_start <- 0
   if (is.null(names(tsl))) {
@@ -465,7 +464,6 @@ tsggplot.list <- function(...,
   # CANVAS OPTIONS END #########################################
 
   # BASE CANVAS
-  # plot(NULL,
   # xlim = global_x$x_range,
   # ylim = left_y$y_range,
   # axes = F,
@@ -474,23 +472,12 @@ tsggplot.list <- function(...,
   # xaxs = theme$xaxs,
   # yaxs = theme$yaxs
   # )
-  theme_args <- list(
-    axis.line.x = theme$axis.line.x,
-    axis.line.y = theme$axis.line.y,
-    axis.minor.ticks.length = theme$axis.minor.ticks.length,
-    axis.minor.ticks.x.bottom = theme$axis.minor.ticks.x.bottom,
-    axis.text = theme$axis.text,
-    axis.ticks.length = theme$axis.ticks.length,
-    axis.ticks.y = element_blank(),
-    axis.ticks.x.bottom = theme$axis.ticks.x.bottom,
-    panel.background = element_blank(),
-    panel.grid.minor = element_blank(),
-    plot.title = theme$plot.title,
-    plot.subtitle = theme$plot.subtitle,
-    plot.caption = theme$plot.caption,
-    plot.tag = theme$plot.tag,
-    text = element_text(family = "sans")
-  )
+
+  # Extract valid theme elements from the provided theme listents]
+  # by matching their names with the formal arguments of ggplot2::theme
+  valid_theme_elements <- names(formals(ggplot2::theme))
+  # Filter the theme list to include only valid theme elements
+  theme_args <- theme[names(theme) %in% valid_theme_elements]
 
   if (is.null(labs$x)) {
     theme_args$axis.title.x <- element_blank()
@@ -501,8 +488,10 @@ tsggplot.list <- function(...,
   if (!is.null(labs$y_right)) {
     theme_args$axis.title.y.right <- element_text()
   }
+  if (is.null(labs$color)) {
+    theme_args$legend.title <- element_blank()
+  }
 
-  # Conditionally add grid and axis elements
   theme_args$panel.grid.major.x <- if (theme$grids_x_show) {
     element_line(color = theme$grids_x_color, size = theme$grids_x_lwd)
   } else {
@@ -848,6 +837,24 @@ tsggplot.list <- function(...,
         minor_breaks = NULL
       )
   }
+
+  # Set the colors
+  if (left_as_band || left_as_bar) {
+    line_names <- names(tsr)
+    fill_colors <- if (left_as_band) {
+      theme$band_fill_color
+    } else {
+      theme$bar_fill_color
+    }
+    p <- p + scale_fill_manual(
+      values = setNames(fill_colors, names(tsl)),
+    )
+  } else {
+    line_names <- c(names(tsl), names(tsr))
+  }
+  p <- p + scale_color_manual(
+    values = setNames(theme$line_colors, line_names)
+  )
 
   # LEFT Y-AXIS
   # if (theme$show_left_y_axis) {

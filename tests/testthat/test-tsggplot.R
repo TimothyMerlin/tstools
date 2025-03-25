@@ -347,3 +347,94 @@ test_that("tsggplot x and y axis text", {
     ), class = c("element_text", "element"))
   )
 })
+
+test_that("tsggplot legend", {
+  # Plot with left and right axes - lines
+  t <- init_tsggplot_theme()
+  p <- tsggplot(list(JohnsonJohnson = JohnsonJohnson, JohnsonJohnson2 = JohnsonJohnson * 2),
+    tsr = list(AirPassengers = AirPassengers, AirPassengers2 = AirPassengers * 2),
+    labs = list(color = "Legend Title"),
+    theme = t
+  )
+
+  expect_equal(p$labels$colour, "Legend Title")
+
+  pb <- ggplot_build(p)
+  # line 1
+  colour_1 <- unique(pb$data[[1]]$colour)
+  expect_equal(colour_1, unname(t$line_colors[1]))
+  # line 2
+  colour_2 <- unique(pb$data[[2]]$colour)
+  expect_equal(colour_2, unname(t$line_colors[2]))
+
+  # Plot with left as band
+  t <- init_tsggplot_theme()
+  p <- tsggplot(list(JohnsonJohnson = JohnsonJohnson, JohnsonJohnson2 = JohnsonJohnson),
+    tsr = list(AirPassengers = AirPassengers, AirPassengers2 = AirPassengers * 2),
+    left_as_band = TRUE,
+    theme = t
+  )
+
+  pb <- ggplot_build(p)
+  # band
+  colour_band_1 <- unique(pb$data[[1]]$fill)
+  expect_equal(colour_band_1, unname(t$band_fill_color[1]))
+  colour_band_2 <- unique(pb$data[[2]]$fill)
+  expect_equal(colour_band_2, unname(t$band_fill_color[2]))
+  # line
+  colour_line_1 <- unique(pb$data[[3]]$colour)
+  expect_equal(colour_line_1, unname(t$line_colors[1]))
+  colour_line_2 <- unique(pb$data[[4]]$colour)
+  expect_equal(colour_line_2, unname(t$line_colors[2]))
+
+  # Plot with left as bar
+  t <- init_tsggplot_theme()
+  p <- tsggplot(list(JohnsonJohnson = JohnsonJohnson, JohnsonJohnson2 = JohnsonJohnson),
+    tsr = list(AirPassengers = AirPassengers, AirPassengers2 = AirPassengers * 2),
+    left_as_bar = TRUE,
+    theme = t
+  )
+
+  pb <- ggplot_build(p)
+  # bar
+  colour_bar <- unique(pb$data[[1]]$fill)
+  expect_equal(colour_bar, unname(t$bar_fill_color[1:2]))
+  # line
+  colour_line_1 <- unique(pb$data[[2]]$colour)
+  expect_equal(colour_line_1, unname(t$line_colors[1]))
+  colour_line_2 <- unique(pb$data[[3]]$colour)
+  expect_equal(colour_line_2, unname(t$line_colors[2]))
+})
+
+test_that("tsggplot modify the legend", {
+  # Modify the legend title
+  t <- init_tsggplot_theme(
+    legend.title = element_text(size = 20, face = "bold"),
+    legend.title.position = "top",
+    legend.justification = "left"
+  )
+  p <- tsggplot(list(AirPassengers = AirPassengers),
+    tsr = list(JohnsonJohnson = JohnsonJohnson),
+    labs = list(color = "Legend Title"),
+    theme = t
+  )
+
+  expect_equal(
+    p$theme$legend.title,
+    structure(list(
+      family = NULL, face = "bold", colour = NULL, size = 20,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
+      margin = NULL, debug = NULL, inherit.blank = FALSE
+    ), class = c("element_text", "element"))
+  )
+})
+
+test_that("tsggplot hide legend", {
+  t <- init_tsggplot_theme(legend.position = "none")
+  p <- tsggplot(list(AirPassengers = AirPassengers),
+    tsr = list(JohnsonJohnson = JohnsonJohnson),
+    theme = t
+  )
+
+  expect_equal(p$theme$legend.position, "none")
+})

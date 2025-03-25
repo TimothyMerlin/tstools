@@ -331,7 +331,7 @@ init_tsplot_print_theme <- function(
 #' x-axis text labels (e.g., `hjust`, `size`, `angle`).
 #' @param axis.text.x.pos A string indicating the horizontal alignment
 #' of x-axis text. Use `"mid"` to center-align (`hjust = 0`), or
-#' `"start"` for default alignment.
+#' `"start"` for alignment.
 #' @param axis.text.y.left An `element_text` object specifying styling
 #' for left y-axis text labels.
 #' @param axis.text.y.right An `element_text` object specifying styling
@@ -495,6 +495,9 @@ init_tsplot_print_theme <- function(
 #' needs to be clean, i.e., without lines or bars. Defaults to 0.15 (15
 #' percent).
 #' @param yaxs character axis definition as in base plot, defaults to "i".
+#'
+#' @inheritParams ggplot2::theme
+#'
 #' @examples
 #' \dontrun{
 #' # create a list
@@ -530,11 +533,17 @@ init_tsggplot_theme <- function(
     axis.minor.ticks.x.bottom = element_line(),
     axis.text = element_text(),
     axis.text.x = element_text(hjust = 0, size = 13),
-    axis.text.x.pos = "start",
+    axis.text.x.pos = "mid",
     axis.text.y.left = element_text(size = 13),
     axis.text.y.right = element_text(size = 13),
     axis.ticks.length = unit(10, "pt"),
     axis.ticks.x.bottom = element_line(),
+    axis.ticks.y = element_blank(),
+    text = element_text(family = "sans"),
+    legend.position = "bottom",
+    legend.title = element_text(size = 13),
+    panel.background = element_blank(),
+    panel.grid.minor = element_blank(),
     axis_x_label_dt = 2,
     axis_x_tick_dt = 1,
     auto_bottom_margin = FALSE,
@@ -566,12 +575,12 @@ init_tsggplot_theme <- function(
     default_bottom_margin = 15,
     fill_up_start = FALSE,
     fill_year_with_nas = TRUE,
-    grids_x_color = colors$ETH_Grey$`20`,
+    grids_x_color = colors$ETH_Grey$`10`,
     grids_x_count = c(5, 6, 8, 10),
     grids_x_count_strict = FALSE,
     grids_x_lwd = 0.5,
     grids_x_show = FALSE,
-    grids_y_color = colors$ETH_Grey$`60`,
+    grids_y_color = colors$ETH_Grey$`20`,
     grids_y_lwd = 0.5,
     grids_y_show = TRUE,
     highlight_color = colors$ETH_Grey$`20`,
@@ -653,6 +662,9 @@ init_tsggplot_theme <- function(
     y_tick_force_integers = FALSE,
     y_tick_margin = 0.15,
     yaxs = "i",
-    yearly_ticks = TRUE) {
-  as.list(environment())[names(formals())]
+    yearly_ticks = TRUE,
+    ...) {
+  args <- as.list(environment())[setdiff(names(formals()), "...")]
+  dots <- list(...)
+  c(args, dots)
 }

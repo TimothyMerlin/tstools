@@ -83,7 +83,7 @@ draw_ts_bars <- function(x, group_bar_chart = FALSE, theme = NULL) {
 #' @importFrom graphics rect
 draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
   n_ts <- length(x)
-  series_names <- names(x)
+  series <- names(x)
 
   # "Remove" NAs (basically rect omits them anyway. Might even be better because of the borders)
   x[is.na(x)] <- 0
@@ -100,7 +100,7 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
     data.frame(
       time = as.numeric(time(x[[i]])),
       value = as.numeric(x[[i]]),
-      series = series_names[i]
+      series = factor(series[i], levels = series)
     )
   }))
 

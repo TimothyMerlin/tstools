@@ -48,6 +48,7 @@ draw_ts_lines <- function(x, theme = NULL, bandplot = FALSE) {
 #' @importFrom stats ts.union
 draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NULL) {
   nts <- length(x)
+  series <- names(x)
   op <- rep(theme$show_points, ceiling(nts / length(theme$show_points)))
   ops <- rep(theme$point_symbol, ceiling(nts / length(theme$point_symbol)))
 
@@ -55,7 +56,9 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
   if (bandplot) {
     x_mat <- do.call(ts.union, x)
     x_mat[is.na(x_mat)] <- 0
+    x_names <- names(x)
     x <- as.list(x_mat)
+    x <- setNames(x, x_names)
   }
 
   band_low <- rep(0, length(x[[1]]))
@@ -79,11 +82,12 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
       time = as.numeric(time(x[[i]])),
       value = as.numeric(x[[i]]),
       line_colors = rep(theme$line_colors[i], each = length(time(x[[i]]))),
-      interval = ifelse(rep(as.numeric(time(x[[i]])), each = nts) <= 1975, "in_sample", "forecast")
+      interval = ifelse(rep(as.numeric(time(x[[i]])), each = nts) <= 1975, "in_sample", "forecast"),
+      series = factor(series[i], levels = series)
     )
     # Ensure 'interval' is a factor with the correct levels
     df$interval <- factor(df$interval, levels = c("forecast", "in_sample"))
-    unique_group_id <- paste0(format(Sys.time(), "%Y%m%d%H%M%S"), "_", i)
+    #    unique_group_id <- paste0(format(Sys.time(), "%Y%m%d%H%M%S"), "_", i)
 
     if (!bandplot) {
       # Create the custom text for hover outside aes()
@@ -97,10 +101,10 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
         aes(
           x = time,
           y = value,
-          group = unique_group_id
+          color = series,
+          # group = unique_group_id
           # text = text,
         ),
-        color = theme$line_colors[i],
         size = theme$lwd[i]
       )
 
@@ -114,11 +118,21 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
       }
     } else {
       band_high <- band_low + yy
-      df_band <- data.frame(time = xx, ymin = band_low, ymax = band_high)
+      df_band <- data.frame(
+        time = xx,
+        ymin = band_low,
+        ymax = band_high,
+        series = factor(series[i], levels = series)
+      )
+
       p <- p + geom_ribbon(
         data = df_band,
-        aes(x = time, ymin = ymin, ymax = ymax),
-        fill = theme$band_fill_color[i]
+        aes(
+          x = time,
+          fill = series,
+          ymin = ymin,
+          ymax = ymax
+        )
       )
       band_low <- band_high # Update band_low for cumulative stacking
     }

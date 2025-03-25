@@ -13,11 +13,17 @@ init_tsggplot_theme(
   axis.minor.ticks.x.bottom = element_line(),
   axis.text = element_text(),
   axis.text.x = element_text(hjust = 0, size = 13),
-  axis.text.x.pos = "start",
+  axis.text.x.pos = "mid",
   axis.text.y.left = element_text(size = 13),
   axis.text.y.right = element_text(size = 13),
   axis.ticks.length = unit(10, "pt"),
   axis.ticks.x.bottom = element_line(),
+  axis.ticks.y = element_blank(),
+  text = element_text(family = "sans"),
+  legend.position = "bottom",
+  legend.title = element_text(size = 13),
+  panel.background = element_blank(),
+  panel.grid.minor = element_blank(),
   axis_x_label_dt = 2,
   axis_x_tick_dt = 1,
   auto_bottom_margin = FALSE,
@@ -39,12 +45,12 @@ init_tsggplot_theme(
   default_bottom_margin = 15,
   fill_up_start = FALSE,
   fill_year_with_nas = TRUE,
-  grids_x_color = colors$ETH_Grey$`20`,
+  grids_x_color = colors$ETH_Grey$`10`,
   grids_x_count = c(5, 6, 8, 10),
   grids_x_count_strict = FALSE,
   grids_x_lwd = 0.5,
   grids_x_show = FALSE,
-  grids_y_color = colors$ETH_Grey$`60`,
+  grids_y_color = colors$ETH_Grey$`20`,
   grids_y_lwd = 0.5,
   grids_y_show = TRUE,
   highlight_color = colors$ETH_Grey$`20`,
@@ -80,6 +86,10 @@ init_tsggplot_theme(
   margins = c(NA, 7, 12, 7),
   NA_continue_line = FALSE,
   output_wide = FALSE,
+  plot.title = element_text(size = 20, face = "bold"),
+  plot.subtitle = element_text(size = 13),
+  plot.caption = element_text(),
+  plot.tag = element_text(size = 13),
   point_symbol = 1:18,
   pointsize = 12,
   preferred_y_gap_sizes = c(25, 20, 15, 10, 5, 2.5, 1, 0.5),
@@ -114,7 +124,8 @@ init_tsggplot_theme(
   y_tick_force_integers = FALSE,
   y_tick_margin = 0.15,
   yaxs = "i",
-  yearly_ticks = TRUE
+  yearly_ticks = TRUE,
+  ...
 )
 }
 \arguments{
@@ -150,7 +161,7 @@ x-axis text labels (e.g., `hjust`, `size`, `angle`).}
 
 \item{axis.text.x.pos}{A string indicating the horizontal alignment
 of x-axis text. Use `"mid"` to center-align (`hjust = 0`), or
-`"start"` for default alignment.}
+`"start"` for alignment.}
 
 \item{axis.text.y.left}{An `element_text` object specifying styling
 for left y-axis text labels.}
@@ -163,6 +174,17 @@ for right y-axis text labels.}
 
 \item{axis.ticks.x.bottom}{Appearance of bottom x-axis major ticks, defined
 using [ggplot2::element_line()]. Use to control line color, width, etc.}
+
+\item{text}{all text elements (\code{\link[ggplot2:element_text]{element_text()}})}
+
+\item{legend.position}{the default position of legends ("none", "left",
+"right", "bottom", "top", "inside")}
+
+\item{legend.title}{title of legend (\code{\link[ggplot2:element_text]{element_text()}}; inherits from
+\code{title})}
+
+\item{panel.background}{background of plotting area, drawn underneath plot
+(\code{\link[ggplot2:element_rect]{element_rect()}}; inherits from \code{rect})}
 
 \item{axis_x_label_dt}{numeric The distance between labels on the x axis in
 years. Defaults to 2.}
@@ -311,6 +333,18 @@ behavior on/off for individual series are supported. Default FALSE}
 \item{output_wide}{logical Should the output file be in a wide format
 (16:9) or (4:3)? Only if output_format is not "plot". Default FALSE}
 
+\item{plot.title}{plot title (text appearance) (\code{\link[ggplot2:element_text]{element_text()}}; inherits
+from \code{title}) left-aligned by default}
+
+\item{plot.subtitle}{plot subtitle (text appearance) (\code{\link[ggplot2:element_text]{element_text()}};
+inherits from \code{title}) left-aligned by default}
+
+\item{plot.caption}{caption below the plot (text appearance)
+(\code{\link[ggplot2:element_text]{element_text()}}; inherits from \code{title}) right-aligned by default}
+
+\item{plot.tag}{upper-left label to identify a plot (text appearance)
+(\code{\link[ggplot2:element_text]{element_text()}}; inherits from \code{title}) left-aligned by default}
+
 \item{point_symbol}{integer or character The symbol to use for marking data
 points. Multiple values can be supplied to set the symbol for each
 individual series See \code{pch} in \code{?par}. Default 1:18}
@@ -405,6 +439,9 @@ needs to be clean, i.e., without lines or bars. Defaults to 0.15 (15
 percent).}
 
 \item{yaxs}{character axis definition as in base plot, defaults to "i".}
+
+\item{...}{additional element specifications not part of base ggplot2. In general,
+these should also be defined in the \verb{element tree} argument. \link[rlang:splice]{Splicing} a list is also supported.}
 
 \item{show_left_y_axis}{logical: should left y axis be shown, defaults to
 TRUE.}
