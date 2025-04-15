@@ -8,9 +8,12 @@ tsggplotly <- function(p, ...) {
   p <- ggplotly(p)
   p <- layout(p,
     xaxis = list(ticks = ""),
+    font = list(family = "Verdana"),
+    title = list(font = list(family = "Verdana")),
     legend = list(
+      font = list(family = "Verdana"),
       orientation = "h",
-      x = 0.4,
+      x = 0.95,
       y = -0.05,
       xanchor = "right",
       title = list(text = "")

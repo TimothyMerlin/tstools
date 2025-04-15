@@ -438,3 +438,107 @@ test_that("tsggplot hide legend", {
 
   expect_equal(p$theme$legend.position, "none")
 })
+
+
+data(KOF)
+short <- window(KOF$kofbarometer,
+  start = c(2007, 1),
+  end = c(2014, 1)
+)
+
+# list of time series
+ts1 <- ts(runif(40, -10, 40), start = c(1995, 1), freq = 4)
+ts2 <- ts(runif(80, 0, 50), start = c(2000, 1), freq = 12)
+
+tslist <- list()
+tslist$ts1 <- ts1
+tslist$ts2 <- ts2
+
+# data for stacked bar charts...
+tsb1 <- ts(runif(30, -30, 20), start = c(2010, 1), frequency = 4)
+tsb2 <- ts(runif(30, 0, 50), start = c(2010, 1), frequency = 4)
+tsb3 <- ts(runif(30, 0, 50), start = c(2010, 1), frequency = 4)
+
+min_series <- ts(runif(10, -10, 40), start = c(1995, 1), freq = 4)
+min_series_2 <- ts(runif(25, -20, 40), start = c(1995, 1), freq = 12)
+
+min_series_3 <- ts(runif(25, -20, 40), start = c(1995, 1), freq = 4)
+
+min_li <- list(
+  series1 = min_series,
+  series2 = min_series_2,
+  series3 = min_series_3
+)
+
+missings <- ts(c(1, 2, 10, 3, 5, 6, NA, NA, 3, 2, 5, 3, 1, 1),
+  start = c(1995, 1), freq = 4
+)
+
+test_that("tsggplot, a single time series: line chart", {
+  p <- tsggplot(short)
+
+  expect_s3_class(p, "ggplot")
+  geoms <- sapply(p$layers, function(l) class(l$geom)[1])
+  expect_true("GeomLine" %in% geoms)
+})
+
+test_that("tsggplot, multiple time series (same y-axis) in one line chart", {
+  tsggplot(ts1, ts2, auto_legend = FALSE)
+  # or a list of time series
+  tsggplot(tslist, auto_legend = FALSE)
+})
+
+test_that("tsggplot, auto-scale grids", {
+  tsggplot(short,
+    theme = init_tsggplot_theme(y_tick_margin = .7)
+  )
+})
+
+test_that("tsggplot, manual value ticks", {
+  tsggplot(KOF["kofbarometer"],
+    manual_value_ticks_l = seq(60, 120, by = 20)
+  )
+})
+
+test_that("tsggplot, fan charts, plotting confidence intervals", {
+  # Define confidence intervals
+  ci <- list(
+    "KOF Barometer" = list(
+      "80" = list(
+        lb = KOF$baro_lo_80,
+        ub = KOF$baro_hi_80
+      ),
+      "95" = list(
+        lb = KOF$baro_lo_95,
+        ub = KOF$baro_hi_95
+      )
+    )
+  )
+
+  tsggplot(list("KOF Barometer" = KOF$baro_point_fc),
+    ci = ci
+  )
+})
+
+test_that("tsggplot, mts, fan charts, plotting confidence intervals", {
+  # Define confidence intervals
+  ci <- list(
+    "KOF Barometer 1" = list(
+      "80" = list(
+        lb = KOF$baro_lo_80,
+        ub = KOF$baro_hi_80
+      )
+    ),
+    "KOF Barometer 2" = list(
+      "95" = list(
+        lb = KOF$baro_lo_95,
+        ub = KOF$baro_hi_95
+      )
+    )
+  )
+
+  tsggplot(list("KOF Barometer 1" = KOF$baro_point_fc),
+    tsr = list("KOF Barometer 2" = KOF$baro_point_fc),
+    ci = ci
+  )
+})

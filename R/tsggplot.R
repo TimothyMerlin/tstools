@@ -614,6 +614,14 @@ tsggplot.list <- function(...,
   # draw_ts_ci(ci_left, theme)
   # }
 
+  if (!left_as_bar) {
+    ci_left <- ci[names(ci) %in% names(tsl)]
+    if (!is.null(ci_left)) {
+      p <- draw_tsggplot_ci(p, ci_left, theme)
+    }
+  }
+
+
   # if (!is.null(tsr)) {
   #  par(new = TRUE)
   #  plot(NULL,
@@ -629,6 +637,13 @@ tsggplot.list <- function(...,
   #    ci_right <- ci[names(ci) %in% names(tsr)]
   #    draw_ts_ci(ci_right, tt_r)
   # }
+
+  if (!is.null(tsr)) {
+    ci_right <- ci[names(ci) %in% names(tsr)]
+    if (!is.null(ci_right)) {
+      p <- draw_tsggplot_ci(p, ci_right, tt_r)
+    }
+  }
 
   # par(new = TRUE)
   # plot(NULL,
@@ -707,7 +722,8 @@ tsggplot.list <- function(...,
             !is.null(tsr)) {
             range(left_y$y_range, scaled_tsr, 0)
           } else if (!inherits(theme$axis.line.y.left, "element_blank")) {
-            range(left_y$y_range, 0)
+            # range(left_y$y_range, 0)
+            left_y$y_range
           } else {
             NULL
           }
