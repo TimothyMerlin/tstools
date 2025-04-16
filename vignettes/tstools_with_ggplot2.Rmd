@@ -23,8 +23,8 @@ Let's do this separately so we can really focus on the **tstools** specific code
 library(tstools)
 data(KOF)
 short <- window(KOF$kofbarometer,
-    start = c(2007, 1),
-    end = c(2014, 1)
+  start = c(2007, 1),
+  end = c(2014, 1)
 )
 
 # list of time series
@@ -49,14 +49,14 @@ min_series_3 <- ts(runif(25, -20, 40), start = c(1995, 1), freq = 4)
 
 
 min_li <- list(
-    series1 = min_series,
-    series2 = min_series_2,
-    series3 = min_series_3
+  series1 = min_series,
+  series2 = min_series_2,
+  series3 = min_series_3
 )
 
 
 missings <- ts(c(1, 2, 10, 3, 5, 6, NA, NA, 3, 2, 5, 3, 1, 1),
-    start = c(1995, 1), freq = 4
+  start = c(1995, 1), freq = 4
 )
 ```
 
@@ -86,8 +86,8 @@ Even though *tsplot* supports *mts* and single time series, we clearly recommend
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(list(
-    "Time Series 1" = ts1,
-    "Time Series 2" = ts2
+  "Time Series 1" = ts1,
+  "Time Series 2" = ts2
 ))
 ```
 
@@ -100,7 +100,7 @@ parameter implies now that 70 percent of the outer most grid needs to stay clean
 
 ```{r}
 tsggplot(short,
-    theme = init_tsggplot_theme(y_tick_margin = .7)
+  theme = init_tsggplot_theme(y_tick_margin = .7)
 )
 ```
 
@@ -110,7 +110,7 @@ In case you use 2 y-axes make sure both manual value tick vectors are of the sam
 
 ```{r}
 tsggplot(KOF["kofbarometer"],
-    manual_value_ticks_l = seq(60, 120, by = 20)
+  manual_value_ticks_l = seq(60, 120, by = 20)
 )
 ```
 
@@ -125,20 +125,20 @@ and lower bound *ts* object to draw shaded confidence bounds around a respective
 ```{r,fig.width = 7,fig.height=6}
 # Define confidence intervals
 ci <- list(
-    "KOF Barometer" = list(
-        "80" = list(
-            lb = KOF$baro_lo_80,
-            ub = KOF$baro_hi_80
-        ),
-        "95" = list(
-            lb = KOF$baro_lo_95,
-            ub = KOF$baro_hi_95
-        )
+  "KOF Barometer" = list(
+    "80" = list(
+      lb = KOF$baro_lo_80,
+      ub = KOF$baro_hi_80
+    ),
+    "95" = list(
+      lb = KOF$baro_lo_95,
+      ub = KOF$baro_hi_95
     )
+  )
 )
 
 tsggplot(list("KOF Barometer" = KOF$baro_point_fc),
-    ci = ci
+  ci = ci
 )
 ```
 
@@ -153,8 +153,8 @@ which implies that a bar is centered above the category tick for that period.
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(tsb1, tsb2, tsb3,
-    left_as_bar = TRUE,
-    auto_legend = FALSE
+  left_as_bar = TRUE,
+  auto_legend = FALSE
 )
 ```
 
@@ -170,10 +170,10 @@ basis. The following draws a line on top of the bars that represents the sum.
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(tsl,
-    left_as_bar = TRUE,
-    manual_value_ticks_l = seq(-40, 80, by = 20),
-    auto_legend = FALSE,
-    theme = init_tsggplot_theme(sum_as_line = TRUE)
+  left_as_bar = TRUE,
+  manual_value_ticks_l = seq(-40, 80, by = 20),
+  auto_legend = FALSE,
+  theme = init_tsggplot_theme(sum_as_line = TRUE)
 )
 ```
 
@@ -188,8 +188,8 @@ tsb2 <- ts(runif(30, 0, 50), start = c(2010, 1), frequency = 4)
 tsb3 <- ts(runif(30, 0, 50), start = c(2010, 1), frequency = 4)
 tsb4 <- ts(runif(30, -40, 10), start = c(2005, 1), frequency = 4)
 tsggplot(tsb1, tsb2, tsb3, tsb4,
-    left_as_bar = TRUE,
-    auto_legend = FALSE
+  left_as_bar = TRUE,
+  auto_legend = FALSE
 )
 ```
 
@@ -205,9 +205,9 @@ tsb1 <- ts(runif(20, -30, 20), start = c(2010, 1), frequency = 12)
 tsb2 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 12)
 tsb3 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 12)
 tsggplot(tsb1, tsb2, tsb3,
-    left_as_bar = TRUE,
-    group_bar_chart = TRUE,
-    auto_legend = FALSE
+  left_as_bar = TRUE,
+  group_bar_chart = TRUE,
+  auto_legend = FALSE
 )
 ```
 
@@ -222,9 +222,9 @@ either positive or negative.
 ```{r,fig.width = 7,fig.height=6}
 set.seed(123)
 tslist <- generate_random_ts(4,
-    starts = 1987:1990,
-    ranges_min = 1,
-    ranges_max = 3
+  starts = 1987:1990,
+  ranges_min = 1,
+  ranges_max = 3
 )
 tsggplot(tslist, left_as_band = TRUE)
 ```
@@ -241,7 +241,7 @@ an object of class ts or a list of time series.
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(KOF$kofbarometer,
-    tsr = KOF$reference, auto_legend = FALSE
+  tsr = KOF$reference, auto_legend = FALSE
 )
 ```
 
@@ -259,9 +259,9 @@ tsb2 <- ts(runif(30, 0, 30), start = c(2010, 1), frequency = 4)
 tsb3 <- ts(runif(30, 0, 30), start = c(2010, 1), frequency = 4)
 tsr1 <- ts(runif(30, -4, 6), start = c(2010, 1), frequency = 4)
 tsggplot(tsb1, tsb2, tsb3,
-    tsr = tsr1,
-    left_as_bar = TRUE,
-    auto_legend = FALSE
+  tsr = tsr1,
+  left_as_bar = TRUE,
+  auto_legend = FALSE
 )
 ```
 
@@ -305,8 +305,8 @@ parameter directly in function call.
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(tsb1, tsb2, tsb3,
-    left_as_bar = TRUE,
-    theme = init_tsggplot_theme(highlight_window = TRUE)
+  left_as_bar = TRUE,
+  theme = init_tsggplot_theme(highlight_window = TRUE)
 )
 ```
 
@@ -315,9 +315,9 @@ tsggplot(tsb1, tsb2, tsb3,
 ```{r,fig.width = 7,fig.height=6}
 tt <- init_tsggplot_theme(use_box = TRUE)
 tsggplot(tsb1, tsb2, tsb3,
-    tsr = tsr1,
-    left_as_bar = TRUE,
-    theme = tt
+  tsr = tsr1,
+  left_as_bar = TRUE,
+  theme = tt
 )
 ```
 
@@ -329,7 +329,7 @@ Note how you can simply change existing themes
 ```{r,fig.width = 7,fig.height=6}
 tt$lty <- c(3, 2, 1)
 tsggplot(tsb1, tsb2, tsb3,
-    theme = tt
+  theme = tt
 )
 ```
 
@@ -340,7 +340,7 @@ nt <- init_tsplot_theme(highlight_window = TRUE)
 nt$highlight_window_start <- c(2017, 1)
 nt$highlight_window_end <- c(2018, 1)
 tsplot(tsb1, tsb2,
-    theme = nt
+  theme = nt
 )
 ```
 
@@ -349,10 +349,10 @@ tsplot(tsb1, tsb2,
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsplot(missings,
-    theme = init_tsplot_theme(
-        NA_continue_line = TRUE,
-        show_points = TRUE
-    )
+  theme = init_tsplot_theme(
+    NA_continue_line = TRUE,
+    show_points = TRUE
+  )
 )
 ```
 
@@ -369,7 +369,7 @@ tsplot(ts2)
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsplot(ts2,
-    theme = init_tsplot_theme(fill_year_with_nas = FALSE)
+  theme = init_tsplot_theme(fill_year_with_nas = FALSE)
 )
 ```
 
@@ -380,8 +380,8 @@ tsplot(ts2,
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(
-    "An arbitrary ts object" = ts1,
-    "another ts object" = ts2
+  "An arbitrary ts object" = ts1,
+  "another ts object" = ts2
 )
 ```
 
@@ -403,7 +403,7 @@ tsggplot(tslist)
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(min_li,
-    theme = init_tsggplot_theme(legend_col = 2)
+  theme = init_tsggplot_theme(legend_col = 2)
 )
 ```
 
@@ -412,7 +412,7 @@ tsggplot(min_li,
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(KOF["kofbarometer"],
-    tsr = KOF["reference"]
+  tsr = KOF["reference"]
 )
 ```
 
@@ -421,8 +421,8 @@ tsggplot(KOF["kofbarometer"],
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(KOF["kofbarometer"],
-    tsr = list("reference (right scale)" = KOF$reference),
-    theme = init_tsggplot_theme(legend.justification = "left")
+  tsr = list("reference (right scale)" = KOF$reference),
+  theme = init_tsggplot_theme(legend.justification = "left")
 )
 ```
 
@@ -444,8 +444,8 @@ Saving your **tstools** chart to a .pdf document is as easy and convenient as
 
 ```{r,eval=FALSE}
 tsggplot(KOF[1],
-    output_format = "pdf",
-    theme = init_tsggplot_theme(output_wide = TRUE)
+  output_format = "pdf",
+  theme = init_tsggplot_theme(output_wide = TRUE)
 )
 ```
 
@@ -465,8 +465,8 @@ All of them are easy to adjust. Also
 
 ```{r,eval=FALSE,echo=TRUE}
 init_tsggplot_theme(
-    band_fill_color = c("#FF0000", "#00FF00"),
-    line_colors = c("#FF0000", "#00FF00"),
-    bar_fill_color = c("#FF0000", "#00FF00")
+  band_fill_color = c("#FF0000", "#00FF00"),
+  line_colors = c("#FF0000", "#00FF00"),
+  bar_fill_color = c("#FF0000", "#00FF00")
 )
 ```
