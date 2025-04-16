@@ -670,6 +670,10 @@ tsggplot.list <- function(...,
     # reduced <- Reduce("+", tsl)
     # draw_sum_as_line(reduced, theme)
     # }
+    if (theme$sum_as_line) {
+      reduced <- Reduce("+", tsl)
+      p <- draw_sum_as_ggline(p, reduced, theme)
+    }
   } else {
     # draw lineplot
     p <- draw_tsggplot_lines(p, tsl, theme = theme, bandplot = left_as_band)
@@ -714,51 +718,47 @@ tsggplot.list <- function(...,
   }
 
   if (!inherits(theme$axis.line.y, "element_blank")) {
-    p <- p +
-      scale_y_continuous(
-        limits = {
-          if (!inherits(theme$axis.line.y.left, "element_blank") &&
-            inherits(theme$axis.line.y.right, "element_blank") &&
-            !is.null(tsr)) {
-            range(left_y$y_range, scaled_tsr, 0)
-          } else if (!inherits(theme$axis.line.y.left, "element_blank")) {
-            # range(left_y$y_range, 0)
-            left_y$y_range
-          } else {
-            NULL
-          }
-        },
-        labels = {
-          if (!inherits(theme$axis.line.y.left, "element_blank")) {
-            left_y$y_ticks
-          } else {
-            NULL
-          }
-        },
-        breaks = {
-          if (!inherits(theme$axis.line.y.left, "element_blank")) {
-            left_y$y_ticks
-          } else {
-            NULL
-          }
-        },
-        minor = NULL,
-        # RIGHT Y-Axis
-        sec.axis = {
-          if (!inherits(theme$axis.line.y.right, "element_blank") &&
-            !is.null(tsr)) {
-            sec_axis(
-              name = labs$y_right,
-              transform = ~ scale(., left_min, left_max, right_min, right_max)
-              # labels = right_y$y_ticks,
-              # breaks = right_y$y_ticks
-            )
-          } else {
-            waiver()
-          }
-        },
-        expand = c(0, 0)
-      )
+    # Compute y-axis limits in a separate variable
+    y_lim <- if (!inherits(theme$axis.line.y.left, "element_blank") &&
+      inherits(theme$axis.line.y.right, "element_blank") &&
+      !is.null(tsr)) {
+      range(left_y$y_range, scaled_tsr, 0)
+    } else if (!inherits(theme$axis.line.y.left, "element_blank")) {
+      left_y$y_range
+    } else {
+      NULL
+    }
+
+    # Remove limits from scale_y_continuous and add coord_cartesian
+    p <- p + scale_y_continuous(
+      labels = if (!inherits(
+        theme$axis.line.y.left,
+        "element_blank"
+      )) {
+        left_y$y_ticks
+      } else {
+        NULL
+      },
+      breaks = if (!inherits(theme$axis.line.y.left, "element_blank")) {
+        left_y$y_ticks
+      } else {
+        NULL
+      },
+      minor = NULL,
+      sec.axis = if (!inherits(theme$axis.line.y.right, "element_blank") &&
+        !is.null(tsr)) {
+        sec_axis(
+          name = labs$y_right,
+          transform = ~ scale(
+            ., left_min, left_max,
+            right_min, right_max
+          )
+        )
+      } else {
+        waiver()
+      },
+      expand = c(0, 0)
+    ) + coord_cartesian(ylim = y_lim)
   } else {
     p <- p +
       scale_y_continuous(
