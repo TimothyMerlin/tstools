@@ -832,6 +832,7 @@ tsggplot.list <- function(...,
       scale_x_continuous(
         breaks = global_x$yearly_tick_pos,
         labels = global_x$year_labels_start,
+        limits = c(global_x$x_range[1], global_x$x_range[2]),
         expand = c(0, 0)
       )
     # if (theme$axis_x_yearly_ticks) {
@@ -861,6 +862,7 @@ tsggplot.list <- function(...,
         scale_x_continuous(
           breaks = global_x$yearly_tick_pos,
           labels = global_x$year_labels_start,
+          limits = c(global_x$x_range[1], global_x$x_range[2]),
           minor_breaks = q_ticks,
           expand = c(0, 0)
         ) +

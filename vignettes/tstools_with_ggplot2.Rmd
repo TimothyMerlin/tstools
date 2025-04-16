@@ -22,6 +22,8 @@ data(KOF)
 short <- window(KOF$kofbarometer,
   start = c(2007, 1),
   end = c(2014, 1)
+  start = c(2007, 1),
+  end = c(2014, 1)
 )
 
 # list of time series
@@ -49,10 +51,14 @@ min_li <- list(
   series1 = min_series,
   series2 = min_series_2,
   series3 = min_series_3
+  series1 = min_series,
+  series2 = min_series_2,
+  series3 = min_series_3
 )
 
 
 missings <- ts(c(1, 2, 10, 3, 5, 6, NA, NA, 3, 2, 5, 3, 1, 1),
+  start = c(1995, 1), freq = 4
   start = c(1995, 1), freq = 4
 )
 ```
@@ -67,7 +73,7 @@ tsggplot(short)
 ```
 
 ## Multiple time series (same y-axis) in one line chart
-The function *tsplot* can handle multiple time series objects or lists at once. You can either throw multiple comma separated time series objects at *tsplot* 
+The function *tsggplot* can handle multiple time series objects or lists at once. You can either throw multiple comma separated time series objects at *tsggplot* 
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(ts1, ts2, auto_legend = FALSE)
@@ -79,10 +85,12 @@ or a list of time series...
 tsggplot(tslist, auto_legend = FALSE)
 ```
 
-Even though *tsplot* supports *mts* and single time series, we clearly recommend to pass lists of time series to *tsplot* for the best and most tested experience. Lists are a convenient way to add legends to time series charts as *tsplot* automatically uses names of list elements in its legend. You may also define your lists adhoc within the *tsplot* call like so:
+Even though *tsggplot* supports *mts* and single time series, we clearly recommend to pass lists of time series to *tsggplot* for the best and most tested experience. Lists are a convenient way to add legends to time series charts as *tsggplot* automatically uses names of list elements in its legend. You may also define your lists adhoc within the *tsggplot* call like so:
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(list(
+  "Time Series 1" = ts1,
+  "Time Series 2" = ts2
   "Time Series 1" = ts1,
   "Time Series 2" = ts2
 ))
@@ -98,6 +106,7 @@ parameter implies now that 70 percent of the outer most grid needs to stay clean
 ```{r}
 tsggplot(short,
   theme = init_tsggplot_theme(y_tick_margin = .7)
+  theme = init_tsggplot_theme(y_tick_margin = .7)
 )
 ```
 
@@ -108,6 +117,7 @@ In case you use 2 y-axes make sure both manual value tick vectors are of the sam
 ```{r}
 tsggplot(KOF["kofbarometer"],
   manual_value_ticks_l = seq(60, 120, by = 20)
+  manual_value_ticks_l = seq(60, 120, by = 20)
 )
 ```
 
@@ -115,7 +125,7 @@ tsggplot(KOF["kofbarometer"],
 
 ## Fan Charts: Plotting Confidence Intervals
 
-*tsplot* can assign confidence intervals to every 
+*tsggplot* can assign confidence intervals to every 
 time series line. Simply choose the line and confidence level and define an upper
 and lower bound *ts* object to draw shaded confidence bounds around a respective series. A confidence interval definition is basically a nested list. For the sake of clear code, it is recommended to define the CI list separately like so: 
 
@@ -132,14 +142,25 @@ ci <- list(
       ub = KOF$baro_hi_95
     )
   )
+  "KOF Barometer" = list(
+    "80" = list(
+      lb = KOF$baro_lo_80,
+      ub = KOF$baro_hi_80
+    ),
+    "95" = list(
+      lb = KOF$baro_lo_95,
+      ub = KOF$baro_hi_95
+    )
+  )
 )
 
 tsggplot(list("KOF Barometer" = KOF$baro_point_fc),
   ci = ci
+  ci = ci
 )
 ```
 
-The KOF data example dataset contains an *auto.arima* point forecast of the KOF Barometer as well as upper and lower bound at the 80% and 95% confidence level. Notice that *tsplot* does **not** do any forecasting or estimation of confidence bands, it simply takes some time series as upper and lower bounds and assigns them to a particular series. Thus it's agnostic of the estimation method. 
+The KOF data example dataset contains an *auto.arima* point forecast of the KOF Barometer as well as upper and lower bound at the 80% and 95% confidence level. Notice that *tsggplot* does **not** do any forecasting or estimation of confidence bands, it simply takes some time series as upper and lower bounds and assigns them to a particular series. Thus it's agnostic of the estimation method. 
 
 ## Stacked Bar Chart
 Sometimes we want to display time series as bar charts. Most plotting engines
@@ -150,6 +171,8 @@ which implies that a bar is centered above the category tick for that period.
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(tsb1, tsb2, tsb3,
+  left_as_bar = TRUE,
+  auto_legend = FALSE
   left_as_bar = TRUE,
   auto_legend = FALSE
 )
@@ -171,6 +194,10 @@ tsggplot(tsl,
   manual_value_ticks_l = seq(-40, 80, by = 20),
   auto_legend = FALSE,
   theme = init_tsggplot_theme(sum_as_line = TRUE)
+  left_as_bar = TRUE,
+  manual_value_ticks_l = seq(-40, 80, by = 20),
+  auto_legend = FALSE,
+  theme = init_tsggplot_theme(sum_as_line = TRUE)
 )
 ```
 
@@ -185,6 +212,8 @@ tsb2 <- ts(runif(30, 0, 50), start = c(2010, 1), frequency = 4)
 tsb3 <- ts(runif(30, 0, 50), start = c(2010, 1), frequency = 4)
 tsb4 <- ts(runif(30, -40, 10), start = c(2005, 1), frequency = 4)
 tsggplot(tsb1, tsb2, tsb3, tsb4,
+  left_as_bar = TRUE,
+  auto_legend = FALSE
   left_as_bar = TRUE,
   auto_legend = FALSE
 )
@@ -205,6 +234,9 @@ tsggplot(tsb1, tsb2, tsb3,
   left_as_bar = TRUE,
   group_bar_chart = TRUE,
   auto_legend = FALSE
+  left_as_bar = TRUE,
+  group_bar_chart = TRUE,
+  auto_legend = FALSE
 )
 ```
 
@@ -222,6 +254,9 @@ tslist <- generate_random_ts(4,
   starts = 1987:1990,
   ranges_min = 1,
   ranges_max = 3
+  starts = 1987:1990,
+  ranges_min = 1,
+  ranges_max = 3
 )
 tsggplot(tslist, left_as_band = TRUE)
 ```
@@ -232,12 +267,13 @@ In order to compare indicators it's covenient in some domains to plot
 two time series of completely different scale, e.g., a growth rate and
 an indicator indexed at 100, to each other. Whenever the absolute level 
 is not overly interesting but rather the lead-lag structure and the
-co-movement, 2 y-axes with different scales are popular. Hence *tsplot*
+co-movement, 2 y-axes with different scales are popular. Hence *tsggplot*
 introduces a second argument, *tsr* (time series right), which takes either 
 an object of class ts or a list of time series.
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(KOF$kofbarometer,
+  tsr = KOF$reference, auto_legend = FALSE
   tsr = KOF$reference, auto_legend = FALSE
 )
 ```
@@ -259,6 +295,9 @@ tsggplot(tsb1, tsb2, tsb3,
   tsr = tsr1,
   left_as_bar = TRUE,
   auto_legend = FALSE
+  tsr = tsr1,
+  left_as_bar = TRUE,
+  auto_legend = FALSE
 )
 ```
 
@@ -277,8 +316,8 @@ other options would lead to a ton of parameters. If you had to specify all of th
 it would be time consuming task to create a quick explorative plot. So *tstools*
 suggests many defaults to many parameters and stores these parameters in lists called
 themes. To tweak a default, simply initialize the default theme, tweak a single list element
-and pass the entire theme to  *tsplot*. By doing so you can also define 
-properties of multiple plots just by passing the new theme to the *tsplot* call. 
+and pass the entire theme to  *tsggplot*. By doing so you can also define 
+properties of multiple plots just by passing the new theme to the *tsggplot* call. 
 
 ```{r}
 def_theme <- init_tsggplot_theme()
@@ -295,13 +334,15 @@ should give you an idea of how much you can do with themes and how to use 'em.
 Let's assume the last 2 years of the time series are a forecast which should be 
 highlight by a shaded area behind the actual series. If you know in advance
 which default parameter -- in this case *highlight_window = FALSE* -- 
-you want to overwrite, I recommend to do so right in your calll to *init_tsplot_theme*.
+you want to overwrite, I recommend to do so right in your calll to *init_tsggplot_theme*.
 The cool thing about it is: R Studio's auto auggest helps you find the parameter.
 **Pro tip**: If you do not plan to reuse your theme in another plot, specify the
 parameter directly in function call. 
 
 ```{r,fig.width = 7,fig.height=6}
 tsggplot(tsb1, tsb2, tsb3,
+  left_as_bar = TRUE,
+  theme = init_tsggplot_theme(highlight_window = TRUE)
   left_as_bar = TRUE,
   theme = init_tsggplot_theme(highlight_window = TRUE)
 )
@@ -312,6 +353,9 @@ tsggplot(tsb1, tsb2, tsb3,
 ```{r,fig.width = 7,fig.height=6}
 tt <- init_tsggplot_theme(use_box = TRUE)
 tsggplot(tsb1, tsb2, tsb3,
+  tsr = tsr1,
+  left_as_bar = TRUE,
+  theme = tt
   tsr = tsr1,
   left_as_bar = TRUE,
   theme = tt
@@ -338,15 +382,15 @@ nt$highlight_window_start <- c(2017, 1)
 nt$highlight_window_end <- c(2018, 1)
 tsggplot(tsb1, tsb2,
   theme = nt
+  theme = nt
 )
 ```
 
 ### Handling missings (NA Handling)
 
-
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
-tsplot(missings,
-  theme = init_tsplot_theme(
+tsggplot(missings,
+  theme = init_tsggplot_theme(
     NA_continue_line = TRUE,
     show_points = TRUE
   )
@@ -357,16 +401,15 @@ tsplot(missings,
 ### Fill up Year With NAs
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
-tsplot(ts2)
+tsggplot(ts2)
 ```
 
 
 ### Fill up Year With NAs
 
-
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
-tsplot(ts2,
-  theme = init_tsplot_theme(fill_year_with_nas = FALSE)
+tsggplot(ts2,
+  theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
 )
 ```
 
@@ -377,6 +420,8 @@ tsplot(ts2,
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(
+  "An arbitrary ts object" = ts1,
+  "another ts object" = ts2
   "An arbitrary ts object" = ts1,
   "another ts object" = ts2
 )
@@ -401,6 +446,7 @@ tsggplot(tslist)
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(min_li,
   theme = init_tsggplot_theme(legend_col = 2)
+  theme = init_tsggplot_theme(legend_col = 2)
 )
 ```
 
@@ -410,6 +456,7 @@ tsggplot(min_li,
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(KOF["kofbarometer"],
   tsr = KOF["reference"]
+  tsr = KOF["reference"]
 )
 ```
 
@@ -418,6 +465,8 @@ tsggplot(KOF["kofbarometer"],
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(KOF["kofbarometer"],
+  tsr = list("reference (right scale)" = KOF$reference),
+  theme = init_tsggplot_theme(legend.justification = "left")
   tsr = list("reference (right scale)" = KOF$reference),
   theme = init_tsggplot_theme(legend.justification = "left")
 )
@@ -443,6 +492,8 @@ Saving your **tstools** chart to a .pdf document is as easy and convenient as
 tsggplot(KOF[1],
   output_format = "pdf",
   theme = init_tsggplot_theme(output_wide = TRUE)
+  output_format = "pdf",
+  theme = init_tsggplot_theme(output_wide = TRUE)
 )
 ```
 
@@ -462,6 +513,9 @@ All of them are easy to adjust. Also
 
 ```{r,eval=FALSE,echo=TRUE}
 init_tsggplot_theme(
+  band_fill_color = c("#FF0000", "#00FF00"),
+  line_colors = c("#FF0000", "#00FF00"),
+  bar_fill_color = c("#FF0000", "#00FF00")
   band_fill_color = c("#FF0000", "#00FF00"),
   line_colors = c("#FF0000", "#00FF00"),
   bar_fill_color = c("#FF0000", "#00FF00")
