@@ -248,6 +248,10 @@ tsggplot.list <- function(...,
     } else {
       theme <- init_tsggplot_theme()
     }
+  } else {
+    if (!inherits(theme, "tsggplot_theme")) {
+      stop("Invalid theme: please pass a theme created via init_tsggplot_theme.")
+    }
   }
 
   # Expand per-line parameters for recycling

@@ -666,5 +666,6 @@ init_tsggplot_theme <- function(
     ...) {
   args <- as.list(environment())[setdiff(names(formals()), "...")]
   dots <- list(...)
-  c(args, dots)
+  theme <- c(args, dots)
+  structure(theme, class = "tsggplot_theme")
 }
