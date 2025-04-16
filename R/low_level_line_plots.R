@@ -65,12 +65,10 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
 
   for (i in 1:nts) {
     xx <- as.numeric(time(x[[i]]))
-    yy <- x[[i]]
+    yy <- as.numeric(x[[i]])
     frq <- frequency(x[[i]])
 
-    if (theme$line_to_middle) {
-      xx <- xx + (1 / frq) / 2
-    }
+    if (theme$line_to_middle) xx <- xx + (1 / frq) / 2
 
     if (theme$NA_continue_line[i]) {
       yy_na <- is.na(yy)
@@ -79,10 +77,10 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
     }
 
     df <- data.frame(
-      time = as.numeric(time(x[[i]])),
-      value = as.numeric(x[[i]]),
-      line_colors = rep(theme$line_colors[i], each = length(time(x[[i]]))),
-      interval = ifelse(rep(as.numeric(time(x[[i]])), each = nts) <= 1975, "in_sample", "forecast"),
+      time = xx,
+      value = yy,
+      line_colors = rep(theme$line_colors[i], each = length(xx)),
+      interval = ifelse(rep(xx, each = nts) <= 1975, "in_sample", "forecast"),
       series = factor(series[i], levels = series)
     )
     # Ensure 'interval' is a factor with the correct levels
@@ -150,5 +148,27 @@ draw_sum_as_line <- function(x, theme = NULL) {
     col = theme$sum_line_color,
     lwd = theme$sum_line_lwd,
     lty = theme$sum_line_lty
+  )
+}
+
+#' @importFrom ggplot2 geom_line aes
+draw_sum_as_ggline <- function(p, x, theme = NULL) {
+  # Convert the time series to a data frame
+  df <- data.frame(
+    xx = as.numeric(time(x)),
+    yy = as.numeric(x)
+  )
+  frq <- frequency(x)
+  if (theme$line_to_middle) df$xx <- df$xx + (1 / frq) / 2
+
+  p + geom_line(
+    data = df,
+    aes(
+      x = xx,
+      y = yy
+    ),
+    color = theme$sum_line_color,
+    size = theme$sum_line_lwd,
+    linetype = theme$sum_line_lty
   )
 }
