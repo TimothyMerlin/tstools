@@ -105,12 +105,11 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
   }))
 
   # Define the dodge width and fill colors based on the theme settings
-  dodge_width <- theme$bar_gap
   fill_colors <- theme$bar_fill_color[1:n_ts]
   fill_colors <- setNames(theme$bar_fill_color[1:n_ts], colnames(x))
 
   if (group_bar_chart && n_ts > 1) {
-    position <- position_dodge2(width = dodge_width, preserve = "single")
+    position <- position_dodge2(padding = theme$bar_gap, preserve = "single")
   } else {
     position <- position_stack()
   }
@@ -123,7 +122,8 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
         y = value,
         fill = series
       ),
-      position = position
+      position = position,
+      just = 0
     ) +
     scale_fill_manual(
       values = fill_colors,
