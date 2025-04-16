@@ -261,8 +261,8 @@ tsggplot.list <- function(...,
   }
 
   theme$line_colors <- expand_param(theme, "line_colors")
-  theme$lwd <- expand_param(theme, "lwd")
-  theme$lty <- expand_param(theme, "lty")
+  theme$linewidth <- expand_param(theme, "linewidth")
+  theme$linetype <- expand_param(theme, "linetype")
   theme$show_points <- expand_param(theme, "show_points")
   theme$point_symbol <- expand_param(theme, "point_symbol")
   theme$NA_continue_line <- expand_param(theme, "NA_continue_line")
@@ -616,14 +616,22 @@ tsggplot.list <- function(...,
     }
 
     rect_df <- data.frame(
-      xmin = xl, xmax = xr,
-      ymin = left_y$y_range[1], ymax = left_y$y_range[2]
+      xmin = xl,
+      xmax = xr,
+      ymin = left_y$y_range[1],
+      ymax = left_y$y_range[2]
     )
 
     p <- p + geom_rect(
       data = rect_df,
-      aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
-      fill = theme$highlight_color, color = NA,
+      aes(
+        xmin = xmin,
+        xmax = xmax,
+        ymin = ymin,
+        ymax = ymax
+      ),
+      fill = theme$highlight_color,
+      color = NA,
       inherit.aes = FALSE
     )
   }
@@ -636,8 +644,8 @@ tsggplot.list <- function(...,
     start_r <- (total_le - (length(tsr) - 1)):total_le
 
     tt_r$line_colors <- tt_r$line_colors[start_r]
-    tt_r$lwd <- tt_r$lwd[start_r]
-    tt_r$lty <- tt_r$lty[start_r]
+    tt_r$linewidth <- tt_r$linewidth[start_r]
+    tt_r$linetype <- tt_r$linetype[start_r]
     tt_r$show_points <- tt_r$show_points[start_r]
     tt_r$point_symbol <- tt_r$point_symbol[start_r]
     tt_r$NA_continue_line <- tt_r$NA_continue_line[start_r]

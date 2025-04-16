@@ -20,11 +20,18 @@ init_tsggplot_theme(
   axis.ticks.x.bottom = element_line(),
   axis.ticks.y = element_blank(),
   text = element_text(family = "sans"),
+  linetype = 1,
+  linewidth = c(1, 1.25, 0.75, 1.5, 1, 1.5),
   legend.justification = "center",
   legend.position = "bottom",
   legend.title = element_text(size = 13),
   panel.background = element_blank(),
   panel.grid.minor = element_blank(),
+  sum_as_line = FALSE,
+  sum_legend = "sum",
+  sum_line_color = c(ETH_Petrol_100 = colors$ETH_Petrol$`100`),
+  sum_line_linetype = 1,
+  sum_line_linewidth = 3,
   axis_x_label_dt = 2,
   axis_x_tick_dt = 1,
   auto_bottom_margin = FALSE,
@@ -67,8 +74,6 @@ init_tsggplot_theme(
     colors$ETH_Purple$`60`, ETH_Petrol_60 = colors$ETH_Petrol$`60`, ETH_Purple_100 =
     colors$ETH_Purple$`100`, ETH_Petrol_100 = colors$ETH_Petrol$`100`),
   line_to_middle = TRUE,
-  lty = 1,
-  lwd = c(1, 1.25, 0.75, 1.5, 1, 1.5),
   lwd_box = 1.5,
   lwd_quarterly_ticks = 1,
   lwd_x_axis = 1.5,
@@ -94,11 +99,6 @@ init_tsggplot_theme(
   subtitle_margin = 2,
   subtitle_outer = FALSE,
   subtitle_transform = "toupper",
-  sum_as_line = FALSE,
-  sum_legend = "sum",
-  sum_line_color = c(ETH_Petrol_100 = colors$ETH_Petrol$`100`),
-  sum_line_lty = 1,
-  sum_line_lwd = 3,
   tcl_quarterly_ticks = -0.4,
   tcl_y_ticks = -0.75,
   tcl_yearly_ticks = -0.75,
@@ -181,6 +181,15 @@ the plot area when positioned outside the plot}
 
 \item{panel.background}{background of plotting area, drawn underneath plot
 (\code{\link[ggplot2:element_rect]{element_rect()}}; inherits from \code{rect})}
+
+\item{sum_as_line}{logical should the sum of stacked time series be
+displayed as a line on top of stacked bar charts. Defaults to FALSE,}
+
+\item{sum_legend}{character Label for the sum line, defaults to "sum". Set
+to NULL to not label the line at all.}
+
+\item{sum_line_color}{character hex color of of sum_as_line, defaults
+"#91056a".}
 
 \item{axis_x_label_dt}{numeric The distance between labels on the x axis in
 years. Defaults to 2.}
@@ -276,10 +285,6 @@ values}
 \item{line_to_middle}{logical try to put a line into the middle of the
 plot. defaults to TRUE.}
 
-\item{lty}{integer vector line type defaults to 1.}
-
-\item{lwd}{integer vector line width, defaults to c(2,3,1,4,2,4).}
-
 \item{lwd_box}{numeric Line width of the box around the plot. Default 1.5}
 
 \item{lwd_quarterly_ticks}{numeric, width of yearly ticks, defaults to 1.}
@@ -350,19 +355,6 @@ defaults to TRUE}
 
 \item{subtitle_transform}{function to transform the subtitle, defaults to
 "toupper",}
-
-\item{sum_as_line}{logical should the sum of stacked time series be
-displayed as a line on top of stacked bar charts. Defaults to FALSE,}
-
-\item{sum_legend}{character Label for the sum line, defaults to "sum". Set
-to NULL to not label the line at all.}
-
-\item{sum_line_color}{character hex color of of sum_as_line, defaults
-"#91056a".}
-
-\item{sum_line_lty}{integer line type of sum_as_line, defaults to 1.}
-
-\item{sum_line_lwd}{integer line width of sum_as_line, defaults to 3.}
 
 \item{tcl_quarterly_ticks}{numeric, length of quarterly ticks. See
 tcl_yearly_ticks, defaults to -0.4}
@@ -439,8 +431,16 @@ legends \% of device height, defaults to 12}
 \item{legend_seg.len}{numeric Length of the line segments in the legend.
 Default 2}
 
+\item{lty}{integer vector line type defaults to 1.}
+
+\item{lwd}{integer vector line width, defaults to c(2,3,1,4,2,4).}
+
 \item{show_left_y_axis}{logical: should left y axis be shown, defaults to
 TRUE.}
+
+\item{sum_line_lty}{integer line type of sum_as_line, defaults to 1.}
+
+\item{sum_line_lwd}{integer line width of sum_as_line, defaults to 3.}
 }
 \description{
 The \code{\link{tsggplot}} methods provide a theme argument which is used to

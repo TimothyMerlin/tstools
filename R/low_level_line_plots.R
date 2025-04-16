@@ -103,7 +103,8 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
           # group = unique_group_id
           # text = text,
         ),
-        size = theme$lwd[i]
+        size = theme$linewidth[i],
+        linetype = theme$linetype[i]
       )
 
       # Optionally add points
@@ -168,7 +169,7 @@ draw_sum_as_ggline <- function(p, x, theme = NULL) {
       y = yy
     ),
     color = theme$sum_line_color,
-    size = theme$sum_line_lwd,
-    linetype = theme$sum_line_lty
+    size = theme$sum_line_linewidth,
+    linetype = theme$sum_line_linetype
   )
 }
