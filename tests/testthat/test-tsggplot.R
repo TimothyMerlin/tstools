@@ -8,7 +8,7 @@ test_that("tsggplot", {
   tsggplot(tsl)
 
   tstools::tsplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson))
-  tsggplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson), labs = labs)
+  tsggplot(list(tsl$AirPassengers), tsr = list(tsl$JohnsonJohnson))
 
   # bar
   t <- tstools::init_tsplot_theme(x_tick_dt = 2)
@@ -63,7 +63,7 @@ test_that("tsggplot", {
   )
   tsggplot(
     list(tsl$JohnsonJohnson),
-    tsr = list(tsg$JohnsonJohnson),
+    tsr = list(tsl$JohnsonJohnson),
     left_as_bar = TRUE
   )
 
@@ -73,7 +73,7 @@ test_that("tsggplot", {
     left_as_bar = TRUE
   )
   tsggplot(list(tsl$AirPassengers),
-    tsr = list(tsl$JohnsonJohnson),
+    tsr = list(tsg$JohnsonJohnson),
     left_as_bar = TRUE
   )
 })

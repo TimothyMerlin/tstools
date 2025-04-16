@@ -495,6 +495,9 @@ tsggplot.list <- function(...,
   if (is.null(labs$color)) {
     theme_args$legend.title <- element_blank()
   }
+  if (!auto_legend) {
+    theme_args$legend.position <- "none"
+  }
 
   theme_args$panel.grid.major.x <- if (theme$grids_x_show) {
     element_line(color = theme$grids_x_color, size = theme$grids_x_lwd)
@@ -946,6 +949,29 @@ tsggplot.list <- function(...,
   # left_as_band = left_as_band
   # )
   # }
+  if (auto_legend) {
+    ci_names <- lapply(names(ci), function(x) {
+      y <- gsub("%series%", x, theme$ci_legend_label)
+      if (grepl("%ci_value%", y)) {
+        parts <- strsplit(y, "%ci_value%")[[1]]
+        # in case %ci_value% is at the very end (see ?split)
+        if (length(parts) == 1) {
+          parts <- c(parts, "")
+        }
+        y <- paste0(parts[1], names(ci[[x]]), parts[2])
+      } else {
+        y <- rep(y, length(ci[[x]]))
+      }
+      y
+    })
+    names(ci_names) <- names(ci)
+
+    p <- p + guides(
+      color = guide_legend(
+        ncol = theme$legend_col
+      )
+    )
+  }
 
   # # add title and subtitle
   # add_title(plot_title, plot_subtitle, plot_subtitle_r, theme)
