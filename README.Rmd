@@ -8,10 +8,10 @@ output: github_document
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
-    collapse = TRUE,
-    comment = "#>",
-    fig.path = "man/figures/README-",
-    out.width = "100%"
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
 )
 ```
 
@@ -48,8 +48,8 @@ feed the `tsplot()` function with a list of time series.
 library(tstools)
 ## basic example code
 tsl <- list(
-    AirPassengers = AirPassengers,
-    JohnsonJohnson = JohnsonJohnson
+  AirPassengers = AirPassengers,
+  JohnsonJohnson = JohnsonJohnson
 )
 
 tsplot(tsl)
@@ -59,7 +59,7 @@ and use easily use 2 y-axis. (I know some argue those double axes are fundamenta
 
 ```{r}
 tsplot(
-    "Air Passengers" = tsl$AirPassengers,
-    tsr = list("Johnson & Johnson" = tsl$JohnsonJohnson)
+  "Air Passengers" = tsl$AirPassengers,
+  tsr = list("Johnson & Johnson" = tsl$JohnsonJohnson)
 )
 ```
