@@ -20,6 +20,7 @@ init_tsggplot_theme(
   axis.ticks.x.bottom = element_line(),
   axis.ticks.y = element_blank(),
   text = element_text(family = "sans"),
+  legend.justification = "center",
   legend.position = "bottom",
   legend.title = element_text(size = 13),
   panel.background = element_blank(),
@@ -37,7 +38,7 @@ init_tsggplot_theme(
     colors$ETH_Petrol$`60`, ETH_Petrol_40 = colors$ETH_Petrol$`40`, ETH_Petrol_20 =
     colors$ETH_Petrol$`20`, ETH_Purple = colors$ETH_Purple$`100`, ETH_Purple_60 =
     colors$ETH_Purple$`60`, ETH_Purple_40 = colors$ETH_Purple$`40`),
-  bar_gap = 0.8,
+  bar_gap = 0.1,
   bar_group_gap = 30,
   ci_alpha = "44",
   ci_colors = line_colors,
@@ -61,15 +62,6 @@ init_tsggplot_theme(
   highlight_y_values = NA,
   highlight_y_lwd = 2,
   highlight_y_color = "#000000",
-  legend_all_left = FALSE,
-  legend_box_size = 2,
-  legend_col = 1,
-  legend_font_size = 1,
-  legend_intersp_x = 1,
-  legend_intersp_y = 1,
-  legend_margin_bottom = 5,
-  legend_margin_top = 12,
-  legend_seg.len = 2,
   line_colors = c(ETH_Green_60 = colors$ETH_Green$`60`, ETH_Green_100 =
     colors$ETH_Green$`100`, ETH_Petrol_20 = colors$ETH_Petrol$`20`, ETH_Purple_60 =
     colors$ETH_Purple$`60`, ETH_Petrol_60 = colors$ETH_Petrol$`60`, ETH_Purple_100 =
@@ -177,6 +169,10 @@ using [ggplot2::element_line()]. Use to control line color, width, etc.}
 
 \item{text}{all text elements (\code{\link[ggplot2:element_text]{element_text()}})}
 
+\item{legend.justification}{anchor point for positioning legend inside plot
+("center" or two-element numeric vector) or the justification according to
+the plot area when positioned outside the plot}
+
 \item{legend.position}{the default position of legends ("none", "left",
 "right", "bottom", "top", "inside")}
 
@@ -274,32 +270,6 @@ bold line}
 values}
 
 \item{highlight_y_color}{character Color of the lines to highlight y values}
-
-\item{legend_all_left}{logical Should all legend entries be drawn on the
-left side of the plot? Default FALSE}
-
-\item{legend_box_size}{numeric The size of the squares denoting bar colors
-in the legend. Default 2}
-
-\item{legend_col}{integer number of columns for the legend, defaults to 3.}
-
-\item{legend_font_size}{numeric passed on to the \code{cex} parameter of
-\code{\link{legend}}, defaults to 1}
-
-\item{legend_intersp_x}{numeric same as base \code{\link{legend}}
-parameter, defaults to 1}
-
-\item{legend_intersp_y}{numeric same as base \code{\link{legend}}
-parameter, defaults to 1}
-
-\item{legend_margin_bottom}{numeric Distance between bottom of legend and
-bottom of graphic in \% of device height, default 5}
-
-\item{legend_margin_top}{numeric Distance between bottom of plot and top of
-legends \% of device height, defaults to 12}
-
-\item{legend_seg.len}{numeric Length of the line segments in the legend.
-Default 2}
 
 \item{line_colors}{character vector of hex colors for 6 lines.}
 
@@ -442,6 +412,32 @@ percent).}
 
 \item{...}{additional element specifications not part of base ggplot2. In general,
 these should also be defined in the \verb{element tree} argument. \link[rlang:splice]{Splicing} a list is also supported.}
+
+\item{legend_all_left}{logical Should all legend entries be drawn on the
+left side of the plot? Default FALSE}
+
+\item{legend_box_size}{numeric The size of the squares denoting bar colors
+in the legend. Default 2}
+
+\item{legend_col}{integer number of columns for the legend, defaults to 3.}
+
+\item{legend_font_size}{numeric passed on to the \code{cex} parameter of
+\code{\link{legend}}, defaults to 1}
+
+\item{legend_intersp_x}{numeric same as base \code{\link{legend}}
+parameter, defaults to 1}
+
+\item{legend_intersp_y}{numeric same as base \code{\link{legend}}
+parameter, defaults to 1}
+
+\item{legend_margin_bottom}{numeric Distance between bottom of legend and
+bottom of graphic in \% of device height, default 5}
+
+\item{legend_margin_top}{numeric Distance between bottom of plot and top of
+legends \% of device height, defaults to 12}
+
+\item{legend_seg.len}{numeric Length of the line segments in the legend.
+Default 2}
 
 \item{show_left_y_axis}{logical: should left y axis be shown, defaults to
 TRUE.}

@@ -587,6 +587,47 @@ tsggplot.list <- function(...,
   #    addYHighlights(global_x$x_range, theme)
   #  }
 
+  if (theme$highlight_window) {
+    hlw_start <- theme$highlight_window_start
+    if (!any(is.na(hlw_start))) {
+      if (!is.list(hlw_start)) {
+        hlw_start <- list(hlw_start)
+      }
+      xl <- sapply(hlw_start, compute_decimal_time, theme$highlight_window_freq)
+    } else {
+      xl <- global_x$x_range[2] - 2
+    }
+
+    hlw_end <- theme$highlight_window_end
+    if (!any(is.na(hlw_end))) {
+      if (!is.list(hlw_end)) {
+        hlw_end <- list(hlw_end)
+      }
+      xr <- sapply(hlw_end, compute_decimal_time, theme$highlight_window_freq) + 1 / theme$highlight_window_freq
+    } else {
+      xr <- global_x$x_range[2]
+    }
+
+    n_start <- length(xl)
+    n_end <- length(xr)
+
+    if (n_start != n_end) {
+      warning(sprintf("%s highlight start points than end points specified! Dropping excess ones.", ifelse(n_start > n_end, "More", "Fewer")))
+    }
+
+    rect_df <- data.frame(
+      xmin = xl, xmax = xr,
+      ymin = left_y$y_range[1], ymax = left_y$y_range[2]
+    )
+
+    p <- p + geom_rect(
+      data = rect_df,
+      aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+      fill = theme$highlight_color, color = NA,
+      inherit.aes = FALSE
+    )
+  }
+
   # Split theme into left/right
   tt_r <- theme
   # Make sure we do not reuse line specs for the right axis (if left is not bars)
