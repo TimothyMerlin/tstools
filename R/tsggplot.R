@@ -545,6 +545,10 @@ tsggplot.list <- function(...,
       theme_args$axis.minor.ticks.length <- -theme$axis.ticks.length # draw minor ticks inward
       segment_length <- as.numeric(theme$axis.minor.ticks.length)
       segment_x_bottom <- theme$axis.minor.ticks.x.bottom
+      if (is.null(theme$axis.text.x$margin)) {
+        theme_args$axis.text.x <- theme$axis.text.x
+        theme_args$axis.text.x$margin <- margin(t = 10, unit = "pt")
+      }
     }
   } else {
     # Explicitly set all axis text elements to blank
@@ -638,7 +642,7 @@ tsggplot.list <- function(...,
 
     ## inside your plotting helper
     if (theme$highlight_window_alpha < 1 && capabilities("cairo") &&
-      getOption("bitmapType") != "cairo") {
+      getOption("bitmapType") != "cairo" && output_format == "plot") {
       warning(
         "Transparency requested but current device is not cairo.\n",
         "Hightlight window may not correctly display.\n",

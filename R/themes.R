@@ -532,10 +532,7 @@ init_tsggplot_theme <- function(
     axis.minor.ticks.length = rel(0.3),
     axis.minor.ticks.x.bottom = element_line(),
     axis.text = element_text(),
-    axis.text.x = element_text(
-      size = 13,
-      margin = margin(t = 10, unit = "pt")
-    ),
+    axis.text.x = element_text(size = 13),
     axis.text.x.pos = "mid",
     axis.text.y.left = element_text(size = 13),
     axis.text.y.right = element_text(size = 13),
