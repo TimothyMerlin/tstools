@@ -570,3 +570,17 @@ test_that("tsggplot with highlight window", {
   expect_equal(rect$aes_params$fill, t$highlight_window_color)
   expect_true(is.na(rect$aes_params$colour))
 })
+
+test_that("tsggplot ", {
+  t <- init_tsggplot_theme()
+  p <- tsggplot(list(JohnsonJohnson = window(JohnsonJohnson, start = c(1960, 3))),
+    theme = t
+  )
+
+  expect_equal(range(p$layers[[1]]$data$time), c(1916.625, 1980.875))
+
+  # check axis x labels
+  pb <- ggplot_build(p)
+  txts <- pb$layout$panel_params[[1]]$x$get_labels()
+  expect_equal(range(txts), c(1960, 1980))
+})

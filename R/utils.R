@@ -118,7 +118,7 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
 
     # labels
     labels <-
-      seq(global_x$x_range[1], global_x$x_range[2], label_dt)
+      seq(floor(global_x$x_range[1]), global_x$x_range[2], label_dt)
 
     global_x$year_labels_start <- ifelse(global_x$yearly_tick_pos %in% labels,
       global_x$yearly_tick_pos, ""

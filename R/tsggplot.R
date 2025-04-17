@@ -943,8 +943,8 @@ tsggplot.list <- function(...,
           expand = c(0, 0)
         )
       if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
-        overlap <- global_x$quarterly_tick_pos %in% global_x$yearly_tick_pos
-        q_ticks <- global_x$quarterly_tick_pos[!overlap]
+        # Filter out overlapping quarterly ticks
+        q_ticks <- setdiff(global_x$quarterly_tick_pos, brks)
         # q_labels <- global_x$year_labels_middle_q[!overlap]
 
         p <- p +
