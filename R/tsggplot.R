@@ -500,13 +500,13 @@ tsggplot.list <- function(...,
   }
 
   theme_args$panel.grid.major.x <- if (theme$grids_x_show) {
-    element_line(color = theme$grids_x_color, size = theme$grids_x_lwd)
+    element_line(color = theme$grids_x_color, linewidth = theme$grids_x_lwd)
   } else {
     element_blank()
   }
 
   theme_args$panel.grid.major.y <- if (theme$grids_y_show) {
-    element_line(color = theme$grids_y_color, size = theme$grids_y_lwd)
+    element_line(color = theme$grids_y_color, linewidth = theme$grids_y_lwd)
   } else {
     element_blank()
   }
@@ -534,11 +534,23 @@ tsggplot.list <- function(...,
       theme_args$axis.text.y.right <- theme$axis.text.y.right
     }
 
-    # Axis text position
     if (theme$axis.text.x.pos == "mid") {
-      theme_args$axis.text.x <-
-        modifyList(theme_args$axis.text.x, list(hjust = 0), keep.null = TRUE)
+      # To position the labels between major tick marks, we repurpose minor
+      # ticks as the actual tick marks, and use major
+      # breaks only for positioning labels (hiding their tick lines).
+      # segments are used to draw the minor ticks
+      theme_args$axis.minor.ticks.length <- theme$axis.ticks.length
+      theme_args$axis.minor.ticks.x.bottom <- theme$axis.ticks.x.bottom
+      theme_args$axis.ticks.length <- unit(0, "cm") # hide major ticks as they are used only for labels
+      theme_args$axis.minor.ticks.length <- -theme$axis.ticks.length # draw minor ticks inward
+      segment_length <- as.numeric(theme$axis.minor.ticks.length)
+      segment_x_bottom <- theme$axis.minor.ticks.x.bottom
     }
+  } else {
+    # Explicitly set all axis text elements to blank
+    theme_args$axis.text.x <- element_blank()
+    theme_args$axis.text.y.left <- element_blank()
+    theme_args$axis.text.y.right <- element_blank()
   }
 
   p <- ggplot() +
@@ -856,13 +868,112 @@ tsggplot.list <- function(...,
 
   # Global X-Axis ###################
   if (!inherits(theme$axis.line.x, "element_blank")) {
-    p <- p +
-      scale_x_continuous(
-        breaks = global_x$yearly_tick_pos,
-        labels = global_x$year_labels_start,
-        limits = c(global_x$x_range[1], global_x$x_range[2]),
-        expand = c(0, 0)
+    # Axis text position
+    if (exists("segment_length")) {
+      # To position the labels between major tick marks, we repurpose minor
+      # ticks as the actual tick marks, and use major
+      # breaks only for positioning labels (hiding their tick lines).
+      # segments are used to draw the minor ticks
+
+      # Compute valid mid‑points & labels for the yearly breaks
+      brks <- global_x$yearly_tick_pos
+      tick_spacing <- diff(brks)[1]
+      mid_all <- c(
+        (head(brks, -1) + tail(brks, -1)) / 2,
+        tail(brks, 1) + tick_spacing / 2
       )
+      is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
+      mid_pts <- mid_all[is_valid]
+      labs_pt <- global_x$year_labels_start[is_valid]
+
+      p <- p +
+        scale_x_continuous(
+          breaks = mid_pts, # major breaks → labels only
+          minor_breaks = global_x$yearly_tick_pos, # minor breaks → drawn ticks
+          labels = labs_pt,
+          limits = c(global_x$x_range[1], global_x$x_range[2]),
+          expand = c(0, 0)
+        ) +
+        guides(x = guide_axis(minor.ticks = TRUE))
+
+      if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
+        # Filter out overlapping quarterly ticks
+        q_ticks <- setdiff(global_x$quarterly_tick_pos, brks)
+
+        # Build a df of segment endpoints plotted in data coordinates
+        panel <- ggplot_build(p)$layout$panel_params[[1]]
+        y_min <- panel$y.range[1]
+        y_rng <- diff(panel$y.range)
+        # cheating here a bit because we neeed to translate grid units
+        # (axis.minor.ticks.length) that make sense in the drawing coordinate
+        # to data coordinates
+        tick_h <- y_rng * segment_length / 100
+
+        tick_df <- data.frame(
+          x    = q_ticks,
+          xend = q_ticks,
+          y    = y_min,
+          yend = y_min + tick_h
+        )
+
+        segment_x_bottom <- segment_x_bottom[!vapply(segment_x_bottom, is.null, logical(1))]
+        segment_x_bottom$inherit.blank <- NULL
+        segment_x_bottom$arrow <- NULL
+
+        geom_args <- c(
+          list(
+            data        = tick_df,
+            mapping     = aes(x = x, xend = xend, y = y, yend = yend),
+            inherit.aes = FALSE
+          ),
+          segment_x_bottom
+        )
+
+        p <- p + do.call(geom_segment, geom_args)
+      }
+    } else {
+      p <- p +
+        scale_x_continuous(
+          breaks = global_x$yearly_tick_pos,
+          limits = c(global_x$x_range[1], global_x$x_range[2]),
+          expand = c(0, 0)
+        )
+      if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
+        overlap <- global_x$quarterly_tick_pos %in% global_x$yearly_tick_pos
+        q_ticks <- global_x$quarterly_tick_pos[!overlap]
+        # q_labels <- global_x$year_labels_middle_q[!overlap]
+
+        p <- p +
+          scale_x_continuous(
+            breaks = global_x$yearly_tick_pos,
+            labels = global_x$year_labels_start,
+            limits = c(global_x$x_range[1], global_x$x_range[2]),
+            minor_breaks = q_ticks,
+            expand = c(0, 0)
+          ) +
+          # show quarterly ticks
+          guides(
+            x = guide_axis(minor.ticks = TRUE)
+          )
+
+        # if (theme$label_pos == "mid") {
+        # axis(1, q_ticks,
+        #  labels = q_labels,
+        #  lwd = theme$lwd_x_axis,
+        #  lwd.ticks = theme$lwd_quarterly_ticks,
+        #  tcl = theme$tcl_quarterly_ticks,
+        #  padj = 0
+        # )
+        # } else {
+        # axis(1, q_ticks,
+        # labels = F,
+        # lwd = theme$lwd_x_axis,
+        # lwd.ticks = theme$lwd_quarterly_ticks,
+        # tcl = theme$tcl_quarterly_ticks
+        # )
+        # }
+      }
+    }
     # if (theme$axis_x_yearly_ticks) {
     #  if (theme$label_pos == "start" || theme$x_tick_dt != 1 || !is.null(manual_ticks_x)) {
     #        axis(1, global_x$yearly_tick_pos,
@@ -880,42 +991,6 @@ tsggplot.list <- function(...,
     # )
     #  }
     # }
-
-    if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
-      overlap <- global_x$quarterly_tick_pos %in% global_x$yearly_tick_pos
-      q_ticks <- global_x$quarterly_tick_pos[!overlap]
-      # q_labels <- global_x$year_labels_middle_q[!overlap]
-
-      p <- p +
-        scale_x_continuous(
-          breaks = global_x$yearly_tick_pos,
-          labels = global_x$year_labels_start,
-          limits = c(global_x$x_range[1], global_x$x_range[2]),
-          minor_breaks = q_ticks,
-          expand = c(0, 0)
-        ) +
-        # show quarterly ticks
-        guides(
-          x = guide_axis(minor.ticks = TRUE)
-        )
-
-      # if (theme$label_pos == "mid") {
-      # axis(1, q_ticks,
-      #  labels = q_labels,
-      #  lwd = theme$lwd_x_axis,
-      #  lwd.ticks = theme$lwd_quarterly_ticks,
-      #  tcl = theme$tcl_quarterly_ticks,
-      #  padj = 0
-      # )
-      # } else {
-      # axis(1, q_ticks,
-      # labels = F,
-      # lwd = theme$lwd_x_axis,
-      # lwd.ticks = theme$lwd_quarterly_ticks,
-      # tcl = theme$tcl_quarterly_ticks
-      # )
-      # }
-    }
 
     # ticks styling
     # p <- p +

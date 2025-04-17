@@ -529,10 +529,13 @@ init_tsggplot_theme <- function(
       color = colors$ETH_Grey$`40`,
       linewidth = 0.5
     ),
-    axis.minor.ticks.length = rel(0.5),
+    axis.minor.ticks.length = rel(0.3),
     axis.minor.ticks.x.bottom = element_line(),
     axis.text = element_text(),
-    axis.text.x = element_text(hjust = 0, size = 13),
+    axis.text.x = element_text(
+      size = 13,
+      margin = margin(t = 10, unit = "pt")
+    ),
     axis.text.x.pos = "mid",
     axis.text.y.left = element_text(size = 13),
     axis.text.y.right = element_text(size = 13),
@@ -552,7 +555,7 @@ init_tsggplot_theme <- function(
     sum_line_color = c(ETH_Petrol_100 = colors$ETH_Petrol$`100`),
     sum_line_linetype = 1,
     sum_line_linewidth = 3,
-    axis_x_label_dt = 2,
+    axis_x_label_dt = 1,
     axis_x_tick_dt = 1,
     auto_bottom_margin = FALSE,
     band_fill_color = c(

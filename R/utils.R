@@ -114,11 +114,11 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
 
     # Yearly tick positions
     global_x$yearly_tick_pos <-
-      seq(floor(global_x$x_range[1]), global_x$x_range[2] + tick_dt, tick_dt)
+      seq(floor(global_x$x_range[1]), global_x$x_range[2], tick_dt)
 
     # labels
     labels <-
-      seq(global_x$x_range[1], global_x$x_range[2] + label_dt, label_dt)
+      seq(global_x$x_range[1], global_x$x_range[2], label_dt)
 
     global_x$year_labels_start <- ifelse(global_x$yearly_tick_pos %in% labels,
       global_x$yearly_tick_pos, ""
@@ -130,7 +130,7 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
   }
 
   global_x$min_year <- trunc(global_x$x_range[1])
-  global_x$max_year <- trunc(global_x$x_range[2]) + 1
+  global_x$max_year <- trunc(global_x$x_range[2])
 
   if (tick_dt == 1) {
     global_x$quarterly_tick_pos <- seq(

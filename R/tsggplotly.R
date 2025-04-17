@@ -1,6 +1,5 @@
 #' Convert ggplot2 time series object to plotly object
 #'
-#' @import ggplot2
 #' @import plotly
 #'
 #' @export

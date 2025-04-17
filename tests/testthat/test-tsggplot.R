@@ -155,6 +155,69 @@ test_that("tsggplot applies custom themes correctly", {
   expect_true(length(p$theme$panel.grid.major.x) > 0)
 })
 
+test_that("tsggplot tick labels centered", {
+  tsl <- list(AirPassengers = AirPassengers)
+  t <- init_tsggplot_theme(
+    axis.minor.ticks.length = ggplot2::unit(5, "pt"),
+    axis.minor.ticks.x.bottom = element_line(
+      color = "blue", linewidth = 2, linetype = "dashed"
+    ),
+    axis.ticks.length = ggplot2::unit(50, "pt"),
+    axis.ticks.x.bottom = element_line(color = "red", linewidth = 3),
+    axis.text.x.pos = "mid"
+  )
+  p <- tsggplot(list(tsl$AirPassengers),
+    left_as_bar = TRUE,
+    theme = t
+  )
+
+  # Check if the theme attributes are applied correctly
+  expect_equal(p$theme$axis.minor.ticks.length, ggplot2::unit(-50, "pt"))
+  expect_equal(
+    p$theme$axis.minor.ticks.x.bottom,
+    structure(list(
+      colour = "red", linewidth = 3, linetype = NULL,
+      lineend = NULL, arrow = FALSE, inherit.blank = FALSE
+    ), class = c("element_line", "element"))
+  )
+  # main ticks are set to 0, only labels are showing
+  expect_equal(p$theme$axis.ticks.length, ggplot2::unit(0, "cm"))
+
+  seg_layers <- which(
+    sapply(p$layers, function(l) inherits(l$geom, "GeomSegment"))
+  )
+  seg_layer <- p$layers[[seg_layers]]
+
+  expected_segment <- structure(
+    list(
+      x = c(
+        1949.25, 1949.5, 1949.75, 1950.25, 1950.5, 1950.75, 1951.25, 1951.5,
+        1951.75, 1952.25, 1952.5, 1952.75, 1953.25, 1953.5, 1953.75, 1954.25,
+        1954.5, 1954.75, 1955.25, 1955.5, 1955.75, 1956.25, 1956.5, 1956.75,
+        1957.25, 1957.5, 1957.75, 1958.25, 1958.5, 1958.75, 1959.25, 1959.5,
+        1959.75, 1960.25, 1960.5, 1960.75
+      ),
+      xend = c(
+        1949.25, 1949.5, 1949.75, 1950.25, 1950.5, 1950.75, 1951.25, 1951.5,
+        1951.75, 1952.25, 1952.5, 1952.75, 1953.25, 1953.5, 1953.75, 1954.25,
+        1954.5, 1954.75, 1955.25, 1955.5, 1955.75, 1956.25, 1956.5, 1956.75,
+        1957.25, 1957.5, 1957.75, 1958.25, 1958.5, 1958.75, 1959.25, 1959.5,
+        1959.75, 1960.25, 1960.5, 1960.75
+      ),
+      y = rep(0, 36),
+      yend = rep(40, 36)
+    ),
+    class = "data.frame",
+    row.names = c(NA, -36L)
+  )
+  expect_equal(seg_layer$data, expected_segment)
+
+  expect_equal(
+    seg_layer$aes_params,
+    list(colour = "blue", linewidth = 2, linetype = "dashed")
+  )
+})
+
 test_that("tsggplot ticks", {
   tsl <- list(AirPassengers = AirPassengers)
   tsg <- list(AirPassengers = diff(log(AirPassengers)) * 100)
@@ -162,7 +225,8 @@ test_that("tsggplot ticks", {
     axis.minor.ticks.length = ggplot2::unit(15, "pt"),
     axis.minor.ticks.x.bottom = element_line(color = "blue", linewidth = 2),
     axis.ticks.length = ggplot2::unit(20, "pt"),
-    axis.ticks.x.bottom = element_line(color = "red", linewidth = 3)
+    axis.ticks.x.bottom = element_line(color = "red", linewidth = 3),
+    axis.text.x.pos = "start"
   )
   p <- tsggplot(list(tsl$AirPassengers),
     tsr = list(tsg$AirPassengers),
@@ -307,6 +371,9 @@ test_that("tsggplot hide axis text", {
   )
 
   expect_true(inherits(p$theme$axis.text, "element_blank"))
+  expect_true(inherits(p$theme$axis.text.x, "element_blank"))
+  expect_true(inherits(p$theme$axis.text.y.left, "element_blank"))
+  expect_true(inherits(p$theme$axis.text.y.right, "element_blank"))
 })
 
 test_that("tsggplot x and y axis text", {
@@ -326,7 +393,7 @@ test_that("tsggplot x and y axis text", {
     p$theme$axis.text.x,
     structure(list(
       family = NULL, face = NULL, colour = "blue", size = 10,
-      hjust = 0, vjust = NULL, angle = NULL, lineheight = NULL,
+      hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
       margin = NULL, debug = NULL, inherit.blank = FALSE
     ), class = c("element_text", "element"))
   )
