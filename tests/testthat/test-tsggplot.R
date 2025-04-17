@@ -448,3 +448,58 @@ test_that("tsggplot wrong theme passed", {
   t <- init_tsggplot_theme()
   expect_no_error(tsggplot(AirPassengers, theme = t))
 })
+
+test_that("tsggplot with highlight window", {
+  t <- init_tsggplot_theme(
+    highlight_window = TRUE,
+    highlight_window_color = "red",
+    highlight_window_alpha = 0.2
+  )
+  if (capabilities("cairo") && getOption("bitmapType") != "cairo") {
+    expect_warning(tsggplot(
+      list(AirPassengers = AirPassengers),
+      theme = t
+    ), "Transparency requested but current device is not cairo.")
+  }
+
+  # Suppress cairo warning
+  suppressWarnings(
+    p <- tsggplot(list(AirPassengers = AirPassengers),
+      theme = t
+    )
+  )
+
+  # find the geom_rect layer
+  ix <- which(sapply(
+    p$layers,
+    function(l) inherits(l$geom, "GeomRect")
+  ))
+
+  rect <- p$layers[[ix]]
+  expect_false(rect$inherit.aes)
+  expect_equal(rect$aes_params$fill, "red")
+  expect_true(is.na(rect$aes_params$colour))
+
+  # Highlight window with start and end date
+  t <- init_tsggplot_theme(
+    highlight_window = TRUE,
+    highlight_window_start = c(1959, 1),
+    highlight_window_end = c(1971, 1)
+  )
+  # Suppress cairo warning
+  suppressWarnings(
+    p <- tsggplot(list(AirPassengers = AirPassengers),
+      theme = t
+    )
+  )
+  # find the geom_rect layer
+  ix <- which(sapply(
+    p$layers,
+    function(l) inherits(l$geom, "GeomRect")
+  ))
+
+  rect <- p$layers[[ix]]
+  expect_false(rect$inherit.aes)
+  expect_equal(rect$aes_params$fill, t$highlight_window_color)
+  expect_true(is.na(rect$aes_params$colour))
+})

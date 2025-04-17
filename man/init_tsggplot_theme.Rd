@@ -61,8 +61,9 @@ init_tsggplot_theme(
   grids_y_color = colors$ETH_Grey$`20`,
   grids_y_lwd = 0.5,
   grids_y_show = TRUE,
-  highlight_color = colors$ETH_Grey$`20`,
   highlight_window = FALSE,
+  highlight_window_alpha = 0.1,
+  highlight_window_color = colors$ETH_Grey$`20`,
   highlight_window_end = NA,
   highlight_window_freq = 4,
   highlight_window_start = NA,
@@ -257,9 +258,6 @@ grid count? Defaults to FALSE.}
 
 \item{grids_y_show}{logical should y_grids be shown. Defaults to TRUE.}
 
-\item{highlight_color}{character hex color code of highlight background,
-defaults to "#e9e9e9".}
-
 \item{highlight_window}{logical should a particular time span be
 highlighted by different background color. Defaults to FALSE.}
 
@@ -404,6 +402,9 @@ percent).}
 
 \item{...}{additional element specifications not part of base ggplot2. In general,
 these should also be defined in the \verb{element tree} argument. \link[rlang:splice]{Splicing} a list is also supported.}
+
+\item{highlight_color}{character hex color code of highlight background,
+defaults to "#e9e9e9".}
 
 \item{legend_all_left}{logical Should all legend entries be drawn on the
 left side of the plot? Default FALSE}

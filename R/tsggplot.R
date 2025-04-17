@@ -604,6 +604,8 @@ tsggplot.list <- function(...,
         hlw_end <- list(hlw_end)
       }
       xr <- sapply(hlw_end, compute_decimal_time, theme$highlight_window_freq) + 1 / theme$highlight_window_freq
+      # highlight window can maximally extend to the end of the x-axis
+      if (xr > global_x$x_range[2]) xr <- global_x$x_range[2]
     } else {
       xr <- global_x$x_range[2]
     }
@@ -622,17 +624,35 @@ tsggplot.list <- function(...,
       ymax = left_y$y_range[2]
     )
 
+    ## inside your plotting helper
+    if (theme$highlight_window_alpha < 1 && capabilities("cairo") &&
+      getOption("bitmapType") != "cairo") {
+      warning(
+        "Transparency requested but current device is not cairo.\n",
+        "Hightlight window may not correctly display.\n",
+        'Use options(bitmapType = "cairo") to enable cairo support.'
+      )
+    } else if (!capabilities("cairo")) {
+      warning(
+        "Transparency will not render correctly.\n",
+        "Hightlight window may not correctly display.\n",
+        "Consider using a Cairo device."
+      )
+    }
+
     p <- p + geom_rect(
       data = rect_df,
       aes(
         xmin = xmin,
         xmax = xmax,
         ymin = ymin,
-        ymax = ymax
+        ymax = ymax,
+        alpha = theme$highlight_window_alpha,
       ),
-      fill = theme$highlight_color,
+      fill = theme$highlight_window_color,
       color = NA,
-      inherit.aes = FALSE
+      inherit.aes = FALSE,
+      show.legend = FALSE
     )
   }
 
