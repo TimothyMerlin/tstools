@@ -564,8 +564,8 @@ init_tsggplot_theme <- function(
       ETH_Purple_60 = colors$ETH_Purple$`60`,
       ETH_Purple_40 = colors$ETH_Purple$`40`
     ),
-    bar_border = "#000000",
-    bar_border_lwd = 1,
+    bar_border_color = "#000000",
+    bar_border_linewidth = 0.1,
     bar_fill_color = c(
       ETH_Petrol = colors$ETH_Petrol$`100`,
       ETH_Petrol_60 = colors$ETH_Petrol$`60`,

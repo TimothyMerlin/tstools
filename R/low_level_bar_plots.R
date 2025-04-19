@@ -123,7 +123,9 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
         fill = series
       ),
       position = position,
-      just = 0
+      just = 0,
+      colour = theme$bar_border_color,
+      linewidth = theme$bar_border_linewidth
     ) +
     scale_fill_manual(
       values = fill_colors,
