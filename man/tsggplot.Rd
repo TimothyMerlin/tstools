@@ -23,7 +23,7 @@ tsggplot(
   theme = NULL,
   auto_legend = TRUE,
   output_format = "plot",
-  filename = "tsplot"
+  save = list(filename = "tsplot", height = 210, width = 297, units = "mm")
 )
 }
 \arguments{

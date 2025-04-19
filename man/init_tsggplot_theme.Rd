@@ -12,7 +12,7 @@ init_tsggplot_theme(
   axis.minor.ticks.length = rel(0.3),
   axis.minor.ticks.x.bottom = element_line(),
   axis.text = element_text(),
-  axis.text.x = element_text(size = 13, margin = margin(t = 10, unit = "pt")),
+  axis.text.x = element_text(size = 13),
   axis.text.x.pos = "mid",
   axis.text.y.left = element_text(size = 13),
   axis.text.y.right = element_text(size = 13),
@@ -26,6 +26,8 @@ init_tsggplot_theme(
   legend.position = "bottom",
   legend.title = element_text(size = 13),
   panel.background = element_blank(),
+  panel.grid.major.x = element_blank(),
+  panel.grid.major.y = element_line(color = colors$ETH_Grey$`20`, linewidth = 0.5),
   panel.grid.minor = element_blank(),
   sum_as_line = FALSE,
   sum_legend = "sum",
@@ -39,48 +41,31 @@ init_tsggplot_theme(
     colors$ETH_Petrol$`60`, ETH_Petrol_40 = colors$ETH_Petrol$`40`, ETH_Petrol_20 =
     colors$ETH_Petrol$`20`, ETH_Purple = colors$ETH_Purple$`100`, ETH_Purple_60 =
     colors$ETH_Purple$`60`, ETH_Purple_40 = colors$ETH_Purple$`40`),
-  bar_border = "#000000",
-  bar_border_lwd = 1,
+  bar_border_color = "#000000",
+  bar_border_linewidth = 0.1,
   bar_fill_color = c(ETH_Petrol = colors$ETH_Petrol$`100`, ETH_Petrol_60 =
     colors$ETH_Petrol$`60`, ETH_Petrol_40 = colors$ETH_Petrol$`40`, ETH_Petrol_20 =
     colors$ETH_Petrol$`20`, ETH_Purple = colors$ETH_Purple$`100`, ETH_Purple_60 =
     colors$ETH_Purple$`60`, ETH_Purple_40 = colors$ETH_Purple$`40`),
   bar_gap = 0.1,
-  bar_group_gap = 30,
   ci_alpha = "44",
   ci_colors = line_colors,
   ci_legend_label = "\%ci_value\%\% ci for \%series\%",
-  default_bottom_margin = 15,
   fill_up_start = FALSE,
   fill_year_with_nas = TRUE,
-  grids_x_color = colors$ETH_Grey$`10`,
   grids_x_count = c(5, 6, 8, 10),
   grids_x_count_strict = FALSE,
-  grids_x_lwd = 0.5,
-  grids_x_show = FALSE,
-  grids_y_color = colors$ETH_Grey$`20`,
-  grids_y_lwd = 0.5,
-  grids_y_show = TRUE,
   highlight_window = FALSE,
   highlight_window_alpha = 0.1,
   highlight_window_color = colors$ETH_Grey$`20`,
   highlight_window_end = NA,
   highlight_window_freq = 4,
   highlight_window_start = NA,
-  highlight_y_values = NA,
-  highlight_y_lwd = 2,
-  highlight_y_color = "#000000",
   line_colors = c(ETH_Green_60 = colors$ETH_Green$`60`, ETH_Green_100 =
     colors$ETH_Green$`100`, ETH_Petrol_20 = colors$ETH_Petrol$`20`, ETH_Purple_60 =
     colors$ETH_Purple$`60`, ETH_Petrol_60 = colors$ETH_Petrol$`60`, ETH_Purple_100 =
     colors$ETH_Purple$`100`, ETH_Petrol_100 = colors$ETH_Petrol$`100`),
   line_to_middle = TRUE,
-  lwd_box = 1.5,
-  lwd_quarterly_ticks = 1,
-  lwd_x_axis = 1.5,
-  lwd_y_axis = 1.5,
-  lwd_y_ticks = 0.5,
-  lwd_yearly_ticks = 1.5,
   margins = c(NA, 7, 12, 7),
   NA_continue_line = FALSE,
   output_wide = FALSE,
@@ -110,7 +95,6 @@ init_tsggplot_theme(
   title_transform = NA,
   total_bar_margin_pct = 0.2,
   use_bar_gap_in_groups = FALSE,
-  use_box = FALSE,
   xaxs = "i",
   y_las = 2,
   y_range_min_size = NULL,
@@ -205,20 +189,11 @@ calculated? This will be overridden if margins[1] is not NA. Default FALSE}
 \item{band_fill_color}{character vector of hex colors for the bands if
 left_as_band == TRUE.}
 
-\item{bar_border}{character hex colors for the border around bars in bar
-charts.}
-
-\item{bar_border_lwd}{numeric The line width of the borders of bars in
-barplots. Default 1}
-
 \item{bar_fill_color}{character vector of hex colors for the bars if
 left_as_bar == TRUE}
 
 \item{bar_gap}{numeric The width of the gap between bars, in \% of space
 allotted to the bar.}
-
-\item{bar_group_gap}{numeric The width of the gap between groups of bars if
-group_bar_chart is TRUE.}
 
 \item{ci_alpha}{Numeric 0-255, numeric 0-1 or hex 00-FF, transparency of
 the confidence interval bands}
@@ -231,32 +206,16 @@ should be labeled. May contain the placeholders. '\%ci_value\%' will be
 replaced with the ci label. '\%series\%' (will be replaced with the series
 name) exactly once. Defaults to '\%ci_value\% ci for \%series\%'}
 
-\item{default_bottom_margin}{numeric The bottom margin to use when
-margins[1] is NA but neither auto_legend nor auto_bottom_margin are true.
-Default 3}
-
 \item{fill_up_start}{logical should the start of the year also be filled?
 Has no effect if fill_year_with_nas == FALSE. Default FALSE}
 
 \item{fill_year_with_nas}{logical should year be filled up with missing in
 order to plot the entire year on the axis. Defaults to TRUE,}
 
-\item{grids_x_color}{character hex color of grids. Defaults to gray.}
-
 \item{grids_x_count}{integer vector preferred x grid counts c(5,6,8,10).}
 
 \item{grids_x_count_strict}{logical should we strictly stick to preferred x
 grid count? Defaults to FALSE.}
-
-\item{grids_x_lwd}{integer line width of the x grids. Defaults to 0.5.}
-
-\item{grids_x_show}{logical should x_grids be shown. Defaults to FALSE}
-
-\item{grids_y_color}{character hex color of grids. Defaults to gray.}
-
-\item{grids_y_lwd}{integer line width of the y grids. Defaults to 0.5.}
-
-\item{grids_y_show}{logical should y_grids be shown. Defaults to TRUE.}
 
 \item{highlight_window}{logical should a particular time span be
 highlighted by different background color. Defaults to FALSE.}
@@ -270,30 +229,10 @@ definition, defaults to 4.}
 \item{highlight_window_start}{integer vector highlight window start
 position, defaults to NA.}
 
-\item{highlight_y_values}{numeric Vector of y values to highlight with a
-bold line}
-
-\item{highlight_y_lwd}{integer Line width of the lines to highlight y
-values}
-
-\item{highlight_y_color}{character Color of the lines to highlight y values}
-
 \item{line_colors}{character vector of hex colors for 6 lines.}
 
 \item{line_to_middle}{logical try to put a line into the middle of the
 plot. defaults to TRUE.}
-
-\item{lwd_box}{numeric Line width of the box around the plot. Default 1.5}
-
-\item{lwd_quarterly_ticks}{numeric, width of yearly ticks, defaults to 1.}
-
-\item{lwd_x_axis}{numeric The line width of the x axis. Default 1.5}
-
-\item{lwd_y_axis}{numeric The line width of the y axis. Default 1.5}
-
-\item{lwd_y_ticks}{numeric Line width of the y ticks. Default 1.5}
-
-\item{lwd_yearly_ticks}{numeric, width of yearly ticks, defaults to 1.5.}
 
 \item{margins}{integer vector defaults to c(NA, 4, 3, 3) + 0.1. Set
 margins[1] to NA to automatically determine the bottom margin such that the
@@ -382,8 +321,6 @@ defaults to 1}
 \item{use_bar_gap_in_groups}{logical Should there be gaps of size bar_gap
 between the bars in a group if group_bar_chart = TRUE? Default FALSE}
 
-\item{use_box}{logical use a box around the plot.}
-
 \item{xaxs}{character axis definition as in base plot, defaults to "i".}
 
 \item{y_las}{integer, same as base \code{\link{plot}} parameter defaults to
@@ -403,8 +340,41 @@ percent).}
 \item{...}{additional element specifications not part of base ggplot2. In general,
 these should also be defined in the \verb{element tree} argument. \link[rlang:splice]{Splicing} a list is also supported.}
 
+\item{bar_border}{character hex colors for the border around bars in bar
+charts.}
+
+\item{bar_border_lwd}{numeric The line width of the borders of bars in
+barplots. Default 1}
+
+\item{bar_group_gap}{numeric The width of the gap between groups of bars if
+group_bar_chart is TRUE.}
+
+\item{default_bottom_margin}{numeric The bottom margin to use when
+margins[1] is NA but neither auto_legend nor auto_bottom_margin are true.
+Default 3}
+
+\item{grids_x_color}{character hex color of grids. Defaults to gray.}
+
+\item{grids_x_lwd}{integer line width of the x grids. Defaults to 0.5.}
+
+\item{grids_x_show}{logical should x_grids be shown. Defaults to FALSE}
+
+\item{grids_y_color}{character hex color of grids. Defaults to gray.}
+
+\item{grids_y_lwd}{integer line width of the y grids. Defaults to 0.5.}
+
+\item{grids_y_show}{logical should y_grids be shown. Defaults to TRUE.}
+
 \item{highlight_color}{character hex color code of highlight background,
 defaults to "#e9e9e9".}
+
+\item{highlight_y_values}{numeric Vector of y values to highlight with a
+bold line}
+
+\item{highlight_y_lwd}{integer Line width of the lines to highlight y
+values}
+
+\item{highlight_y_color}{character Color of the lines to highlight y values}
 
 \item{legend_all_left}{logical Should all legend entries be drawn on the
 left side of the plot? Default FALSE}
@@ -436,12 +406,26 @@ Default 2}
 
 \item{lwd}{integer vector line width, defaults to c(2,3,1,4,2,4).}
 
+\item{lwd_box}{numeric Line width of the box around the plot. Default 1.5}
+
+\item{lwd_quarterly_ticks}{numeric, width of yearly ticks, defaults to 1.}
+
+\item{lwd_x_axis}{numeric The line width of the x axis. Default 1.5}
+
+\item{lwd_y_axis}{numeric The line width of the y axis. Default 1.5}
+
+\item{lwd_y_ticks}{numeric Line width of the y ticks. Default 1.5}
+
+\item{lwd_yearly_ticks}{numeric, width of yearly ticks, defaults to 1.5.}
+
 \item{show_left_y_axis}{logical: should left y axis be shown, defaults to
 TRUE.}
 
 \item{sum_line_lty}{integer line type of sum_as_line, defaults to 1.}
 
 \item{sum_line_lwd}{integer line width of sum_as_line, defaults to 3.}
+
+\item{use_box}{logical use a box around the plot.}
 }
 \description{
 The \code{\link{tsggplot}} methods provide a theme argument which is used to

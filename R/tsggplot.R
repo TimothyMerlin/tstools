@@ -71,7 +71,12 @@ tsggplot <- function(...,
                      theme = NULL,
                      auto_legend = TRUE,
                      output_format = "plot",
-                     filename = "tsplot") {
+                     save = list(
+                       filename = "tsplot",
+                       height = 210,
+                       width = 297,
+                       units = "mm"
+                     )) {
   UseMethod("tsggplot")
 }
 
@@ -94,7 +99,12 @@ tsggplot.ts <- function(...,
                         theme = NULL,
                         auto_legend = TRUE,
                         output_format = "plot",
-                        filename = "tsplot") {
+                        save = list(
+                          filename = "tsplot",
+                          height = 210,
+                          width = 297,
+                          units = "mm"
+                        )) {
   li <- list(...)
   tsggplot(li,
     tsr = tsr,
@@ -114,7 +124,7 @@ tsggplot.ts <- function(...,
     auto_legend = auto_legend,
     theme = theme,
     output_format = output_format,
-    filename = filename
+    save = save
   )
 }
 
@@ -137,7 +147,12 @@ tsggplot.mts <- function(...,
                          theme = NULL,
                          auto_legend = TRUE,
                          output_format = "plot",
-                         filename = "tsplot") {
+                         save = list(
+                           filename = "tsplot",
+                           height = 210,
+                           width = 297,
+                           units = "mm"
+                         )) {
   li <- list(...)
   if (length(li) > 1) {
     stop("If you use multivariate time series objects (mts), make sure to pass only one object per axis. Place all time series you want to plot on one y-axis in one mts object or list of time series.")
@@ -168,7 +183,7 @@ create a ts out of a row of a data.frame? Converting to single ts.")
       auto_legend = auto_legend,
       theme = theme,
       output_format = output_format,
-      filename = filename
+      save = save
     )
   }
 }
@@ -193,7 +208,12 @@ tsggplot.list <- function(...,
                           quiet = TRUE,
                           auto_legend = TRUE,
                           output_format = "plot",
-                          filename = "tsplot") {
+                          save = list(
+                            filename = "tsplot",
+                            height = 210,
+                            width = 297,
+                            units = "mm"
+                          )) {
   tsl <- c(...)
 
   if (inherits(tsr, "ts")) {
@@ -1104,15 +1124,10 @@ tsggplot.list <- function(...,
   }
 
   if (output_format != "plot") {
-    if (!grepl(sprintf("[.]%s$", output_format), filename)) {
-      filename <- sprintf("%s.%s", filename, output_format)
+    if (!grepl(sprintf("[.]%s$", output_format), save$filename)) {
+      save$filename <- sprintf("%s.%s", save$filename, output_format)
     }
-    ggsave(filename,
-      plot = p,
-      device = output_format,
-      width = 20,
-      height = 10
-    )
+    do.call(ggsave, save)
   } else {
     p
   }
