@@ -394,7 +394,10 @@ test_that("tsggplot x and y axis text", {
     structure(list(
       family = NULL, face = NULL, colour = "blue", size = 10,
       hjust = NULL, vjust = NULL, angle = NULL, lineheight = NULL,
-      margin = NULL, debug = NULL, inherit.blank = FALSE
+      margin = structure(c(10, 0, 0, 0),
+        unit = 8L, class = c("margin", "simpleUnit", "unit", "unit_v2")
+      ),
+      debug = NULL, inherit.blank = FALSE
     ), class = c("element_text", "element"))
   )
   expect_equal(
@@ -571,16 +574,63 @@ test_that("tsggplot with highlight window", {
   expect_true(is.na(rect$aes_params$colour))
 })
 
-test_that("tsggplot ", {
+test_that("tsggplot, with series starting not at start of year", {
   t <- init_tsggplot_theme()
   p <- tsggplot(list(JohnsonJohnson = window(JohnsonJohnson, start = c(1960, 3))),
     theme = t
   )
 
-  expect_equal(range(p$layers[[1]]$data$time), c(1916.625, 1980.875))
+  expect_equal(range(p$layers[[1]]$data$time), c(1960.625, 1980.875))
 
   # check axis x labels
   pb <- ggplot_build(p)
   txts <- pb$layout$panel_params[[1]]$x$get_labels()
   expect_equal(range(txts), c(1960, 1980))
+})
+
+test_that("tsggplot, confidence intervals", {
+  t <- init_tsggplot_theme(
+    ci_alpha = 0.2,
+    ci_colors = c("red", "blue"),
+    ci_legend_label = "%ci_value%% ci for %series% TEST"
+  )
+
+  # Define confidence intervals
+  ci <- list(
+    "KOF Barometer" = list(
+      "80" = list(
+        lb = KOF$baro_lo_80,
+        ub = KOF$baro_hi_80
+      ),
+      "95" = list(
+        lb = KOF$baro_lo_95,
+        ub = KOF$baro_hi_95
+      )
+    )
+  )
+
+  p <- tsggplot(list("KOF Barometer" = KOF$baro_point_fc),
+    ci = ci,
+    theme = t
+  )
+
+  expected_ci_colors <- namedColor2Hex(t$ci_colors, t$ci_alpha)
+
+  bd <- ggplot_build(p)$data
+  ci_colors <- unique(c(bd[[1]]$fill, bd[[2]]$fill))
+
+  expect_equal(
+    ci_colors,
+    expected_ci_colors
+  )
+
+  fill_scale <- p$scales$get_scales("fill")
+
+  expect_equal(
+    fill_scale$labels,
+    c(
+      "80% ci for KOF Barometer TEST",
+      "95% ci for KOF Barometer TEST"
+    )
+  )
 })

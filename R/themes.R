@@ -575,8 +575,8 @@ init_tsggplot_theme <- function(
       ETH_Purple_60 = colors$ETH_Purple$`60`,
       ETH_Purple_40 = colors$ETH_Purple$`40`
     ),
-    bar_gap = 0.1,
-    bar_group_gap = 30,
+    bar_gap = 0.1, # TODO: does not work with tsggplot
+    #    bar_group_gap = 30,
     ci_alpha = "44",
     ci_colors = line_colors,
     ci_legend_label = "%ci_value%% ci for %series%",

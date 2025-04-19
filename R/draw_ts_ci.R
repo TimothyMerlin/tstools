@@ -27,7 +27,25 @@ draw_ts_ci <- function(ci, theme) {
 #' @importFrom ggplot2 geom_polygon aes
 draw_tsggplot_ci <- function(p, ci, theme) {
   if (!is.null(ci)) {
+    ci_names <- lapply(names(ci), function(x) {
+      y <- gsub("%series%", x, theme$ci_legend_label)
+      if (grepl("%ci_value%", y)) {
+        parts <- strsplit(y, "%ci_value%")[[1]]
+        # in case %ci_value% is at the very end (see ?split)
+        if (length(parts) == 1) {
+          parts <- c(parts, "")
+        }
+        y <- paste0(parts[1], names(ci[[x]]), parts[2])
+      } else {
+        y <- rep(y, length(ci[[x]]))
+      }
+      y
+    })
+
     ci_colors <- namedColor2Hex(theme$ci_colors, theme$ci_alpha)
+
+    group_ids <- character()
+
     for (ci_series_i in seq_along(ci)) {
       ci_series <- ci[[ci_series_i]]
 
@@ -45,6 +63,7 @@ draw_tsggplot_ci <- function(p, ci, theme) {
         yy_high <- ci_level$ub
 
         group_id <- interaction(ci_series_i, ci_level_i, drop = TRUE)
+        group_ids <- c(group_ids, as.character(group_id))
 
         ci_df <- data.frame(
           x = c(xx, rev(xx)),
@@ -52,13 +71,28 @@ draw_tsggplot_ci <- function(p, ci, theme) {
           group = group_id
         )
 
-        p <- p + geom_polygon(
-          data = ci_df,
-          aes(x = x, y = y, group = group),
-          fill = ci_colors[ci_level_i]
-        )
+        p <- p +
+          geom_polygon(
+            data = ci_df,
+            aes(
+              x = x,
+              y = y,
+              group = group,
+              fill = group
+            ),
+            show.legend = TRUE
+          )
       }
     }
+
+    group_labels <- unlist(ci_names)
+
+    p <- p +
+      scale_fill_manual(
+        breaks = group_ids,
+        labels = group_labels,
+        values = setNames(ci_colors, group_ids)
+      )
 
     p
   }
