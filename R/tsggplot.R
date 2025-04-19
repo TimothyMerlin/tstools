@@ -499,18 +499,6 @@ tsggplot.list <- function(...,
     theme_args$legend.position <- "none"
   }
 
-  theme_args$panel.grid.major.x <- if (theme$grids_x_show) {
-    element_line(color = theme$grids_x_color, linewidth = theme$grids_x_lwd)
-  } else {
-    element_blank()
-  }
-
-  theme_args$panel.grid.major.y <- if (theme$grids_y_show) {
-    element_line(color = theme$grids_y_color, linewidth = theme$grids_y_lwd)
-  } else {
-    element_blank()
-  }
-
   if (!inherits(theme$axis.line.y, "element_blank")) {
     # If the y-axis line theme is not identical to the default ggplot2
     # element_line

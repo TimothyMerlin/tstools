@@ -141,18 +141,48 @@ test_that("tsggplot sets custom labels correctly", {
   )
 })
 
-test_that("tsggplot applies custom themes correctly", {
-  tsl <- list(AirPassengers = AirPassengers)
-  tsg <- list(AirPassengers = diff(log(AirPassengers)) * 100)
-  t <- init_tsggplot_theme(grids_x_show = TRUE, axis_x_label_dt = 1)
-  p <- tsggplot(list(tsl$AirPassengers),
-    tsr = list(tsg$AirPassengers),
-    left_as_bar = TRUE,
+test_that("tsggplot, grids", {
+  t <- init_tsggplot_theme(
+    grids_x_count = c(5, 6, 8, 10),
+    grids_x_count_strict = FALSE,
+    panel.grid.major.x = element_line(
+      color = "red",
+      linewidth = 4,
+      linetype = "dashed"
+    ),
+    panel.grid.major.y = element_line(
+      color = "blue",
+      linewidth = 5,
+    )
+  )
+  p <- tsggplot(AirPassengers,
     theme = t
   )
 
   # Check if the theme attributes are applied correctly
-  expect_true(length(p$theme$panel.grid.major.x) > 0)
+  expected_grid_x_major <- structure(
+    list(
+      colour = "red",
+      linewidth = 4,
+      linetype = "dashed",
+      lineend = NULL,
+      arrow = FALSE,
+      inherit.blank = FALSE
+    ),
+    class = c("element_line", "element")
+  )
+  expect_equal(p$theme$panel.grid.major.x, expected_grid_x_major)
+
+  expected_grid_y_major <-
+    structure(list(
+      colour = "blue",
+      linewidth = 5,
+      linetype = NULL,
+      lineend = NULL,
+      arrow = FALSE,
+      inherit.blank = FALSE
+    ), class = c("element_line", "element"))
+  expect_equal(p$theme$panel.grid.major.y, expected_grid_y_major)
 })
 
 test_that("tsggplot tick labels centered", {
@@ -506,6 +536,13 @@ test_that("tsggplot hide legend", {
     theme = t
   )
 
+  expect_equal(p$theme$legend.position, "none")
+
+  # alternative way
+  p <- tsggplot(
+    AirPassengers = AirPassengers,
+    auto_legend = FALSE
+  )
   expect_equal(p$theme$legend.position, "none")
 })
 
