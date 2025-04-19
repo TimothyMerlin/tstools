@@ -315,7 +315,11 @@ tsggplot(tsb1, tsb2,
 ### Add a Box Around Your Plot
 
 ```{r,fig.width = 7,fig.height=6}
-tt <- init_tsggplot_theme(use_box = TRUE)
+tt <- init_tsggplot_theme(
+  panel.border = element_rect(
+    colour = "black", fill = NA, linewidth = 2
+  )
+)
 tsggplot(tsb1, tsb2, tsb3,
   tsr = tsr1,
   left_as_bar = TRUE,
