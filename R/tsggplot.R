@@ -314,8 +314,6 @@ tsggplot.list <- function(...,
     }
   }
 
-  cnames <- names(tsl)
-
   if (left_as_bar || left_as_band) {
     # Combine ts
     tsmat <- do.call("cbind", tsl)
@@ -363,8 +361,6 @@ tsggplot.list <- function(...,
     }
   }
 
-  # CANVAS OPTIONS START #########################################
-  # so far manual date ticks are ignored.
   global_x <- getGlobalXInfo_tsggplot(
     tsl, tsr,
     fill_up = theme$fill_year_with_nas,
@@ -386,7 +382,6 @@ tsggplot.list <- function(...,
   } else {
     left_ticks <- do.call(find_ticks_function, list(tsl_r, theme$grids_x_count, theme$preferred_y_gap_sizes, theme$y_tick_force_integers, theme$range_must_not_cross_zero))
     left_y <- list(y_range = range(left_ticks), y_ticks = left_ticks)
-    # return("Only works with manual value ticks...")
   }
   # time series right
   if (!is.null(tsr)) {
@@ -485,18 +480,6 @@ tsggplot.list <- function(...,
     }
   }
 
-  # CANVAS OPTIONS END #########################################
-
-  # BASE CANVAS
-  # xlim = global_x$x_range,
-  # ylim = left_y$y_range,
-  # axes = F,
-  # xlab = "",
-  # ylab = "",
-  # xaxs = theme$xaxs,
-  # yaxs = theme$yaxs
-  # )
-
   # Extract valid theme elements from the provided theme listents]
   # by matching their names with the formal arguments of ggplot2::theme
   valid_theme_elements <- names(formals(ggplot2::theme))
@@ -567,49 +550,6 @@ tsggplot.list <- function(...,
 
   p <- ggplot() +
     do.call(ggplot2::theme, theme_args)
-
-  #  if (theme$highlight_window) {
-  #    hlw_start <- theme$highlight_window_start
-  #    if (!any(is.na(hlw_start))) {
-  #      if (!is.list(hlw_start)) {
-  #        hlw_start <- list(hlw_start)
-  #      }
-  #      xl <- sapply(hlw_start, compute_decimal_time, theme$highlight_window_freq)
-  #    } else {
-  #      xl <- global_x$x_range[2] - 2
-  #    }
-  #
-  #    hlw_end <- theme$highlight_window_end
-  #    if (!any(is.na(hlw_end))) {
-  #      if (!is.list(hlw_end)) {
-  #        hlw_end <- list(hlw_end)
-  #      }
-  #      xr <- sapply(hlw_end, compute_decimal_time, theme$highlight_window_freq) + 1 / theme$highlight_window_freq
-  #    } else {
-  #      xr <- global_x$x_range[2]
-  #    }
-  #
-  #    n_start <- length(xl)
-  #    n_end <- length(xr)
-  #
-  #    if (n_start != n_end) {
-  #      warning(sprintf("%s highlight start points than end points specified! Dropping excess ones.", ifelse(n_start > n_end, "More", "Fewer")))
-  #    }
-  #
-  #    for (i in seq_along(xl)) {
-  #      rect(xl[i], left_y$y_range[1], xr[i], left_y$y_range[2],
-  #        col = theme$highlight_color,
-  #        border = NA
-  #      )
-  #    }
-  #  }
-  # if (theme$grids_y_show) {
-  # addYGrids(left_y$y_ticks, global_x$x_range, theme = theme)
-  #  }
-  #
-  #  if (!all(is.na(theme$highlight_y_values))) {
-  #    addYHighlights(global_x$x_range, theme)
-  #  }
 
   if (theme$highlight_window) {
     hlw_start <- theme$highlight_window_start
@@ -696,47 +636,12 @@ tsggplot.list <- function(...,
     tt_r$ci_colors <- tt_r$ci_colors[start_r]
   }
 
-  # Draw all confidence bands here (so they don't overlap lines later)
-  # Or should they be drawn left first, then right as before? cf especially with left_as_bar == TRUE and
-  # CI somewhere in the middle of the series. How common a case is that though?
-  # if (!left_as_bar) {
-  # plot(NULL,
-  # xlim = global_x$x_range,
-  # ylim = left_y$y_range,
-  # axes = F,
-  # xlab = "",
-  # ylab = "",
-  # xaxs = theme$xaxs,
-  # yaxs = theme$yaxs
-  # )
-
-  # ci_left <- ci[names(ci) %in% names(tsl)]
-  # draw_ts_ci(ci_left, theme)
-  # }
-
   if (!left_as_bar) {
     ci_left <- ci[names(ci) %in% names(tsl)]
     if (!is.null(ci_left)) {
       p <- draw_tsggplot_ci(p, ci_left, theme)
     }
   }
-
-
-  # if (!is.null(tsr)) {
-  #  par(new = TRUE)
-  #  plot(NULL,
-  #    xlim = global_x$x_range,
-  #    ylim = right_y$y_range,
-  #    axes = F,
-  #    xlab = "",
-  #    ylab = "",
-  #    yaxs = theme$yaxs,
-  #    xaxs = theme$xaxs
-  #  )
-
-  #    ci_right <- ci[names(ci) %in% names(tsr)]
-  #    draw_ts_ci(ci_right, tt_r)
-  # }
 
   if (!is.null(tsr)) {
     ci_right <- ci[names(ci) %in% names(tsr)]
@@ -745,31 +650,12 @@ tsggplot.list <- function(...,
     }
   }
 
-  # par(new = TRUE)
-  # plot(NULL,
-  #  xlim = global_x$x_range,
-  #  ylim = left_y$y_range,
-  #  axes = F,
-  #  xlab = "",
-  #  ylab = "",
-  #  xaxs = theme$xaxs,
-  #  yaxs = theme$yaxs
-  # )
-
   if (left_as_bar) {
     ## draw barplot
     p <- draw_tsggplot_bars(p, tsl,
       group_bar_chart = group_bar_chart,
       theme = theme
     )
-    # draw_ts_bars(tsl,
-    # group_bar_chart = group_bar_chart,
-    # theme = theme
-    # )
-    # if (theme$sum_as_line) {
-    # reduced <- Reduce("+", tsl)
-    # draw_sum_as_line(reduced, theme)
-    # }
     if (theme$sum_as_line) {
       reduced <- Reduce("+", tsl)
       p <- draw_sum_as_ggline(p, reduced, theme)
@@ -781,19 +667,6 @@ tsggplot.list <- function(...,
 
   # RIGHT PLOT #######################
   if (!is.null(tsr)) {
-    # par(new = T)
-    # plot(NULL,
-    #  xlim = global_x$x_range,
-    #  ylim = right_y$y_range,
-    #  axes = F,
-    #  xlab = "",
-    #  ylab = "",
-    #  yaxs = theme$yaxs,
-    #  xaxs = theme$xaxs
-    # )
-
-    # draw_ts_lines(tsr, theme = tt_r)
-
     scale <- function(x, min1, max1, min2, max2) {
       ((x - min1) / (max1 - min1)) * (max2 - min2) + min2
     }
@@ -808,13 +681,6 @@ tsggplot.list <- function(...,
 
     # Add `tsr` as secondary time series
     p <- draw_tsggplot_lines(p, scaled_tsr, theme = tt_r, bandplot = FALSE, scale = NULL)
-    # RIGHT Y-Axis
-    #      axis(4, right_y$y_ticks,
-    # las = theme$y_las,
-    # lwd = theme$lwd_y_axis,
-    # lwd.ticks = theme$lwd_y_ticks, tcl = theme$tcl_y_ticks
-    # )
-    #  }
   }
 
   if (!inherits(theme$axis.line.y, "element_blank")) {
@@ -866,17 +732,6 @@ tsggplot.list <- function(...,
         expand = c(0, 0)
       )
   }
-  # DRAW AXES
-  # par(new = TRUE)
-  # plot(NULL,
-  #  xlim = global_x$x_range,
-  #  ylim = left_y$y_range,
-  #  axes = F,
-  #  xlab = "",
-  #  ylab = "",
-  #  xaxs = theme$xaxs,
-  #  yaxs = theme$yaxs
-  # )
 
   # Global X-Axis ###################
   if (!inherits(theme$axis.line.x, "element_blank")) {
@@ -967,49 +822,8 @@ tsggplot.list <- function(...,
           guides(
             x = guide_axis(minor.ticks = TRUE)
           )
-
-        # if (theme$label_pos == "mid") {
-        # axis(1, q_ticks,
-        #  labels = q_labels,
-        #  lwd = theme$lwd_x_axis,
-        #  lwd.ticks = theme$lwd_quarterly_ticks,
-        #  tcl = theme$tcl_quarterly_ticks,
-        #  padj = 0
-        # )
-        # } else {
-        # axis(1, q_ticks,
-        # labels = F,
-        # lwd = theme$lwd_x_axis,
-        # lwd.ticks = theme$lwd_quarterly_ticks,
-        # tcl = theme$tcl_quarterly_ticks
-        # )
-        # }
       }
     }
-    # if (theme$axis_x_yearly_ticks) {
-    #  if (theme$label_pos == "start" || theme$x_tick_dt != 1 || !is.null(manual_ticks_x)) {
-    #        axis(1, global_x$yearly_tick_pos,
-    # labels = global_x$yearly_tick_pos,
-    # lwd = theme$lwd_x_axis,
-    # lwd.ticks = theme$lwd_yearly_ticks,
-    # tcl = theme$tcl_yearly_tick,
-    # padj = 0
-    # )
-    # axis(1, global_x$yearly_tick_pos,
-    # labels = F,
-    # lwd = theme$lwd_x_axis,
-    # lwd.ticks = theme$lwd_yearly_ticks,
-    # tcl = theme$tcl_yearly_tick
-    # )
-    #  }
-    # }
-
-    # ticks styling
-    # p <- p +
-    # theme(
-    # axis.ticks.length = theme$axis_ticks_length,
-    # axis.minor.ticks.length = theme$axis_minor_ticks_length
-    # )
   } else {
     p <- p +
       scale_x_continuous(
@@ -1037,76 +851,6 @@ tsggplot.list <- function(...,
     values = setNames(theme$line_colors, line_names)
   )
 
-  # LEFT Y-AXIS
-  # if (theme$show_left_y_axis) {
-  #  axis(2, left_y$y_ticks,
-  #    las = theme$y_las,
-  #    lwd = theme$lwd_y_axis,
-  #    lwd.ticks = theme$lwd_y_ticks, tcl = theme$tcl_y_ticks
-  #  )
-  # }
-
-  # if (!is.null(tsr)) {
-  #  par(new = T)
-  #  plot(NULL,
-  #    xlim = global_x$x_range,
-  #    ylim = right_y$y_range,
-  #    axes = F,
-  #    xlab = "",
-  #    ylab = "",
-  #    yaxs = theme$yaxs,
-  #    xaxs = theme$xaxs
-  #  )
-
-  #  # RIGHT Y-Axis
-  #  if (theme$show_right_y_axis) {
-  #    axis(4, right_y$y_ticks,
-  #      las = theme$y_las,
-  #      lwd = theme$lwd_y_axis,
-  #      lwd.ticks = theme$lwd_y_ticks, tcl = theme$tcl_y_ticks
-  #    )
-  #  }
-  # }
-
-  # # RESET USER COORDINATES TO LEFT SIDE
-  # par(new = TRUE)
-  # plot(NULL,
-  #   xlim = global_x$x_range,
-  #   ylim = left_y$y_range,
-  #   axes = F,
-  #   xlab = "",
-  #   ylab = "",
-  #   xaxs = theme$xaxs,
-  #   yaxs = theme$yaxs
-  # )
-
-  # if (theme$use_box) {
-  #   box(lwd = theme$lwd_box)
-  # }
-
-  # add legend
-  #  if (auto_legend) {
-  # ci_names <- lapply(names(ci), function(x) {
-  # y <- gsub("%series%", x, theme$ci_legend_label)
-  # if (grepl("%ci_value%", y)) {
-  # parts <- strsplit(y, "%ci_value%")[[1]]
-  # # in case %ci_value% is at the very end (see ?split)
-  # if (length(parts) == 1) {
-  # parts <- c(parts, "")
-  # }
-  # y <- paste0(parts[1], names(ci[[x]]), parts[2])
-  # } else {
-  # y <- rep(y, length(ci[[x]]))
-  # }
-  # y
-  # })
-  # names(ci_names) <- names(ci)
-
-  # add_legend(names(tsl), names(tsr), ci_names,
-  # theme = theme, left_as_bar = left_as_bar,
-  # left_as_band = left_as_band
-  # )
-  # }
   if (auto_legend) {
     p <- p + guides(
       color = guide_legend(
@@ -1115,9 +859,6 @@ tsggplot.list <- function(...,
     )
   }
 
-  # # add title and subtitle
-  # add_title(plot_title, plot_subtitle, plot_subtitle_r, theme)
-  # add title and subtitle
   if (!is.null(labs)) {
     lab_args <- labs[!vapply(labs, is.null, logical(1))]
     p <- p + do.call(ggplot2::labs, lab_args)
