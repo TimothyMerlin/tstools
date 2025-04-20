@@ -45,12 +45,11 @@ draw_ts_lines <- function(x, theme = NULL, bandplot = FALSE) {
 }
 
 
-#' @importFrom stats ts.union
+#' @importFrom ggplot2 aes geom_line geom_ribbon geom_point .data
+#' @importFrom stats setNames time frequency
 draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NULL) {
   nts <- length(x)
   series <- names(x)
-  op <- rep(theme$show_points, ceiling(nts / length(theme$show_points)))
-  ops <- rep(theme$point_symbol, ceiling(nts / length(theme$point_symbol)))
 
   # "harmonize" all ts, range wise
   if (bandplot) {
@@ -85,7 +84,6 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
     )
     # Ensure 'interval' is a factor with the correct levels
     df$interval <- factor(df$interval, levels = c("forecast", "in_sample"))
-    #    unique_group_id <- paste0(format(Sys.time(), "%Y%m%d%H%M%S"), "_", i)
 
     if (!bandplot) {
       # Create the custom text for hover outside aes()
@@ -97,11 +95,9 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
       p <- p + geom_line(
         data = df,
         aes(
-          x = time,
-          y = value,
-          color = series,
-          # group = unique_group_id
-          # text = text,
+          x = .data$time,
+          y = .data$value,
+          color = .data$series
         ),
         linewidth = theme$linewidth[i],
         linetype = theme$linetype[i]
@@ -111,7 +107,10 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
       if (theme$show_points[i]) {
         p <- p + geom_point(
           data = df,
-          aes(x = time, y = value),
+          aes(
+            x = .data$time,
+            y = .data$value
+          ),
           shape = theme$point_symbol[i]
         )
       }
@@ -127,10 +126,10 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
       p <- p + geom_ribbon(
         data = df_band,
         aes(
-          x = time,
-          fill = series,
-          ymin = ymin,
-          ymax = ymax
+          x = .data$time,
+          fill = .data$series,
+          ymin = .data$ymin,
+          ymax = .data$ymax
         )
       )
       band_low <- band_high # Update band_low for cumulative stacking
@@ -152,9 +151,8 @@ draw_sum_as_line <- function(x, theme = NULL) {
   )
 }
 
-#' @importFrom ggplot2 geom_line aes
+#' @importFrom ggplot2 aes geom_line .data
 draw_sum_as_ggline <- function(p, x, theme = NULL) {
-  # Convert the time series to a data frame
   df <- data.frame(
     xx = as.numeric(time(x)),
     yy = as.numeric(x)
@@ -165,8 +163,8 @@ draw_sum_as_ggline <- function(p, x, theme = NULL) {
   p + geom_line(
     data = df,
     aes(
-      x = xx,
-      y = yy
+      x = .data$xx,
+      y = .data$yy
     ),
     color = theme$sum_line_color,
     linewidth = theme$sum_line_linewidth,

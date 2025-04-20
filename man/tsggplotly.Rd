@@ -6,6 +6,11 @@
 \usage{
 tsggplotly(p, ...)
 }
+\arguments{
+\item{p}{ggplot2 figure}
+
+\item{...}{additional arguments}
+}
 \description{
 Convert ggplot2 time series object to plotly object
 }

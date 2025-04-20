@@ -80,21 +80,13 @@ draw_ts_bars <- function(x, group_bar_chart = FALSE, theme = NULL) {
   }
 }
 
-#' @importFrom graphics rect
+#' @importFrom ggplot2 aes geom_col position_dodge2 position_stack
+#' scale_fill_manual
 draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
   n_ts <- length(x)
   series <- names(x)
 
-  # "Remove" NAs (basically rect omits them anyway. Might even be better because of the borders)
   x[is.na(x)] <- 0
-
-  # Base rect coordinates
-  # ts_time <- time(x)
-  # frq <- frequency(x)
-  # positives <- x
-  # positives[x < 0] <- 0
-  # negatives <- x
-  # negatives[x > 0] <- 0
 
   data <- do.call(rbind, lapply(1:n_ts, function(i) {
     data.frame(
@@ -113,7 +105,6 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
   } else {
     position <- position_stack()
   }
-  # Use ggplot to add bars, handling grouped bars if group_bar_chart is TRUE
   p <- p +
     geom_col(
       data = data,

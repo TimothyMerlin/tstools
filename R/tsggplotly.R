@@ -1,11 +1,14 @@
 #' Convert ggplot2 time series object to plotly object
 #'
-#' @import plotly
+#' @param p ggplot2 figure
+#' @param ... additional arguments
+#'
+#' @importFrom plotly ggplotly layout
 #'
 #' @export
 tsggplotly <- function(p, ...) {
-  p <- ggplotly(p)
-  p <- layout(p,
+  p <- plotly::ggplotly(p)
+  p <- plotly::layout(p,
     xaxis = list(ticks = ""),
     font = list(family = "Verdana"),
     title = list(font = list(family = "Verdana")),

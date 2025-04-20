@@ -29,6 +29,10 @@ init_tsggplot_theme(
   panel.grid.major.x = element_blank(),
   panel.grid.major.y = element_line(color = colors$ETH_Grey$`20`, linewidth = 0.5),
   panel.grid.minor = element_blank(),
+  plot.title = element_text(size = 20, face = "bold"),
+  plot.subtitle = element_text(size = 13),
+  plot.caption = element_text(),
+  plot.tag = element_text(size = 13),
   sum_as_line = FALSE,
   sum_legend = "sum",
   sum_line_color = c(ETH_Petrol_100 = colors$ETH_Petrol$`100`),
@@ -66,41 +70,16 @@ init_tsggplot_theme(
     colors$ETH_Purple$`60`, ETH_Petrol_60 = colors$ETH_Petrol$`60`, ETH_Purple_100 =
     colors$ETH_Purple$`100`, ETH_Petrol_100 = colors$ETH_Petrol$`100`),
   line_to_middle = TRUE,
-  margins = c(NA, 7, 12, 7),
   NA_continue_line = FALSE,
-  output_wide = FALSE,
-  plot.title = element_text(size = 20, face = "bold"),
-  plot.subtitle = element_text(size = 13),
-  plot.caption = element_text(),
-  plot.tag = element_text(size = 13),
   point_symbol = 1:18,
   pointsize = 12,
   preferred_y_gap_sizes = c(25, 20, 15, 10, 5, 2.5, 1, 0.5),
   quarterly_ticks = TRUE,
   range_must_not_cross_zero = TRUE,
   show_points = FALSE,
-  subtitle_adj = 0,
-  subtitle_adj_r = 0.9,
-  subtitle_cex = 1,
-  subtitle_margin = 2,
-  subtitle_outer = FALSE,
-  subtitle_transform = "toupper",
-  tcl_quarterly_ticks = -0.4,
-  tcl_y_ticks = -0.75,
-  tcl_yearly_ticks = -0.75,
-  title_adj = 0,
-  title_cex.main = 1,
-  title_margin = 5,
-  title_outer = FALSE,
-  title_transform = NA,
-  total_bar_margin_pct = 0.2,
-  use_bar_gap_in_groups = FALSE,
-  xaxs = "i",
-  y_las = 2,
   y_range_min_size = NULL,
   y_tick_force_integers = FALSE,
   y_tick_margin = 0.15,
-  yaxs = "i",
   yearly_ticks = TRUE,
   ...
 )
@@ -152,7 +131,14 @@ for right y-axis text labels.}
 \item{axis.ticks.x.bottom}{Appearance of bottom x-axis major ticks, defined
 using [ggplot2::element_line()]. Use to control line color, width, etc.}
 
+\item{axis.ticks.y}{Appearance of y-axis ticks, defined using
+[ggplot2::element_line()]. Use to control line color, width, etc.}
+
 \item{text}{all text elements (\code{\link[ggplot2:element_text]{element_text()}})}
+
+\item{linetype}{integer vector line type defaults to 1.}
+
+\item{linewidth}{integer vector line width, defaults to c(2,3,1,4,2,4).}
 
 \item{legend.justification}{anchor point for positioning legend inside plot
 ("center" or two-element numeric vector) or the justification according to
@@ -167,6 +153,23 @@ the plot area when positioned outside the plot}
 \item{panel.background}{background of plotting area, drawn underneath plot
 (\code{\link[ggplot2:element_rect]{element_rect()}}; inherits from \code{rect})}
 
+\item{panel.grid.major.x}{ggplot2 element_blank for major x-axis grid lines.}
+
+\item{panel.grid.major.y}{ggplot2 element_line for major y-axis grid lines.}
+
+\item{panel.grid.minor}{ggplot2 element_blank for minor grid lines.}
+
+\item{plot.title}{ggplot2 element_text for bold plot titles of size 20.}
+
+\item{plot.subtitle}{plot subtitle (text appearance) (\code{\link[ggplot2:element_text]{element_text()}};
+inherits from \code{title}) left-aligned by default}
+
+\item{plot.caption}{caption below the plot (text appearance)
+(\code{\link[ggplot2:element_text]{element_text()}}; inherits from \code{title}) right-aligned by default}
+
+\item{plot.tag}{upper-left label to identify a plot (text appearance)
+(\code{\link[ggplot2:element_text]{element_text()}}; inherits from \code{title}) left-aligned by default}
+
 \item{sum_as_line}{logical should the sum of stacked time series be
 displayed as a line on top of stacked bar charts. Defaults to FALSE,}
 
@@ -175,6 +178,10 @@ to NULL to not label the line at all.}
 
 \item{sum_line_color}{character hex color of of sum_as_line, defaults
 "#91056a".}
+
+\item{sum_line_linetype}{integer line type of sum_as_line, defaults to 1.}
+
+\item{sum_line_linewidth}{integer line width of sum_as_line, defaults to 3.}
 
 \item{axis_x_label_dt}{numeric The distance between labels on the x axis in
 years. Defaults to 2.}
@@ -188,6 +195,12 @@ calculated? This will be overridden if margins[1] is not NA. Default FALSE}
 
 \item{band_fill_color}{character vector of hex colors for the bands if
 left_as_band == TRUE.}
+
+\item{bar_border_color}{character hex colors for the border around bars in
+bar charts.}
+
+\item{bar_border_linewidth}{numeric The line width of the borders of bars in
+barplots. Default 1}
 
 \item{bar_fill_color}{character vector of hex colors for the bars if
 left_as_bar == TRUE}
@@ -220,6 +233,11 @@ grid count? Defaults to FALSE.}
 \item{highlight_window}{logical should a particular time span be
 highlighted by different background color. Defaults to FALSE.}
 
+\item{highlight_window_alpha}{numeric for transparancy of highlight window.}
+
+\item{highlight_window_color}{character hex color code of highlight
+background, defaults to "#e9e9e9".}
+
 \item{highlight_window_end}{integer vector highlight window start position,
 defaults to NA.,}
 
@@ -234,28 +252,9 @@ position, defaults to NA.}
 \item{line_to_middle}{logical try to put a line into the middle of the
 plot. defaults to TRUE.}
 
-\item{margins}{integer vector defaults to c(NA, 4, 3, 3) + 0.1. Set
-margins[1] to NA to automatically determine the bottom margin such that the
-legend fits (if either auto_legend or auto_bottom_margin are TRUE)}
-
 \item{NA_continue_line}{boolean If true, NA values in time series are
 ignored and a continuous line is drawn. Multiple values to turn this
 behavior on/off for individual series are supported. Default FALSE}
-
-\item{output_wide}{logical Should the output file be in a wide format
-(16:9) or (4:3)? Only if output_format is not "plot". Default FALSE}
-
-\item{plot.title}{plot title (text appearance) (\code{\link[ggplot2:element_text]{element_text()}}; inherits
-from \code{title}) left-aligned by default}
-
-\item{plot.subtitle}{plot subtitle (text appearance) (\code{\link[ggplot2:element_text]{element_text()}};
-inherits from \code{title}) left-aligned by default}
-
-\item{plot.caption}{caption below the plot (text appearance)
-(\code{\link[ggplot2:element_text]{element_text()}}; inherits from \code{title}) right-aligned by default}
-
-\item{plot.tag}{upper-left label to identify a plot (text appearance)
-(\code{\link[ggplot2:element_text]{element_text()}}; inherits from \code{title}) left-aligned by default}
 
 \item{point_symbol}{integer or character The symbol to use for marking data
 points. Multiple values can be supplied to set the symbol for each
@@ -275,57 +274,6 @@ to do not find ranges below zero. Defaults to TRUE.}
 point_symbol at the data points. Multiple values can be supplied to
 enable/disable showing points for each individual series Default FALSE}
 
-\item{subtitle_adj}{numeric same as base \code{\link{plot}} parameter,
-defaults to 0.}
-
-\item{subtitle_adj_r}{numeric same as base \code{\link{plot}} parameter,
-defaults to .9}
-
-\item{subtitle_cex}{numeric same as base \code{\link{plot}} parameter,
-defaults to 1.}
-
-\item{subtitle_margin}{numeric How far above the plot the title is placed
-in \% of the device height. Defaults to 2.}
-
-\item{subtitle_outer}{logical same as base \code{\link{plot}} parameter,
-defaults to TRUE}
-
-\item{subtitle_transform}{function to transform the subtitle, defaults to
-"toupper",}
-
-\item{tcl_quarterly_ticks}{numeric, length of quarterly ticks. See
-tcl_yearly_ticks, defaults to -0.4}
-
-\item{tcl_y_ticks}{numeric Length of y ticks, see \code{tcl_yearly_ticks}.
-Default -0.75}
-
-\item{tcl_yearly_ticks}{numeric, length of yearly ticks. Analogous to
-\code{cex} for \code{\link{axis}}. defaults to -0.75.}
-
-\item{title_adj}{numeric, same as base \code{\link{plot}} parameter,
-defaults to 0.}
-
-\item{title_cex.main}{numeric, same as base \code{\link{plot}} parameter
-defaults to 1}
-
-\item{title_margin}{numeric How far above the plot the title is placed in
-\% of the device height. Default 8}
-
-\item{title_outer}{logical, currently undocumented. Defaults to TRUE.}
-
-\item{title_transform}{function to transform the title, defaults to NA.}
-
-\item{total_bar_margin_pct}{numeric definition as in base plot, defaults to
-"i", defaults to .2,}
-
-\item{use_bar_gap_in_groups}{logical Should there be gaps of size bar_gap
-between the bars in a group if group_bar_chart = TRUE? Default FALSE}
-
-\item{xaxs}{character axis definition as in base plot, defaults to "i".}
-
-\item{y_las}{integer, same as base \code{\link{plot}} parameter defaults to
-2.}
-
 \item{y_range_min_size}{= NULL  ,}
 
 \item{y_tick_force_integers}{logical Should y ticks be forced (rounded
@@ -335,97 +283,12 @@ down) to whole numbers? Default FALSE}
 needs to be clean, i.e., without lines or bars. Defaults to 0.15 (15
 percent).}
 
-\item{yaxs}{character axis definition as in base plot, defaults to "i".}
+\item{yearly_ticks}{logical, should yearly ticks be shown. Defaults to TRUE.}
 
-\item{...}{additional element specifications not part of base ggplot2. In general,
-these should also be defined in the \verb{element tree} argument. \link[rlang:splice]{Splicing} a list is also supported.}
+\item{...}{additional ggplot2 theme arguments}
 
-\item{bar_border}{character hex colors for the border around bars in bar
-charts.}
-
-\item{bar_border_lwd}{numeric The line width of the borders of bars in
-barplots. Default 1}
-
-\item{bar_group_gap}{numeric The width of the gap between groups of bars if
-group_bar_chart is TRUE.}
-
-\item{default_bottom_margin}{numeric The bottom margin to use when
-margins[1] is NA but neither auto_legend nor auto_bottom_margin are true.
-Default 3}
-
-\item{grids_x_color}{character hex color of grids. Defaults to gray.}
-
-\item{grids_x_lwd}{integer line width of the x grids. Defaults to 0.5.}
-
-\item{grids_x_show}{logical should x_grids be shown. Defaults to FALSE}
-
-\item{grids_y_color}{character hex color of grids. Defaults to gray.}
-
-\item{grids_y_lwd}{integer line width of the y grids. Defaults to 0.5.}
-
-\item{grids_y_show}{logical should y_grids be shown. Defaults to TRUE.}
-
-\item{highlight_color}{character hex color code of highlight background,
-defaults to "#e9e9e9".}
-
-\item{highlight_y_values}{numeric Vector of y values to highlight with a
-bold line}
-
-\item{highlight_y_lwd}{integer Line width of the lines to highlight y
-values}
-
-\item{highlight_y_color}{character Color of the lines to highlight y values}
-
-\item{legend_all_left}{logical Should all legend entries be drawn on the
-left side of the plot? Default FALSE}
-
-\item{legend_box_size}{numeric The size of the squares denoting bar colors
-in the legend. Default 2}
-
-\item{legend_col}{integer number of columns for the legend, defaults to 3.}
-
-\item{legend_font_size}{numeric passed on to the \code{cex} parameter of
-\code{\link{legend}}, defaults to 1}
-
-\item{legend_intersp_x}{numeric same as base \code{\link{legend}}
-parameter, defaults to 1}
-
-\item{legend_intersp_y}{numeric same as base \code{\link{legend}}
-parameter, defaults to 1}
-
-\item{legend_margin_bottom}{numeric Distance between bottom of legend and
-bottom of graphic in \% of device height, default 5}
-
-\item{legend_margin_top}{numeric Distance between bottom of plot and top of
-legends \% of device height, defaults to 12}
-
-\item{legend_seg.len}{numeric Length of the line segments in the legend.
-Default 2}
-
-\item{lty}{integer vector line type defaults to 1.}
-
-\item{lwd}{integer vector line width, defaults to c(2,3,1,4,2,4).}
-
-\item{lwd_box}{numeric Line width of the box around the plot. Default 1.5}
-
-\item{lwd_quarterly_ticks}{numeric, width of yearly ticks, defaults to 1.}
-
-\item{lwd_x_axis}{numeric The line width of the x axis. Default 1.5}
-
-\item{lwd_y_axis}{numeric The line width of the y axis. Default 1.5}
-
-\item{lwd_y_ticks}{numeric Line width of the y ticks. Default 1.5}
-
-\item{lwd_yearly_ticks}{numeric, width of yearly ticks, defaults to 1.5.}
-
-\item{show_left_y_axis}{logical: should left y axis be shown, defaults to
-TRUE.}
-
-\item{sum_line_lty}{integer line type of sum_as_line, defaults to 1.}
-
-\item{sum_line_lwd}{integer line width of sum_as_line, defaults to 3.}
-
-\item{use_box}{logical use a box around the plot.}
+\item{axis.text.y}{An `element_text` object specifying styling for the
+y-axes text labels.}
 }
 \description{
 The \code{\link{tsggplot}} methods provide a theme argument which is used to

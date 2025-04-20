@@ -85,8 +85,8 @@ to TRUE.}
 to a file? Possible values are "plot" for screen output and "pdf".
 Default "plot"}
 
-\item{filename}{character Path to the file to be written if
-\code{output_format} is "pdf". Default "tsplot.pdf"}
+\item{save}{list containing filename (default tsplot) used when output_format
+is not "plot". See [ggplot2::ggsave]] for list of arguments.}
 }
 \description{
 Conveniently plot time series.

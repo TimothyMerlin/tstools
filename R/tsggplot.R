@@ -42,10 +42,12 @@
 #' @param output_format character Should the plot be drawn on screen or written
 #'        to a file? Possible values are "plot" for screen output and "pdf".
 #'        Default "plot"
-#' @param filename character Path to the file to be written if
-#'        \code{output_format} is "pdf". Default "tsplot.pdf"
+#' @param save list containing filename (default tsplot) used when output_format
+#'        is not "plot". See [ggplot2::ggsave]] for list of arguments.
 #'
-#' @import ggplot2
+#' @importFrom ggplot2 aes coord_cartesian element_blank element_line element_text geom_rect geom_segment ggplot
+#' ggplot_build ggsave guides guide_axis guide_legend margin sec_axis scale_color_manual
+#' scale_fill_manual scale_x_continuous scale_y_continuous waiver .data
 #'
 #' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
 #'          caption, tag)
@@ -607,10 +609,10 @@ tsggplot.list <- function(...,
     p <- p + geom_rect(
       data = rect_df,
       aes(
-        xmin = xmin,
-        xmax = xmax,
-        ymin = ymin,
-        ymax = ymax,
+        xmin = .data$xmin,
+        xmax = .data$xmax,
+        ymin = .data$ymin,
+        ymax = .data$ymax,
         alpha = theme$highlight_window_alpha,
       ),
       fill = theme$highlight_window_color,
@@ -697,10 +699,7 @@ tsggplot.list <- function(...,
 
     # Remove limits from scale_y_continuous and add coord_cartesian
     p <- p + scale_y_continuous(
-      labels = if (!inherits(
-        theme$axis.line.y.left,
-        "element_blank"
-      )) {
+      labels = if (!inherits(theme$axis.line.y.left, "element_blank")) {
         left_y$y_ticks
       } else {
         NULL
@@ -710,15 +709,11 @@ tsggplot.list <- function(...,
       } else {
         NULL
       },
-      minor = NULL,
-      sec.axis = if (!inherits(theme$axis.line.y.right, "element_blank") &&
-        !is.null(tsr)) {
+      minor_breaks = NULL,
+      sec.axis = if (!inherits(theme$axis.line.y.right, "element_blank") && !is.null(tsr)) {
         sec_axis(
-          name = labs$y_right,
-          transform = ~ scale(
-            ., left_min, left_max,
-            right_min, right_max
-          )
+          transform = ~ scale(., left_min, left_max, right_min, right_max),
+          name = labs$y_right
         )
       } else {
         waiver()
@@ -728,7 +723,7 @@ tsggplot.list <- function(...,
   } else {
     p <- p +
       scale_y_continuous(
-        minor = NULL,
+        minor_breaks = NULL,
         expand = c(0, 0)
       )
   }
@@ -746,8 +741,8 @@ tsggplot.list <- function(...,
       brks <- global_x$yearly_tick_pos
       tick_spacing <- diff(brks)[1]
       mid_all <- c(
-        (head(brks, -1) + tail(brks, -1)) / 2,
-        tail(brks, 1) + tick_spacing / 2
+        (brks[-length(brks)] + brks[-1]) / 2,
+        brks[length(brks)] + tick_spacing / 2
       )
       is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
       mid_pts <- mid_all[is_valid]
@@ -789,8 +784,13 @@ tsggplot.list <- function(...,
 
         geom_args <- c(
           list(
-            data        = tick_df,
-            mapping     = aes(x = x, xend = xend, y = y, yend = yend),
+            data = tick_df,
+            mapping = aes(
+              x = .data$x,
+              y = .data$y,
+              xend = .data$xend,
+              yend = .data$yend
+            ),
             inherit.aes = FALSE
           ),
           segment_x_bottom

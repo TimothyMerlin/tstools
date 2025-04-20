@@ -24,7 +24,7 @@ draw_ts_ci <- function(ci, theme) {
   }
 }
 
-#' @importFrom ggplot2 geom_polygon aes
+#' @importFrom ggplot2 aes geom_polygon scale_fill_manual .data
 draw_tsggplot_ci <- function(p, ci, theme) {
   if (!is.null(ci)) {
     ci_names <- lapply(names(ci), function(x) {
@@ -75,10 +75,10 @@ draw_tsggplot_ci <- function(p, ci, theme) {
           geom_polygon(
             data = ci_df,
             aes(
-              x = x,
-              y = y,
-              group = group,
-              fill = group
+              x = .data$x,
+              y = .data$y,
+              group = .data$group,
+              fill = .data$group
             ),
             show.legend = TRUE
           )

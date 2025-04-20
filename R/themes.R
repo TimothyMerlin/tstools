@@ -332,6 +332,8 @@ init_tsplot_print_theme <- function(
 #' @param axis.text.x.pos A string indicating the horizontal alignment
 #' of x-axis text. Use `"mid"` to center-align (`hjust = 0`), or
 #' `"start"` for alignment.
+#' @param axis.text.y An `element_text` object specifying styling for the
+#' y-axes text labels.
 #' @param axis.text.y.left An `element_text` object specifying styling
 #' for left y-axis text labels.
 #' @param axis.text.y.right An `element_text` object specifying styling
@@ -340,6 +342,12 @@ init_tsplot_print_theme <- function(
 #' [ggplot2::unit()], e.g., `unit(10, "pt")`.
 #' @param axis.ticks.x.bottom Appearance of bottom x-axis major ticks, defined
 #' using [ggplot2::element_line()]. Use to control line color, width, etc.
+#' @param axis.ticks.y Appearance of y-axis ticks, defined using
+#' [ggplot2::element_line()]. Use to control line color, width, etc.
+#' @param panel.grid.major.x ggplot2 element_blank for major x-axis grid lines.
+#' @param panel.grid.major.y ggplot2 element_line for major y-axis grid lines.
+#' @param panel.grid.minor ggplot2 element_blank for minor grid lines.
+#' @param plot.title ggplot2 element_text for bold plot titles of size 20.
 #' @param axis_x_tick_dt numeric The distance between ticks on the x axis in
 #' years. The first tick will always be at the start of the plotted time
 #' series. If neq 1 then quarterly ticks will not be shown. Defaults to 1.
@@ -347,16 +355,14 @@ init_tsplot_print_theme <- function(
 #' years. Defaults to 2.
 #' @param band_fill_color character vector of hex colors for the bands if
 #' left_as_band == TRUE.
-#' @param bar_border character hex colors for the border around bars in bar
-#' charts.
+#' @param bar_border_color character hex colors for the border around bars in
+#' bar charts.
 #' @param bar_border_linewidth numeric The line width of the borders of bars in
 #' barplots. Default 1
 #' @param bar_fill_color character vector of hex colors for the bars if
 #' left_as_bar == TRUE
 #' @param bar_gap numeric The width of the gap between bars, in \% of space
 #' allotted to the bar.
-#' @param bar_group_gap numeric The width of the gap between groups of bars if
-#' group_bar_chart is TRUE.
 #' @param ci_alpha Numeric 0-255, numeric 0-1 or hex 00-FF, transparency of
 #' the confidence interval bands
 #' @param ci_colors Named colors or hex values Colors of the confidence
@@ -369,10 +375,14 @@ init_tsplot_print_theme <- function(
 #' Has no effect if fill_year_with_nas == FALSE. Default FALSE
 #' @param fill_year_with_nas logical should year be filled up with missing in
 #' order to plot the entire year on the axis. Defaults to TRUE,
-#' @param highlight_color character hex color code of highlight background,
-#' defaults to "#e9e9e9".
+#' @param grids_x_count integer vector preferred x grid counts c(5,6,8,10).
+#' @param grids_x_count_strict logical should we strictly stick to preferred x
+#' grid count? Defaults to FALSE.
 #' @param highlight_window logical should a particular time span be
 #' highlighted by different background color. Defaults to FALSE.
+#' @param highlight_window_alpha numeric for transparancy of highlight window.
+#' @param highlight_window_color character hex color code of highlight
+#' background, defaults to "#e9e9e9".
 #' @param highlight_window_end integer vector highlight window start position,
 #' defaults to NA.,
 #' @param highlight_window_freq integer frequency of the highlight window
@@ -387,8 +397,6 @@ init_tsplot_print_theme <- function(
 #' @param NA_continue_line boolean If true, NA values in time series are
 #' ignored and a continuous line is drawn. Multiple values to turn this
 #' behavior on/off for individual series are supported. Default FALSE
-#' @param output_wide logical Should the output file be in a wide format
-#' (16:9) or (4:3)? Only if output_format is not "plot". Default FALSE
 #' @param point_symbol integer or character The symbol to use for marking data
 #' points. Multiple values can be supplied to set the symbol for each
 #' individual series See \code{pch} in \code{?par}. Default 1:18
@@ -409,12 +417,14 @@ init_tsplot_print_theme <- function(
 #' "#91056a".
 #' @param sum_line_linetype integer line type of sum_as_line, defaults to 1.
 #' @param sum_line_linewidth integer line width of sum_as_line, defaults to 3.
+#' @param yearly_ticks logical, should yearly ticks be shown. Defaults to TRUE.
 #' @param y_range_min_size = NULL  ,
 #' @param y_tick_force_integers logical Should y ticks be forced (rounded
 #' down) to whole numbers? Default FALSE
 #' @param y_tick_margin numeric, minimal percentage of horizontal grid that
 #' needs to be clean, i.e., without lines or bars. Defaults to 0.15 (15
 #' percent).
+#' @param ... additional ggplot2 theme arguments
 #'
 #' @inheritParams ggplot2::theme
 #'
@@ -429,7 +439,7 @@ init_tsplot_print_theme <- function(
 #' tsggplot(KOF$kofbarometer, theme = tt)
 #' }
 #'
-#' @import ggplot2
+#' @importFrom ggplot2 element_blank element_line element_text rel unit
 #'
 #' @seealso \href{https://ggplot2.tidyverse.org/reference/theme.html}{ggplot2 theme vignette}
 #'
