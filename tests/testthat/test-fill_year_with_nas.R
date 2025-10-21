@@ -22,7 +22,7 @@ test_that("ts, fill up start", {
   expect_equal(out[1:3], rep(NA_real_, 3))
 })
 
-test_that("ts, fills year and adds 1 period", {
+test_that("xts, fills year and adds 1 period", {
   data("sample_matrix", package = "xts")
   x <- xts::as.xts(sample_matrix)
   out <- fill_year_with_nas(x)
@@ -51,7 +51,7 @@ test_that("ts, fills year and adds 1 period", {
   expect_true(any(is.na(utils::tail(out, 2))))
 })
 
-test_that("ts, fills up start", {
+test_that("xts, fills up start", {
   data("sample_matrix", package = "xts")
   x <- xts::as.xts(sample_matrix)
   out <- fill_year_with_nas(x, add_periods = 0, fill_up_start = TRUE)
