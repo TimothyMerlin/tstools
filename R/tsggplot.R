@@ -554,7 +554,7 @@ tsggplot.list <- function(...,
     do.call(ggplot2::theme, theme_args)
 
   if (theme$highlight_window) {
-    p <- draw_tsggplot_highlight(p, global_x, theme, output_format)
+    p <- draw_tsggplot_highlight(p, global_x, left_y, theme, output_format)
   }
 
   # Split theme into left/right
@@ -712,10 +712,6 @@ tsggplot.list <- function(...,
           y    = y_min,
           yend = y_min + tick_h
         )
-
-        segment_x_bottom <- segment_x_bottom[!vapply(segment_x_bottom, is.null, logical(1))]
-        segment_x_bottom$inherit.blank <- NULL
-        segment_x_bottom$arrow <- NULL
 
         geom_args <- c(
           list(

@@ -1,5 +1,5 @@
 #' @importFrom ggplot2 aes geom_rect .data
-draw_tsggplot_highlight <- function(p, global_x, theme, output_format) {
+draw_tsggplot_highlight <- function(p, global_x, left_y, theme, output_format) {
   hlw_start <- theme$highlight_window_start
   if (!any(is.na(hlw_start))) {
     if (!is.list(hlw_start)) {
