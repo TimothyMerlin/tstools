@@ -35,7 +35,41 @@ fill_year_with_nas.ts <- function(x, add_periods = 1,
 #' @export
 fill_year_with_nas.xts <- function(x, add_periods = 1,
                                    fill_up_start = FALSE) {
-  stop("xts support for filling up NAs not supported yet.")
+  if (!xts::is.xts(x)) stop("Input must be an xts object.")
+  if (add_periods < 0) stop("add_periods must be >= 0.")
+
+  idx <- zoo::index(x)
+  tz <- attr(idx, "tzone")
+
+  per <- xts::periodicity(x)$scale
+  step <- switch(per,
+    "daily" = "day",
+    "weekly" = "week",
+    "monthly" = "month",
+    "quarterly" = "quarter",
+    stop("Unsupported frequency: ", per)
+  )
+
+  start_d <- as.Date(start(x), tz = tz)
+  end_d <- as.Date(end(x), tz = tz)
+
+  year_start <- as.Date(paste0(format(start_d, "%Y"), "-01-01"))
+  year_end <- as.Date(paste0(format(end_d, "%Y"), "-12-31"))
+
+  seq_start <- if (fill_up_start) year_start else start_d
+  full_idx <- seq(seq_start, year_end, by = step)
+
+  if (add_periods > 0) {
+    extra_idx <- seq(
+      from = utils::tail(full_idx, 1),
+      by = step, length.out = add_periods + 1
+    )[-1]
+    full_idx <- c(full_idx, extra_idx)
+  }
+
+  full_idx <- as.POSIXct(paste(full_idx, "00:00:00"), format = "%Y-%m-%d %H:%M:%S", tz = tz)
+
+  merge(x, full_idx)
 }
 
 
