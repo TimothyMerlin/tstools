@@ -91,20 +91,37 @@ getGlobalXInfo <- function(tsl, tsr, fill_up, fill_up_start, dt, manual_ticks) {
 getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt, manual_ticks) {
   global_x <- list()
 
+  # Combine left and right series
   if (!is.null(tsr)) {
     all_ts <- c(tsl, tsr)
   } else {
     all_ts <- tsl
   }
 
+  # Helper to extract time/index for ts or xts
+  get_time_index <- function(x) {
+    if (inherits(x, "ts")) {
+      time(x)
+    } else if (inherits(x, "xts")) {
+      as.numeric(format(index(x), "%Y")) +
+        (as.numeric(format(index(x), "%m")) - 1) / 12
+    } else {
+      stop("Input must be 'ts' or 'xts'.")
+    }
+  }
+
   if (is.null(manual_ticks)) {
     if (fill_up) {
-      all_ts <- lapply(all_ts, fill_year_with_nas, fill_up_start = fill_up_start)
+      all_ts <- lapply(all_ts, function(x) {
+        fill_year_with_nas(x, fill_up_start)
+      })
     }
 
-    global_x$x_range <- range(unlist(lapply(all_ts, time)))
+    # Compute combined range
+    all_time <- unlist(lapply(all_ts, get_time_index))
+    global_x$x_range <- range(all_time)
 
-    # Set the lower bound to correspond with a quarterly tick, for pretties
+    # Align to quarters
     global_x$x_range[1] <- trunc(global_x$x_range[1] * 4) / 4
     if (fill_up) {
       global_x$x_range[2] <- trunc(global_x$x_range[2] * 4 + 0.76) / 4
@@ -112,15 +129,21 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
       global_x$x_range[2] <- trunc(global_x$x_range[2] * 4 + 1) / 4
     }
 
-    # Yearly tick positions
-    global_x$yearly_tick_pos <-
-      seq(floor(global_x$x_range[1]), global_x$x_range[2], tick_dt)
+    # Tick positions and labels
+    global_x$yearly_tick_pos <- seq(
+      floor(global_x$x_range[1]),
+      global_x$x_range[2],
+      tick_dt
+    )
 
-    # labels
-    labels <-
-      seq(floor(global_x$x_range[1]), global_x$x_range[2], label_dt)
+    labels <- seq(
+      floor(global_x$x_range[1]),
+      global_x$x_range[2],
+      label_dt
+    )
 
-    global_x$year_labels_start <- ifelse(global_x$yearly_tick_pos %in% labels,
+    global_x$year_labels_start <- ifelse(
+      global_x$yearly_tick_pos %in% labels,
       global_x$yearly_tick_pos, ""
     )
   } else {
@@ -129,27 +152,19 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     global_x$year_labels_start <- manual_ticks
   }
 
+  # Year bounds
   global_x$min_year <- trunc(global_x$x_range[1])
   global_x$max_year <- trunc(global_x$x_range[2])
 
+  # Quarterly ticks
   if (tick_dt == 1) {
     global_x$quarterly_tick_pos <- seq(
       from = global_x$min_year,
       to = global_x$max_year,
-      by = .25
+      by = 0.25
     )
-    # global_x$year_labels_middle_q <-
-    #  ifelse(global_x$quarterly_tick_pos - floor(global_x$quarterly_tick_pos) == 0.5,
-    #    as.character(floor(global_x$quarterly_tick_pos)),
-    #    NA
-    #  )
-    # global_x$year_labels_middle_m <- ifelse(global_x$monthly_tick_pos -
-    #                                       floor(global_x$monthly_tick_pos) == 0.5,
-    #                                     as.character(floor(global_x$monthly_tick_pos)),
-    #                                      NA)
+    global_x$year_labels_middle_q <- NULL
   } else {
-    # global_x$quarterly_tick_pos <- NA
-    # global_x$year_labels_middle_q <- NA
     global_x$quarterly_tick_pos <- NULL
     global_x$year_labels_middle_q <- NULL
   }
