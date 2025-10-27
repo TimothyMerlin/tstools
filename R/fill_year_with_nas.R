@@ -38,8 +38,13 @@ fill_year_with_nas.xts <- function(x, add_periods = 1,
   if (!xts::is.xts(x)) stop("Input must be an xts object.")
   if (add_periods < 0) stop("add_periods must be >= 0.")
 
-  idx <- zoo::index(x)
-  tz <- attr(idx, "tzone")
+  tz <- attr(x, "tzone")
+  if (is.null(tz)) {
+    tz <- attr(attr(x, "index"), "tzone")
+  }
+  if (is.null(tz)) {
+    tz <- ""
+  }
 
   per <- xts::periodicity(x)$scale
   step <- switch(per,
@@ -50,8 +55,20 @@ fill_year_with_nas.xts <- function(x, add_periods = 1,
     stop("Unsupported frequency: ", per)
   )
 
-  start_d <- as.Date(start(x), tz = tz)
-  end_d <- as.Date(end(x), tz = tz)
+  start_d <- switch(per,
+    "monthly"   = zoo::as.Date(zoo::as.yearmon(start(x)), tz = tz),
+    "quarterly" = zoo::as.Date(zoo::as.yearqtr(start(x)), tz = tz),
+    "weekly"    = as.Date(start(x), tz = tz),
+    "daily"     = as.Date(start(x), tz = tz),
+    stop("Unsupported frequency: ", per)
+  )
+  end_d <- switch(per,
+    "monthly"   = zoo::as.Date(zoo::as.yearmon(end(x)), tz = tz),
+    "quarterly" = zoo::as.Date(zoo::as.yearqtr(end(x)), tz = tz),
+    "weekly"    = as.Date(end(x), tz = tz),
+    "daily"     = as.Date(end(x), tz = tz),
+    stop("Unsupported frequency: ", per)
+  )
 
   year_start <- as.Date(paste0(format(start_d, "%Y"), "-01-01"))
   year_end <- as.Date(paste0(format(end_d, "%Y"), "-12-31"))

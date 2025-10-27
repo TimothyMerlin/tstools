@@ -88,6 +88,7 @@ getGlobalXInfo <- function(tsl, tsr, fill_up, fill_up_start, dt, manual_ticks) {
 }
 
 
+
 getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt, manual_ticks) {
   global_x <- list()
 
@@ -98,22 +99,35 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     all_ts <- tsl
   }
 
-  # Helper to extract time/index for ts or xts
+  days_in_year <- function(y) {
+    ifelse(((y %% 4 == 0) & (y %% 100 != 0)) | (y %% 400 == 0), 366, 365)
+  }
   get_time_index <- function(x) {
     if (inherits(x, "ts")) {
-      time(x)
-    } else if (inherits(x, "xts")) {
-      as.numeric(format(index(x), "%Y")) +
-        (as.numeric(format(index(x), "%m")) - 1) / 12
-    } else {
-      stop("Input must be 'ts' or 'xts'.")
+      return(time(x))
     }
+    if (!inherits(x, "xts")) stop("Input must be 'ts' or 'xts'.")
+
+    idx <- zoo::index(x)
+    tcl <- attr(attr(x, "index"), "tclass")
+    if (is.null(tcl)) tcl <- class(idx)
+
+    if ("yearqtr" %in% tcl) {
+      return(as.numeric(zoo::as.yearqtr(idx)))
+    }
+    if ("yearmon" %in% tcl) {
+      return(as.numeric(zoo::as.yearmon(idx)))
+    }
+
+    y <- as.numeric(format(idx, "%Y"))
+    d <- as.numeric(format(idx, "%j"))
+    y + (d - 1) / days_in_year(y)
   }
 
   if (is.null(manual_ticks)) {
     if (fill_up) {
       all_ts <- lapply(all_ts, function(x) {
-        fill_year_with_nas(x, fill_up_start)
+        fill_year_with_nas(x, fill_up_start = fill_up_start)
       })
     }
 
@@ -159,14 +173,39 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
   # Quarterly ticks
   if (tick_dt == 1) {
     global_x$quarterly_tick_pos <- seq(
-      from = global_x$min_year,
-      to = global_x$max_year,
+      from = as.numeric(global_x$x_range[1]),
+      to = as.numeric(global_x$x_range[2]),
       by = 0.25
     )
     global_x$year_labels_middle_q <- NULL
   } else {
     global_x$quarterly_tick_pos <- NULL
     global_x$year_labels_middle_q <- NULL
+  }
+
+  global_x$dominant_freq <- {
+    scales <- sapply(all_ts, function(x) {
+      if (inherits(x, "xts")) xts::periodicity(x)$scale else "ts"
+    })
+    if ("daily" %in% scales) {
+      "daily"
+    } else if ("weekly" %in% scales) {
+      "weekly"
+    } else if ("monthly" %in% scales) {
+      "monthly"
+    } else if ("quarterly" %in% scales) {
+      "quarterly"
+    } else if ("ts" %in% scales) {
+      "ts"
+    } else {
+      "annual"
+    }
+  }
+
+  if (global_x$dominant_freq %in% c("daily", "weekly") && !is.null(global_x$quarterly_tick_pos)) {
+    global_x$quarterly_tick_pos <- zoo::as.Date(zoo::as.yearqtr(global_x$quarterly_tick_pos))
+    global_x$yearly_tick_pos <- zoo::as.Date(zoo::as.yearqtr(global_x$yearly_tick_pos))
+    global_x$x_range <- global_x$x_range <- range(do.call(c, lapply(all_ts, zoo::index)))
   }
 
   global_x

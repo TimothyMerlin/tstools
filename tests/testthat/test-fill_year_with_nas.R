@@ -23,9 +23,10 @@ test_that("ts, fill up start", {
 })
 
 test_that("xts, fills year and adds 1 period", {
+  # daily
   data("sample_matrix", package = "xts")
   x <- xts::as.xts(sample_matrix)
-  out <- fill_year_with_nas(x)
+  out <- fill_year_with_nas(x, fill_up_start = FALSE)
 
   expect_s3_class(out, "xts")
 
@@ -52,8 +53,9 @@ test_that("xts, fills year and adds 1 period", {
 })
 
 test_that("xts, fills up start", {
-  data("sample_matrix", package = "xts")
-  x <- xts::as.xts(sample_matrix)
+  # monthly
+  x <- stats::window(AirPassengers, start = c(1949, 4))
+  x <- xts::as.xts(x)
   out <- fill_year_with_nas(x, add_periods = 0, fill_up_start = TRUE)
 
   expect_s3_class(out, "xts")
@@ -65,12 +67,12 @@ test_that("xts, fills up start", {
 
   # It should fill up start of the year
   first_idx <- zoo::index(utils::head(out, 1))
-  expect_equal(as.Date(first_idx, tz = ""), as.Date("2007-01-01"))
+  expect_equal(zoo::as.Date(first_idx, tz = ""), as.Date("1949-01-01"))
 
   # It should fill to the end of the year
   last_idx <- zoo::index(utils::tail(out, 1))
-  expect_equal(as.Date(last_idx, tz = ""), as.Date("2007-12-31"))
+  expect_equal(zoo::as.Date(last_idx, tz = ""), as.Date("1960-12-01"))
 
   # There should be NA rows beyond original data
-  expect_true(any(is.na(utils::tail(out, 2))))
+  expect_true(any(is.na(utils::head(out, 2))))
 })

@@ -504,12 +504,15 @@ test_that("tsggplot with highlight window", {
 })
 
 test_that("tsggplot, with series starting not at start of year", {
-  theme <- init_tsggplot_theme()
+  theme <- init_tsggplot_theme(fill_up_start = TRUE)
   p <- tsggplot(list(JohnsonJohnson = window(JohnsonJohnson, start = c(1960, 3))),
     theme = theme
   )
 
-  expect_equal(range(p$layers[[1]]$data$time), c(1960.625, 1980.875))
+  expect_equal(
+    range(p$layers[[1]]$data$time),
+    structure(c(1960.5, 1980.75), class = "yearqtr")
+  )
 
   # check axis x labels
   pb <- ggplot_build(p)
@@ -561,5 +564,43 @@ test_that("tsggplot, confidence intervals", {
       "80% ci for KOF Barometer TEST",
       "95% ci for KOF Barometer TEST"
     )
+  )
+})
+
+test_that("daily xts", {
+  data("sample_matrix", package = "xts")
+  x <- xts::as.xts(sample_matrix)
+
+  theme <- init_tsggplot_theme()
+
+  p <- tsggplot(list("KOF Barometer" = x$Open),
+    theme = theme
+  )
+})
+
+test_that("xts", {
+  data("sample_matrix", package = "xts")
+  x <- xts::as.xts(sample_matrix)
+
+  theme <- init_tsggplot_theme(
+    ci_alpha = 0.2,
+    ci_colors = c("red", "blue"),
+    ci_legend_label = "%ci_value%% ci for %series% TEST",
+    fill_year_with_nas = TRUE
+  )
+
+  # Define confidence intervals
+  ci <- list(
+    "KOF Barometer" = list(
+      "95" = list(
+        lb = x$Low,
+        ub = x$High
+      )
+    )
+  )
+
+  p <- tsggplot(list("KOF Barometer" = x$Open),
+    ci = ci,
+    theme = theme
   )
 })

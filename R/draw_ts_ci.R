@@ -51,16 +51,17 @@ draw_tsggplot_ci <- function(p, ci, theme) {
 
       for (ci_level_i in seq_along(ci_series)) {
         ci_level <- ci_series[[ci_level_i]]
-        xx <- as.numeric(time(ci_level$lb))
+        xx <- time(ci_level$lb)
 
-        frq <- frequency(ci_level$lb)
-
-        if (theme$line_to_middle) {
-          xx <- xx + (1 / frq) / 2
+        if (inherits(xx, "POSIXct")) {
+          xx <- as.POSIXct(c(xx, rev(xx)))
+        } else {
+          xx <- as.numeric(xx)
+          if (theme$line_to_middle) xx <- xx + (1 / frequency(ci_level$lb)) / 2
         }
 
-        yy_low <- ci_level$lb
-        yy_high <- ci_level$ub
+        yy_low <- as.numeric(ci_level$lb)
+        yy_high <- as.numeric(ci_level$ub)
 
         group_id <- interaction(ci_series_i, ci_level_i, drop = TRUE)
         group_ids <- c(group_ids, as.character(group_id))

@@ -10,7 +10,7 @@ init_tsggplot_theme(
   axis.line.y.left = element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
   axis.line.y.right = element_line(color = colors$ETH_Grey$`40`, linewidth = 0.5),
   axis.minor.ticks.length = rel(0.3),
-  axis.minor.ticks.x.bottom = element_line(),
+  axis.minor.ticks.x.bottom = aes(),
   axis.text = element_text(),
   axis.text.x = element_text(size = 13),
   axis.text.x.pos = "mid",

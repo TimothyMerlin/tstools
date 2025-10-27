@@ -54,8 +54,8 @@ be displayed as stacked area charts?}
 below the title, \code{caption} for the text in the bottom-right
 corner, \code{tag} for the label at the top-left of the plot,
 \code{alt} and \code{alt_insight} for alt-text generation (see
-\code{\link{get_alt_text}} for examples). You may also provide
-additional name-value pairs corresponding to aesthetics. See
+\code{\link[ggplot2]{get_alt_text}} for examples). You may also 
+provide additional name-value pairs corresponding to aesthetics. See
 \code{\link[ggplot2]{labs}} for further details.
 Use \code{y_right} to set the label of the right-side y-axis
 (secondary axis), if present.}

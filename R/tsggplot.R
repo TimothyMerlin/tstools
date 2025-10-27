@@ -22,8 +22,8 @@
 #'        below the title, \code{caption} for the text in the bottom-right
 #'        corner, \code{tag} for the label at the top-left of the plot,
 #'        \code{alt} and \code{alt_insight} for alt-text generation (see
-#'        \code{\link{get_alt_text}} for examples). You may also provide
-#'        additional name-value pairs corresponding to aesthetics. See
+#'        \code{\link[ggplot2]{get_alt_text}} for examples). You may also 
+#'        provide additional name-value pairs corresponding to aesthetics. See
 #'        \code{\link[ggplot2]{labs}} for further details.
 #'        Use \code{y_right} to set the label of the right-side y-axis
 #'        (secondary axis), if present.
@@ -48,6 +48,7 @@
 #' @importFrom ggplot2 aes coord_cartesian element_blank element_line element_text geom_rect geom_segment ggplot
 #' ggplot_build ggsave guides guide_axis guide_legend margin sec_axis scale_color_manual
 #' scale_fill_manual scale_x_continuous scale_y_continuous waiver .data
+#' scale_x_date
 #'
 #' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
 #'          caption, tag)
@@ -191,6 +192,56 @@ create a ts out of a row of a data.frame? Converting to single ts.")
 }
 
 #' @export
+tsggplot.xts <- function(...,
+                         tsr = NULL,
+                         ci = NULL,
+                         left_as_bar = FALSE,
+                         group_bar_chart = FALSE,
+                         relative_bar_chart = FALSE,
+                         left_as_band = FALSE,
+                         labs = NULL,
+                         find_ticks_function = "findTicks",
+                         overall_xlim = NULL,
+                         overall_ylim = NULL,
+                         manual_date_ticks = NULL,
+                         manual_value_ticks_l = NULL,
+                         manual_value_ticks_r = NULL,
+                         manual_ticks_x = NULL,
+                         theme = NULL,
+                         quiet = TRUE,
+                         auto_legend = TRUE,
+                         output_format = "plot",
+                         save = list(
+                           filename = "tsplot",
+                           height = 210,
+                           width = 297,
+                           units = "mm"
+                         )) {
+  li <- list(...)
+  tsggplot(li,
+    tsr = tsr,
+    ci = ci,
+    left_as_bar = left_as_bar,
+    group_bar_chart = group_bar_chart,
+    relative_bar_chart = relative_bar_chart,
+    left_as_band = left_as_band,
+    labs = labs,
+    find_ticks_function = find_ticks_function,
+    manual_date_ticks = manual_date_ticks,
+    overall_xlim = overall_xlim,
+    overall_ylim = overall_ylim,
+    manual_value_ticks_l = manual_value_ticks_l,
+    manual_value_ticks_r = manual_value_ticks_r,
+    manual_ticks_x = manual_ticks_x,
+    auto_legend = auto_legend,
+    theme = theme,
+    output_format = output_format,
+    save = save
+  )
+}
+
+
+#' @export
 tsggplot.list <- function(...,
                           tsr = NULL,
                           ci = NULL,
@@ -217,22 +268,22 @@ tsggplot.list <- function(...,
                             units = "mm"
                           )) {
   tsl <- c(...)
+  tsl <- lapply(tsl, xts::as.xts)
 
   if (inherits(tsr, "ts")) {
     tsr <- list(tsr)
   }
 
-  class_l <- sapply(tsl, "class")
-  non_ts_l <- class_l != "ts"
-  if (any(non_ts_l)) {
-    warning(
-      sprintf(
-        "Ignoring non-ts objects in list: %s\nCheck if those belong in the theme!",
-        paste(names(class_l[non_ts_l]), collapse = ", ")
-      )
-    )
-    tsl <- tsl[!non_ts_l]
+  class_l <- lapply(tsl, class)
+  non_xts_l <- !vapply(class_l, function(cl) "xts" %in% cl, logical(1))
+  if (any(non_xts_l)) {
+    warning(sprintf(
+      "Ignoring non-xts objects in list: %s\nCheck if those belong in the theme!",
+      paste(names(tsl)[non_xts_l], collapse = ", ")
+    ))
+    tsl <- tsl[!non_xts_l]
   }
+
 
   tsl_lengths <- sapply(tsl, length)
   if (any(tsl_lengths == 1) && !left_as_bar) {
@@ -252,7 +303,18 @@ tsggplot.list <- function(...,
         tsr <- NULL
       }
     }
+
+    tsr <- lapply(tsr, xts::as.xts)
   }
+
+  if (!is.null(ci)) {
+    ci <- lapply(ci, function(x) {
+      lapply(x, function(y) {
+        lapply(y, xts::as.xts)
+      })
+    })
+  }
+
 
   # Sanity check for band plots
   if (left_as_band) {
@@ -665,33 +727,49 @@ tsggplot.list <- function(...,
 
   # Global X-Axis ###################
   if (!inherits(theme$axis.line.x, "element_blank")) {
-    # Axis text position
     if (exists("segment_length")) {
-      # To position the labels between major tick marks, we repurpose minor
-      # ticks as the actual tick marks, and use major
-      # breaks only for positioning labels (hiding their tick lines).
-      # segments are used to draw the minor ticks
-
-      # Compute valid mid‑points & labels for the yearly breaks
       brks <- global_x$yearly_tick_pos
       tick_spacing <- diff(brks)[1]
-      mid_all <- c(
-        (brks[-length(brks)] + brks[-1]) / 2,
-        brks[length(brks)] + tick_spacing / 2
-      )
+      if (inherits(brks, "Date")) {
+        # --- DAILY / WEEKLY: compute midpoints as numeric days
+        mid_all <- as.Date(
+          c(
+            (as.numeric(brks[-length(brks)]) + as.numeric(brks[-1])) / 2,
+            as.numeric(brks[length(brks)]) + as.numeric(tick_spacing) / 2
+          ),
+          origin = "1970-01-01"
+        )
+      } else {
+        # --- MONTHLY / QUARTERLY / ANNUAL: numeric scale
+        mid_all <- c(
+          (brks[-length(brks)] + brks[-1]) / 2,
+          brks[length(brks)] + tick_spacing / 2
+        )
+      }
       is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
       mid_pts <- mid_all[is_valid]
       labs_pt <- global_x$year_labels_start[is_valid]
 
-      p <- p +
-        scale_x_continuous(
-          breaks = mid_pts, # major breaks → labels only
-          minor_breaks = global_x$yearly_tick_pos, # minor breaks → drawn ticks
-          labels = labs_pt,
-          limits = c(global_x$x_range[1], global_x$x_range[2]),
-          expand = c(0, 0)
-        ) +
-        guides(x = guide_axis(minor.ticks = TRUE))
+      # choose scale type depending on frequency
+      if (global_x$dominant_freq %in% c("daily", "weekly")) {
+        p <- p +
+          scale_x_date(
+            date_breaks = paste0(theme$axis_x_label_dt, " years"),
+            date_labels = "%Y",
+            limits = as.Date(global_x$x_range),
+            expand = c(0, 0)
+          )
+      } else {
+        p <- p +
+          scale_x_continuous(
+            breaks = mid_pts,
+            minor_breaks = global_x$yearly_tick_pos,
+            labels = labs_pt,
+            limits = c(global_x$x_range[1], global_x$x_range[2]),
+            expand = c(0, 0)
+          ) +
+          guides(x = guide_axis(minor.ticks = TRUE))
+      }
 
       if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
         # Filter out overlapping quarterly ticks
@@ -717,10 +795,8 @@ tsggplot.list <- function(...,
           list(
             data = tick_df,
             mapping = aes(
-              x = .data$x,
-              y = .data$y,
-              xend = .data$xend,
-              yend = .data$yend
+              x = .data$x, y = .data$y,
+              xend = .data$xend, yend = .data$yend
             ),
             inherit.aes = FALSE
           ),
@@ -730,37 +806,26 @@ tsggplot.list <- function(...,
         p <- p + do.call(geom_segment, geom_args)
       }
     } else {
-      p <- p +
-        scale_x_continuous(
-          breaks = global_x$yearly_tick_pos,
-          limits = c(global_x$x_range[1], global_x$x_range[2]),
-          expand = c(0, 0)
-        )
-      if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
-        # Filter out overlapping quarterly ticks
-        q_ticks <- setdiff(global_x$quarterly_tick_pos, global_x$yearly_tick_pos)
-        # q_labels <- global_x$year_labels_middle_q[!overlap]
-
+      # no segment_length case
+      if (global_x$dominant_freq %in% c("daily", "weekly")) {
+        p <- p +
+          scale_x_date(
+            limits = as.Date(global_x$x_range, origin = "1970-01-01"),
+            expand = c(0, 0)
+          )
+      } else {
         p <- p +
           scale_x_continuous(
             breaks = global_x$yearly_tick_pos,
-            labels = global_x$year_labels_start,
             limits = c(global_x$x_range[1], global_x$x_range[2]),
-            minor_breaks = q_ticks,
             expand = c(0, 0)
-          ) +
-          # show quarterly ticks
-          guides(
-            x = guide_axis(minor.ticks = TRUE)
           )
       }
     }
   } else {
     p <- p +
       scale_x_continuous(
-        breaks = NULL,
-        labels = NULL,
-        minor_breaks = NULL
+        breaks = NULL, labels = NULL, minor_breaks = NULL
       )
   }
 

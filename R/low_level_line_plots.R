@@ -47,13 +47,13 @@ draw_ts_lines <- function(x, theme = NULL, bandplot = FALSE) {
 
 #' @importFrom ggplot2 aes geom_line geom_ribbon geom_point .data
 #' @importFrom stats setNames time frequency
-draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NULL) {
+draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL) {
   nts <- length(x)
   series <- names(x)
 
   # "harmonize" all ts, range wise
   if (bandplot) {
-    x_mat <- do.call(ts.union, x)
+    x_mat <- do.call(merge, x)
     x_mat[is.na(x_mat)] <- 0
     x_names <- names(x)
     x <- as.list(x_mat)
@@ -63,7 +63,7 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
   band_low <- rep(0, length(x[[1]]))
 
   for (i in 1:nts) {
-    xx <- as.numeric(time(x[[i]]))
+    xx <- time(x[[i]])
     yy <- as.numeric(x[[i]])
     frq <- frequency(x[[i]])
 
@@ -79,11 +79,8 @@ draw_tsggplot_lines <- function(p, x, theme = NULL, bandplot = FALSE, scale = NU
       time = xx,
       value = yy,
       line_colors = rep(theme$line_colors[i], each = length(xx)),
-      interval = ifelse(rep(xx, each = nts) <= 1975, "in_sample", "forecast"),
       series = factor(series[i], levels = series)
     )
-    # Ensure 'interval' is a factor with the correct levels
-    df$interval <- factor(df$interval, levels = c("forecast", "in_sample"))
 
     if (!bandplot) {
       # Create the custom text for hover outside aes()
