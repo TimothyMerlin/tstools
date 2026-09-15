@@ -686,7 +686,7 @@ tsggplot.list <- function(...,
     scaled_tsr <- lapply(tsr, scale, right_min, right_max, left_min, left_max)
 
     # Add `tsr` as secondary time series
-    p <- draw_tsggplot_lines(p, scaled_tsr, theme = tt_r, bandplot = FALSE, scale = NULL, use_date_scale = use_date_scale)
+    p <- draw_tsggplot_lines(p, scaled_tsr, theme = tt_r, bandplot = FALSE, true_values = tsr, use_date_scale = use_date_scale)
   }
 
   if (!inherits(theme$axis.line.y, "element_blank")) {
@@ -866,6 +866,15 @@ tsggplot.list <- function(...,
     lab_args <- labs[!vapply(labs, is.null, logical(1))]
     p <- p + do.call(ggplot2::labs, lab_args)
   }
+
+  # Attach the axis metadata already computed above, so tsggplotly() can
+  # build a real plotly yaxis2 for the secondary axis instead of guessing.
+  attr(p, "tsggplot_meta") <- list(
+    global_x = global_x,
+    left_y = left_y,
+    right_y = if (!is.null(tsr)) right_y else NULL,
+    y_right_label = labs$y_right
+  )
 
   if (output_format != "plot") {
     if (!grepl(sprintf("[.]%s$", output_format), save$filename)) {

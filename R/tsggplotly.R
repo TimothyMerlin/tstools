@@ -1,17 +1,49 @@
 #' Convert ggplot2 time series object to plotly object
 #'
-#' @param p ggplot2 figure
-#' @param ... additional arguments
+#' @param p ggplot2 figure, as returned by \code{\link{tsggplot}}
+#' @param ... additional arguments passed on to \code{\link[plotly]{ggplotly}}
 #'
 #' @importFrom plotly ggplotly layout
 #'
 #' @export
 tsggplotly <- function(p, ...) {
-  p <- plotly::ggplotly(p)
-  p <- plotly::layout(p,
+  meta <- attr(p, "tsggplot_meta")
+
+  # Collect each series' custom hover text ("value: ...") from the line/point
+  # layer data before conversion. It's a plain data column, not an aes()
+  # mapping (mapping it would make ggplot2 warn "Ignoring unknown
+  # aesthetics" on every ordinary, non-plotly tsggplot() call), so ggplotly()
+  # has no way to pick it up on its own -- it's injected into the matching
+  # trace by name below instead.
+  text_by_series <- list()
+  for (l in p$layers) {
+    d <- l$data
+    if (is.data.frame(d) && !is.null(d$text) && !is.null(d$series)) {
+      for (s in levels(d$series)) {
+        text_by_series[[s]] <- as.character(d$text[as.character(d$series) == s])
+      }
+    }
+  }
+
+  p <- plotly::ggplotly(p, ...)
+
+  for (i in seq_along(p$x$data)) {
+    nm <- p$x$data[[i]]$name
+    txt <- text_by_series[[nm]]
+    if (!is.null(txt) && length(txt) == length(p$x$data[[i]]$x)) {
+      p$x$data[[i]]$text <- txt
+      p$x$data[[i]]$hoverinfo <- "text"
+    }
+  }
+
+  layout_args <- list(
+    p = p,
+    paper_bgcolor = "rgba(0,0,0,0)",
+    plot_bgcolor = "rgba(0,0,0,0)",
     xaxis = list(ticks = ""),
     font = list(family = "Verdana"),
     title = list(font = list(family = "Verdana")),
+    hoverlabel = list(font = list(family = "Verdana")),
     legend = list(
       font = list(family = "Verdana"),
       orientation = "h",
@@ -21,6 +53,24 @@ tsggplotly <- function(p, ...) {
       title = list(text = "")
     )
   )
+
+  # The right-axis series are already rescaled into the left axis's numeric
+  # range (the same trick ggplot2's sec_axis() relies on for a static plot),
+  # so the traces don't need to move to a second y-axis -- overlaying a
+  # cosmetic yaxis2 with the *true* right-axis range/ticks over the same
+  # panel area reproduces the same dual-axis look plotly-side.
+  if (!is.null(meta) && !is.null(meta$right_y)) {
+    layout_args$yaxis2 <- list(
+      title = meta$y_right_label,
+      overlaying = "y",
+      side = "right",
+      range = meta$right_y$y_range,
+      tickvals = meta$right_y$y_ticks,
+      automargin = TRUE
+    )
+  }
+
+  p <- do.call(plotly::layout, layout_args)
 
   # rename legend items
   for (i in seq_along(p$x$data)) {
@@ -36,66 +86,6 @@ tsggplotly <- function(p, ...) {
       p$x$data[[i]]$name <- name
     }
   }
-
-  # p <- plotly::layout(
-  #  p,
-  #  font = theme$font,
-  #  barmode = "group",
-  #  xaxis = list(
-  #    showgrid = TRUE,
-  #    tickvals = x_axis_ticks$year,
-  #    tickfont = theme$xaxis$tickfont,
-  #    tickmode = "array",
-  #    title = "",
-  #    range = c(
-  #      theme$xaxis$range$start - x_range_padding,
-  #      theme$xaxis$range$end + x_range_padding
-  #    )
-  #  ),
-  #  annotations = annotations,
-  #  yaxis = list(
-  #    title = theme$yaxis$y$title,
-  #    tickfont = theme$yaxis$tickfont,
-  #    side = "left",
-  #    range = c(
-  #      optimal_y_ticks$extremas$growth$min,
-  #      optimal_y_ticks$extremas$growth$max
-  #    ),
-  #    tickvals = optimal_y_ticks$y1_tickvals,
-  #    ticktext = round(optimal_y_ticks$y1_tickvals, 1)
-  #  ),
-  #  yaxis2 = list(
-  #    title = theme$yaxis$y2$title,
-  #    tickfont = theme$yaxis$tickfont,
-  #    side = "right",
-  #    range = c(
-  #      optimal_y_ticks$extremas$level$min,
-  #      optimal_y_ticks$extremas$level$max
-  #    ),
-  #    overlaying = "y",
-  #    automargin = TRUE,
-  #    tickvals = optimal_y_ticks$y2_tickvals,
-  #    ticktext = optimal_y_ticks$y2_ticktext
-  #  ),
-  #  legend = list(
-  #    font = theme$legend$font,
-  #    bgcolor = "rgba(0,0,0,0)",
-  #    orientation = "h", # horizontal orientation
-  #    x = 0, # center the legend
-  #    y = -0.35, # position below the x-axis
-  #    xanchor = "left", # anchor at the center
-  #    yanchor = "top", # anchor at the top (bottom of the plot)
-  #    traceorder = "normal", # order as they appear in the traces
-  #    tracegroupgap = 0, # gap between trace groups
-  #    itemsizing = "constant", # all items same size
-  #    itemwidth = 30, # width of each legend item
-  #    itemclick = "toggleothers", # only one item active at a time
-  #    valign = "top", # align vertically at the top
-  #    roworder = "top to bottom", # order of legend items
-  #    ncol = 3 # number of columns
-  #  ),
-  #  hovermode = "closest"
-  # )
 
   p
 }

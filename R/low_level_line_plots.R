@@ -47,7 +47,7 @@ draw_ts_lines <- function(x, theme = NULL, bandplot = FALSE) {
 
 #' @importFrom ggplot2 aes geom_line geom_ribbon geom_point .data
 #' @importFrom stats setNames time frequency
-draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL, use_date_scale = FALSE) {
+draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, true_values = NULL, use_date_scale = FALSE) {
   nts <- length(x)
   series <- names(x)
 
@@ -66,12 +66,19 @@ draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL, use
     xx <- getNumericTimeIndex(x[[i]], use_date_scale = use_date_scale)
     yy <- as.numeric(x[[i]])
 
+    # Right-axis series are rescaled into the left axis's numeric range for
+    # plotting (see the sec_axis() trick in tsggplot()), so the true value
+    # for hover text has to come from the pre-rescale series instead of
+    # from yy, which by this point holds the rescaled number.
+    hover_yy <- if (!is.null(true_values)) as.numeric(true_values[[i]]) else yy
+
     if (theme$line_to_middle) xx <- xx + getLineToMiddleShift(x[[i]], use_date_scale = use_date_scale)
 
     if (theme$NA_continue_line[i]) {
       yy_na <- is.na(yy)
       xx <- xx[!yy_na]
       yy <- yy[!yy_na]
+      hover_yy <- hover_yy[!yy_na]
     }
 
     df <- data.frame(
@@ -82,12 +89,13 @@ draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL, use
     )
 
     if (!bandplot) {
-      # Create the custom text for hover outside aes()
-      df$text <- if (!is.null(scale)) {
-        paste("value:", df$value / scale)
-      } else {
-        paste("value:", df$value)
-      }
+      # Custom hover text, kept as a plain data column rather than an aes()
+      # mapping -- tsggplotly() picks it up from the layer data directly
+      # (see text_by_series there) and injects it into the plotly trace,
+      # instead of mapping it here where it would trigger a ggplot2
+      # "Ignoring unknown aesthetics: text" warning on every ordinary
+      # (non-plotly) tsggplot() call.
+      df$text <- paste("value:", hover_yy)
       p <- p + geom_line(
         data = df,
         aes(
