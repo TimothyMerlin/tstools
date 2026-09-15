@@ -509,9 +509,15 @@ test_that("tsggplot, with series starting not at start of year", {
     theme = theme
   )
 
+  # Plotted x-positions are numeric decimal-year values shifted by half a
+  # quarter (line_to_middle, the theme default). Previously this stayed
+  # yearqtr-classed and unshifted, because zoo's yearqtr arithmetic treats
+  # "+" as whole quarters and silently absorbed the fractional (0.125)
+  # shift -- i.e. quarterly xts data was never actually centered despite
+  # line_to_middle = TRUE. See getNumericTimeIndex()/getLineToMiddleShift().
   expect_equal(
     range(p$layers[[1]]$data$time),
-    structure(c(1960.5, 1980.75), class = "yearqtr")
+    c(1960.625, 1980.875)
   )
 
   # check axis x labels
@@ -576,6 +582,63 @@ test_that("daily xts", {
   p <- tsggplot(list("KOF Barometer" = x$Open),
     theme = theme
   )
+
+  expect_s3_class(p, "ggplot")
+  b <- ggplot2::ggplot_build(p)
+  line_x <- b$data[[1]]$x
+  expect_equal(length(line_x), length(x$Open))
+  expect_equal(length(unique(line_x)), length(x$Open))
+  expect_false(anyNA(line_x))
+})
+
+test_that("weekly xts (#2)", {
+  idx <- seq(as.Date("2020-01-06"), as.Date("2020-06-01"), by = "week")
+  x <- xts::xts(seq_along(idx), order.by = idx)
+
+  p <- tsggplot(list("Weekly" = x))
+
+  expect_s3_class(p, "ggplot")
+  b <- ggplot2::ggplot_build(p)
+  line_x <- b$data[[1]]$x
+  expect_equal(length(line_x), length(idx))
+  expect_equal(length(unique(line_x)), length(idx))
+  expect_false(anyNA(line_x))
+})
+
+test_that("yearly xts (#6)", {
+  idx <- as.Date(paste0(2010:2015, "-01-01"))
+  x <- xts::xts(1:6, order.by = idx)
+
+  expect_no_error(p <- tsggplot(list("Yearly" = x)))
+
+  expect_s3_class(p, "ggplot")
+  b <- ggplot2::ggplot_build(p)
+  line_x <- b$data[[1]]$x
+  expect_equal(length(line_x), 6)
+  expect_equal(length(unique(line_x)), 6)
+  expect_false(anyNA(line_x))
+  # x positions fall within the built panel's x range
+  panel_range <- b$layout$panel_params[[1]]$x.range
+  expect_true(all(line_x >= panel_range[1] & line_x <= panel_range[2]))
+})
+
+test_that("hourly xts (#7)", {
+  idx <- seq(as.POSIXct("2020-01-01 05:00:00", tz = "UTC"),
+    as.POSIXct("2020-01-02 10:00:00", tz = "UTC"),
+    by = "hour"
+  )
+  x <- xts::xts(seq_along(idx), order.by = idx)
+
+  expect_no_error(p <- tsggplot(list("Hourly" = x)))
+
+  expect_s3_class(p, "ggplot")
+  b <- ggplot2::ggplot_build(p)
+  line_x <- b$data[[1]]$x
+  expect_equal(length(line_x), length(idx))
+  # every hourly observation gets its own distinct x position (not
+  # collapsed onto the same day, which was the #7 bug)
+  expect_equal(length(unique(line_x)), length(idx))
+  expect_false(anyNA(line_x))
 })
 
 test_that("xts", {

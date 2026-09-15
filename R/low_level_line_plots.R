@@ -47,7 +47,7 @@ draw_ts_lines <- function(x, theme = NULL, bandplot = FALSE) {
 
 #' @importFrom ggplot2 aes geom_line geom_ribbon geom_point .data
 #' @importFrom stats setNames time frequency
-draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL) {
+draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL, use_date_scale = FALSE) {
   nts <- length(x)
   series <- names(x)
 
@@ -63,11 +63,10 @@ draw_tsggplot_lines <- function(p, x, theme, bandplot = FALSE, scale = NULL) {
   band_low <- rep(0, length(x[[1]]))
 
   for (i in 1:nts) {
-    xx <- time(x[[i]])
+    xx <- getNumericTimeIndex(x[[i]], use_date_scale = use_date_scale)
     yy <- as.numeric(x[[i]])
-    frq <- frequency(x[[i]])
 
-    if (theme$line_to_middle) xx <- xx + (1 / frq) / 2
+    if (theme$line_to_middle) xx <- xx + getLineToMiddleShift(x[[i]], use_date_scale = use_date_scale)
 
     if (theme$NA_continue_line[i]) {
       yy_na <- is.na(yy)
@@ -149,13 +148,12 @@ draw_sum_as_line <- function(x, theme = NULL) {
 }
 
 #' @importFrom ggplot2 aes geom_line .data
-draw_sum_as_ggline <- function(p, x, theme = NULL) {
+draw_sum_as_ggline <- function(p, x, theme = NULL, use_date_scale = FALSE) {
   df <- data.frame(
-    xx = as.numeric(time(x)),
+    xx = getNumericTimeIndex(x, use_date_scale = use_date_scale),
     yy = as.numeric(x)
   )
-  frq <- frequency(x)
-  if (theme$line_to_middle) df$xx <- df$xx + (1 / frq) / 2
+  if (theme$line_to_middle) df$xx <- df$xx + getLineToMiddleShift(x, use_date_scale = use_date_scale)
 
   p + geom_line(
     data = df,

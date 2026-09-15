@@ -25,7 +25,7 @@ draw_ts_ci <- function(ci, theme) {
 }
 
 #' @importFrom ggplot2 aes geom_polygon scale_fill_manual .data
-draw_tsggplot_ci <- function(p, ci, theme) {
+draw_tsggplot_ci <- function(p, ci, theme, use_date_scale = FALSE) {
   if (!is.null(ci)) {
     ci_names <- lapply(names(ci), function(x) {
       y <- gsub("%series%", x, theme$ci_legend_label)
@@ -51,14 +51,8 @@ draw_tsggplot_ci <- function(p, ci, theme) {
 
       for (ci_level_i in seq_along(ci_series)) {
         ci_level <- ci_series[[ci_level_i]]
-        xx <- time(ci_level$lb)
-
-        if (inherits(xx, "POSIXct")) {
-          xx <- as.POSIXct(c(xx, rev(xx)))
-        } else {
-          xx <- as.numeric(xx)
-          if (theme$line_to_middle) xx <- xx + (1 / frequency(ci_level$lb)) / 2
-        }
+        xx <- getNumericTimeIndex(ci_level$lb, use_date_scale = use_date_scale)
+        if (theme$line_to_middle) xx <- xx + getLineToMiddleShift(ci_level$lb, use_date_scale = use_date_scale)
 
         yy_low <- as.numeric(ci_level$lb)
         yy_high <- as.numeric(ci_level$ub)

@@ -434,6 +434,12 @@ tsggplot.list <- function(...,
     manual_ticks_x
   )
 
+  # daily/weekly xts data is plotted on a Date-based x-axis (scale_x_date);
+  # everything else (ts, monthly/quarterly/annual/hourly xts) is plotted on
+  # a numeric decimal-year x-axis (scale_x_continuous) -- draw functions need
+  # to know which, so their data lines up with the axis built below.
+  use_date_scale <- global_x$dominant_freq %in% c("daily", "weekly")
+
   # y can't be global in the first place, cause
   # tsr and tsl have different scales....
   # time series left
@@ -638,14 +644,14 @@ tsggplot.list <- function(...,
   if (!left_as_bar) {
     ci_left <- ci[names(ci) %in% names(tsl)]
     if (!is.null(ci_left)) {
-      p <- draw_tsggplot_ci(p, ci_left, theme)
+      p <- draw_tsggplot_ci(p, ci_left, theme, use_date_scale = use_date_scale)
     }
   }
 
   if (!is.null(tsr)) {
     ci_right <- ci[names(ci) %in% names(tsr)]
     if (!is.null(ci_right)) {
-      p <- draw_tsggplot_ci(p, ci_right, tt_r)
+      p <- draw_tsggplot_ci(p, ci_right, tt_r, use_date_scale = use_date_scale)
     }
   }
 
@@ -653,15 +659,16 @@ tsggplot.list <- function(...,
     ## draw barplot
     p <- draw_tsggplot_bars(p, tsl,
       group_bar_chart = group_bar_chart,
-      theme = theme
+      theme = theme,
+      use_date_scale = use_date_scale
     )
     if (theme$sum_as_line) {
       reduced <- Reduce("+", tsl)
-      p <- draw_sum_as_ggline(p, reduced, theme)
+      p <- draw_sum_as_ggline(p, reduced, theme, use_date_scale = use_date_scale)
     }
   } else {
     # draw lineplot
-    p <- draw_tsggplot_lines(p, tsl, theme = theme, bandplot = left_as_band)
+    p <- draw_tsggplot_lines(p, tsl, theme = theme, bandplot = left_as_band, use_date_scale = use_date_scale)
   }
 
   # RIGHT PLOT #######################
@@ -679,7 +686,7 @@ tsggplot.list <- function(...,
     scaled_tsr <- lapply(tsr, scale, right_min, right_max, left_min, left_max)
 
     # Add `tsr` as secondary time series
-    p <- draw_tsggplot_lines(p, scaled_tsr, theme = tt_r, bandplot = FALSE, scale = NULL)
+    p <- draw_tsggplot_lines(p, scaled_tsr, theme = tt_r, bandplot = FALSE, scale = NULL, use_date_scale = use_date_scale)
   }
 
   if (!inherits(theme$axis.line.y, "element_blank")) {
