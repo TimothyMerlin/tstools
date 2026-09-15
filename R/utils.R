@@ -88,7 +88,6 @@ getGlobalXInfo <- function(tsl, tsr, fill_up, fill_up_start, dt, manual_ticks) {
 }
 
 
-
 #' Convert a ts/xts index to a numeric decimal-year time index
 #'
 #' Shared by \code{getGlobalXInfo_tsggplot} (for computing axis ticks/ranges)
