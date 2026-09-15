@@ -76,3 +76,16 @@ test_that("xts, fills up start", {
   # There should be NA rows beyond original data
   expect_true(any(is.na(utils::head(out, 2))))
 })
+
+test_that("zoo, delegates to xts (#5)", {
+  idx <- as.Date("2020-01-01") + 0:9
+  x_zoo <- zoo::zoo(1:10, idx)
+  x_xts <- xts::as.xts(x_zoo)
+
+  out_zoo <- fill_year_with_nas(x_zoo, add_periods = 1, fill_up_start = FALSE)
+  out_xts <- fill_year_with_nas(x_xts, add_periods = 1, fill_up_start = FALSE)
+
+  expect_s3_class(out_zoo, "xts")
+  expect_equal(zoo::index(out_zoo), zoo::index(out_xts), ignore_attr = TRUE)
+  expect_equal(as.numeric(out_zoo), as.numeric(out_xts))
+})

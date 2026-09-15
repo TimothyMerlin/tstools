@@ -93,5 +93,8 @@ fill_year_with_nas.xts <- function(x, add_periods = 1,
 #' @export
 fill_year_with_nas.zoo <- function(x, add_periods = 1,
                                    fill_up_start = FALSE) {
-  stop("zoo support for filling up NAs not supported yet.")
+  fill_year_with_nas(xts::as.xts(x),
+    add_periods = add_periods,
+    fill_up_start = fill_up_start
+  )
 }
