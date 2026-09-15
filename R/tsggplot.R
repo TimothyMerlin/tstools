@@ -250,6 +250,55 @@ tsggplot.xts <- function(...,
   )
 }
 
+#' @export
+tsggplot.zoo <- function(...,
+                         tsr = NULL,
+                         ci = NULL,
+                         left_as_bar = FALSE,
+                         group_bar_chart = FALSE,
+                         relative_bar_chart = FALSE,
+                         left_as_band = FALSE,
+                         labs = NULL,
+                         find_ticks_function = "findTicks",
+                         overall_xlim = NULL,
+                         overall_ylim = NULL,
+                         manual_date_ticks = NULL,
+                         manual_value_ticks_l = NULL,
+                         manual_value_ticks_r = NULL,
+                         manual_ticks_x = NULL,
+                         theme = NULL,
+                         quiet = TRUE,
+                         auto_legend = TRUE,
+                         output_format = "plot",
+                         save = list(
+                           filename = "tsplot",
+                           height = 210,
+                           width = 297,
+                           units = "mm"
+                         )) {
+  li <- list(...)
+  li <- lapply(li, xts::as.xts)
+  tsggplot(li,
+    tsr = tsr,
+    ci = ci,
+    left_as_bar = left_as_bar,
+    group_bar_chart = group_bar_chart,
+    relative_bar_chart = relative_bar_chart,
+    left_as_band = left_as_band,
+    labs = labs,
+    find_ticks_function = find_ticks_function,
+    manual_date_ticks = manual_date_ticks,
+    overall_xlim = overall_xlim,
+    overall_ylim = overall_ylim,
+    manual_value_ticks_l = manual_value_ticks_l,
+    manual_value_ticks_r = manual_value_ticks_r,
+    manual_ticks_x = manual_ticks_x,
+    auto_legend = auto_legend,
+    theme = theme,
+    output_format = output_format,
+    save = save
+  )
+}
 
 #' @export
 tsggplot.list <- function(...,

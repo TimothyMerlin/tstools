@@ -667,3 +667,18 @@ test_that("xts", {
     theme = theme
   )
 })
+
+test_that("zoo (#5)", {
+  idx <- as.Date("2020-01-01") + 0:23
+  x_zoo <- zoo::zoo(1:24, idx)
+
+  expect_no_error(p_zoo <- tsggplot(list("Zoo" = x_zoo)))
+  expect_s3_class(p_zoo, "ggplot")
+
+  # should match the equivalent xts input exactly
+  p_xts <- tsggplot(list("Zoo" = xts::as.xts(x_zoo)))
+  b_zoo <- ggplot2::ggplot_build(p_zoo)
+  b_xts <- ggplot2::ggplot_build(p_xts)
+  expect_equal(b_zoo$data[[1]]$x, b_xts$data[[1]]$x)
+  expect_equal(b_zoo$data[[1]]$y, b_xts$data[[1]]$y)
+})
