@@ -430,6 +430,77 @@ tsggplot("Some like\n loooong legends\n with so many words" = ts1)
 tsggplot(KOF[1], auto_legend = FALSE)
 ```
 
+# Working with xts and zoo objects
+
+In addition to `ts`/`mts` objects, `tsggplot` accepts `xts` and `zoo` objects
+directly, which is convenient for data that doesn't fit neatly into `ts`'s
+regular-period model -- daily, weekly, or even hourly observations.
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
+library(xts)
+library(zoo)
+
+kof_xts <- as.xts(KOF$kofbarometer)
+tsggplot(list("KOF Barometer" = kof_xts))
+```
+
+## Supported frequencies
+
+`tsggplot` supports `xts` series at daily, weekly, monthly, quarterly, yearly,
+and hourly frequency -- each renders on the appropriate x-axis (a date axis
+for daily/weekly data, a numeric decimal-year axis otherwise).
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE}
+weekly_idx <- seq(as.Date("2020-01-06"), as.Date("2023-01-01"), by = "week")
+weekly_xts <- xts(cumsum(rnorm(length(weekly_idx))), order.by = weekly_idx)
+tsggplot(list("Weekly series" = weekly_xts))
+```
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE}
+yearly_idx <- as.Date(paste0(2000:2023, "-01-01"))
+yearly_xts <- xts(cumsum(rnorm(length(yearly_idx))), order.by = yearly_idx)
+tsggplot(list("Yearly series" = yearly_xts))
+```
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE}
+hourly_idx <- seq(as.POSIXct("2023-01-01 00:00", tz = "UTC"),
+  as.POSIXct("2023-01-05 00:00", tz = "UTC"),
+  by = "hour"
+)
+hourly_xts <- xts(cumsum(rnorm(length(hourly_idx))), order.by = hourly_idx)
+tsggplot(list("Hourly series" = hourly_xts))
+```
+
+## zoo objects
+
+A plain `zoo` object works the same way -- it's converted to `xts` internally
+and produces identical output.
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE}
+kof_zoo <- as.zoo(KOF$kofbarometer)
+tsggplot(list("KOF Barometer" = kof_zoo))
+```
+
+Note that a multi-column `xts`/`zoo` object passed directly isn't split into
+one series per column (unlike `mts`) -- pass multiple series as a named list
+instead, as in the examples above.
+
+# Interactive plots with plotly
+
+Any `tsggplot` figure can be converted into an interactive `plotly` chart with
+`tsggplotly()`, including custom hover text and a real secondary axis when a
+`tsr` (right-axis) series is present.
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
+library(plotly)
+
+p <- tsggplot(KOF["kofbarometer"],
+  tsr = KOF["reference"],
+  labs = list(y_right = "Reference indicator")
+)
+tsggplotly(p)
+```
+
 # Export your chart to .pdf
 
 Saving your **tstools** chart to a .pdf document is as easy and convenient as

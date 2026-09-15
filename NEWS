@@ -1,3 +1,10 @@
+Changes in version 0.4.3
+ * tsggplot: added support for zoo objects
+ * tsggplot: added support for yearly and hourly xts frequencies, verified weekly/daily
+ * tsggplot: fixed x-position handling for xts series so plotted data lines up with axis ticks (affected yearly/hourly/monthly/quarterly xts)
+ * tsggplot: fixed line_to_middle centering for xts series (frequency() was unreliable, e.g. near-zero for hourly data)
+ * tsggplotly: rewritten with working custom hover text and a real secondary y-axis (built from the same axis metadata used to draw the plot); removed dead commented-out code
+ * tsggplot: quiet argument now wired through consistently (returns axis metadata alongside the plot when FALSE), matching tsplot's behavior
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1
