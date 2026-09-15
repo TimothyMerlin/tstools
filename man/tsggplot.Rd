@@ -21,6 +21,7 @@ tsggplot(
   manual_value_ticks_r = NULL,
   manual_ticks_x = NULL,
   theme = NULL,
+  quiet = TRUE,
   auto_legend = TRUE,
   output_format = "plot",
   save = list(filename = "tsplot", height = 210, width = 297, units = "mm")
@@ -54,7 +55,7 @@ be displayed as stacked area charts?}
 below the title, \code{caption} for the text in the bottom-right
 corner, \code{tag} for the label at the top-left of the plot,
 \code{alt} and \code{alt_insight} for alt-text generation (see
-\code{\link[ggplot2]{get_alt_text}} for examples). You may also 
+\code{\link[ggplot2]{get_alt_text}} for examples). You may also
 provide additional name-value pairs corresponding to aesthetics. See
 \code{\link[ggplot2]{labs}} for further details.
 Use \code{y_right} to set the label of the right-side y-axis
@@ -77,6 +78,11 @@ Use \code{y_right} to set the label of the right-side y-axis
 \item{theme}{list of default plot output parameters. Defaults to NULL, which
 leads to \code{\link{init_tsggplot_theme}} being called. Please see
 the vignette for details about tweaking themes.}
+
+\item{quiet}{logical should only the plot be returned (default TRUE)? If
+FALSE, returns a list with the plot (\code{plot}) and the axis
+metadata used to build it (\code{global_x}, \code{left_y},
+\code{right_y}, \code{y_right_label}).}
 
 \item{auto_legend}{logical should legends be printed automatically, defaults
 to TRUE.}

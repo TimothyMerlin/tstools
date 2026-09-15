@@ -37,6 +37,10 @@
 #' @param theme list of default plot output parameters. Defaults to NULL, which
 #'        leads to \code{\link{init_tsggplot_theme}} being called. Please see
 #'        the vignette for details about tweaking themes.
+#' @param quiet logical should only the plot be returned (default TRUE)? If
+#'        FALSE, returns a list with the plot (\code{plot}) and the axis
+#'        metadata used to build it (\code{global_x}, \code{left_y},
+#'        \code{right_y}, \code{y_right_label}).
 #' @param auto_legend logical should legends be printed automatically, defaults
 #'        to TRUE.
 #' @param output_format character Should the plot be drawn on screen or written
@@ -72,6 +76,7 @@ tsggplot <- function(...,
                      manual_value_ticks_r = NULL,
                      manual_ticks_x = NULL,
                      theme = NULL,
+                     quiet = TRUE,
                      auto_legend = TRUE,
                      output_format = "plot",
                      save = list(
@@ -100,6 +105,7 @@ tsggplot.ts <- function(...,
                         manual_value_ticks_r = NULL,
                         manual_ticks_x = NULL,
                         theme = NULL,
+                        quiet = TRUE,
                         auto_legend = TRUE,
                         output_format = "plot",
                         save = list(
@@ -126,6 +132,7 @@ tsggplot.ts <- function(...,
     manual_ticks_x = manual_ticks_x,
     auto_legend = auto_legend,
     theme = theme,
+    quiet = quiet,
     output_format = output_format,
     save = save
   )
@@ -148,6 +155,7 @@ tsggplot.mts <- function(...,
                          manual_value_ticks_r = NULL,
                          manual_ticks_x = NULL,
                          theme = NULL,
+                         quiet = TRUE,
                          auto_legend = TRUE,
                          output_format = "plot",
                          save = list(
@@ -185,6 +193,7 @@ create a ts out of a row of a data.frame? Converting to single ts.")
       manual_ticks_x = manual_ticks_x,
       auto_legend = auto_legend,
       theme = theme,
+      quiet = quiet,
       output_format = output_format,
       save = save
     )
@@ -235,6 +244,7 @@ tsggplot.xts <- function(...,
     manual_ticks_x = manual_ticks_x,
     auto_legend = auto_legend,
     theme = theme,
+    quiet = quiet,
     output_format = output_format,
     save = save
   )
@@ -881,7 +891,9 @@ tsggplot.list <- function(...,
       save$filename <- sprintf("%s.%s", save$filename, output_format)
     }
     do.call(ggsave, save)
-  } else {
+  } else if (quiet) {
     p
+  } else {
+    c(list(plot = p), attr(p, "tsggplot_meta"))
   }
 }
