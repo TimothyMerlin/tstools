@@ -7,9 +7,9 @@
 tsggplotly(p, ...)
 }
 \arguments{
-\item{p}{ggplot2 figure}
+\item{p}{ggplot2 figure, as returned by \code{\link{tsggplot}}}
 
-\item{...}{additional arguments}
+\item{...}{additional arguments passed on to \code{\link[plotly]{ggplotly}}}
 }
 \description{
 Convert ggplot2 time series object to plotly object

@@ -89,20 +89,27 @@ test_that("tsggplotly", {
   )
 
   fig <- tsggplotly(p)
+  fig <- plotly::layout(fig, font = t)
+  fig <- plotly::layout(
+    fig,
+    font = t,
+    xaxis = list(titlefont = t, tickfont = t),
+    yaxis = list(titlefont = t, tickfont = t),
+    legend = list(font = t),
+    title = list(font = t)
+  )
 
-  fig <- fig %>%
-    plotly::layout(font = t)
+  expect_s3_class(fig, "plotly")
 
-  fig <- fig %>%
-    plotly::layout(
-      font = t,
-      xaxis = list(titlefont = t, tickfont = t),
-      yaxis = list(titlefont = t, tickfont = t),
-      legend = list(font = t),
-      title = list(font = t)
-    )
-  fig
+  built <- plotly::plotly_build(fig)
+  expect_equal(built$x$layout$font$family, t$family)
+  expect_equal(built$x$layout$xaxis$titlefont$family, t$family)
+  expect_equal(built$x$layout$yaxis$titlefont$family, t$family)
+  expect_equal(built$x$layout$legend$font$family, t$family)
 
-
-  # Check if the theme attributes are applied correctly
+  # left_as_bar + tsr (secondary axis) still produces a real, non-guessed
+  # yaxis2 and doesn't error out
+  meta <- attr(p, "tsggplot_meta")
+  expect_false(is.null(meta$right_y))
+  expect_equal(built$x$layout$yaxis2$range, meta$right_y$y_range)
 })
