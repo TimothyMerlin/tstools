@@ -82,7 +82,7 @@ draw_ts_bars <- function(x, group_bar_chart = FALSE, theme = NULL) {
 
 #' @importFrom ggplot2 aes geom_col position_dodge2 position_stack
 #' scale_fill_manual
-draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
+draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL, use_date_scale = FALSE) {
   n_ts <- length(x)
   series <- names(x)
 
@@ -90,7 +90,7 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL) {
 
   data <- do.call(rbind, lapply(1:n_ts, function(i) {
     data.frame(
-      time = as.numeric(time(x[[i]])),
+      time = getNumericTimeIndex(x[[i]], use_date_scale = use_date_scale),
       value = as.numeric(x[[i]]),
       series = factor(series[i], levels = series)
     )

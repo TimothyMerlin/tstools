@@ -47,11 +47,37 @@ fill_year_with_nas.xts <- function(x, add_periods = 1,
   }
 
   per <- xts::periodicity(x)$scale
+
+  # Sub-daily data (e.g. hourly) can't be represented by the Date-based
+  # sequence below (a Date has no hour-of-day), so it is handled separately,
+  # staying in POSIXct throughout instead of snapping to midnight.
+  if (per %in% c("hourly")) {
+    start_dt <- as.POSIXct(start(x), tz = tz)
+    end_dt <- as.POSIXct(end(x), tz = tz)
+
+    year_start_dt <- as.POSIXct(paste0(format(start_dt, "%Y"), "-01-01 00:00:00"), tz = tz)
+    year_end_dt <- as.POSIXct(paste0(format(end_dt, "%Y"), "-12-31 23:00:00"), tz = tz)
+
+    seq_start_dt <- if (fill_up_start) year_start_dt else start_dt
+    full_idx <- seq(seq_start_dt, year_end_dt, by = "hour")
+
+    if (add_periods > 0) {
+      extra_idx <- seq(
+        from = utils::tail(full_idx, 1),
+        by = "hour", length.out = add_periods + 1
+      )[-1]
+      full_idx <- c(full_idx, extra_idx)
+    }
+
+    return(merge(x, full_idx))
+  }
+
   step <- switch(per,
     "daily" = "day",
     "weekly" = "week",
     "monthly" = "month",
     "quarterly" = "quarter",
+    "yearly" = "year",
     stop("Unsupported frequency: ", per)
   )
 
@@ -60,6 +86,7 @@ fill_year_with_nas.xts <- function(x, add_periods = 1,
     "quarterly" = zoo::as.Date(zoo::as.yearqtr(start(x)), tz = tz),
     "weekly"    = as.Date(start(x), tz = tz),
     "daily"     = as.Date(start(x), tz = tz),
+    "yearly"    = as.Date(start(x), tz = tz),
     stop("Unsupported frequency: ", per)
   )
   end_d <- switch(per,
@@ -67,6 +94,7 @@ fill_year_with_nas.xts <- function(x, add_periods = 1,
     "quarterly" = zoo::as.Date(zoo::as.yearqtr(end(x)), tz = tz),
     "weekly"    = as.Date(end(x), tz = tz),
     "daily"     = as.Date(end(x), tz = tz),
+    "yearly"    = as.Date(end(x), tz = tz),
     stop("Unsupported frequency: ", per)
   )
 

@@ -89,6 +89,82 @@ getGlobalXInfo <- function(tsl, tsr, fill_up, fill_up_start, dt, manual_ticks) {
 
 
 
+#' Convert a ts/xts index to a numeric decimal-year time index
+#'
+#' Shared by \code{getGlobalXInfo_tsggplot} (for computing axis ticks/ranges)
+#' and the tsggplot draw functions (for plotting data), so that plotted data
+#' and axis ticks are always on the same numeric scale.
+#'
+#' When \code{use_date_scale} is TRUE (daily/weekly xts, plotted on a
+#' \code{scale_x_date} x-axis), the raw index is returned unchanged instead --
+#' \code{ggplot2}'s Date scale coerces it (e.g. truncating POSIXct to Date)
+#' the same way it always has for this case.
+#'
+#' @param x object of class ts or xts
+#' @param use_date_scale logical, is this plotted on a Date-based x-axis?
+#' @noRd
+getNumericTimeIndex <- function(x, use_date_scale = FALSE) {
+  if (use_date_scale) {
+    return(time(x))
+  }
+  if (inherits(x, "ts")) {
+    return(as.numeric(time(x)))
+  }
+  if (!inherits(x, "xts")) stop("Input must be 'ts' or 'xts'.")
+
+  idx <- zoo::index(x)
+  tcl <- attr(attr(x, "index"), "tclass")
+  if (is.null(tcl)) tcl <- class(idx)
+
+  if ("yearqtr" %in% tcl) {
+    return(as.numeric(zoo::as.yearqtr(idx)))
+  }
+  if ("yearmon" %in% tcl) {
+    return(as.numeric(zoo::as.yearmon(idx)))
+  }
+
+  days_in_year <- function(y) {
+    ifelse(((y %% 4 == 0) & (y %% 100 != 0)) | (y %% 400 == 0), 366, 365)
+  }
+
+  y <- as.numeric(format(idx, "%Y"))
+  d <- as.numeric(format(idx, "%j"))
+  # Intraday fraction: 0 for Date-classed indices (daily/weekly/yearly),
+  # so this stays backward compatible; only POSIXct indices (e.g. hourly)
+  # contribute a nonzero fraction, avoiding same-day observations
+  # collapsing onto a single x position.
+  frac_day <- (as.numeric(format(idx, "%H")) +
+    as.numeric(format(idx, "%M")) / 60 +
+    as.numeric(format(idx, "%S")) / 3600) / 24
+  y + (d - 1 + frac_day) / days_in_year(y)
+}
+
+#' Half-period shift used to center a line/ci band within its period
+#'
+#' \code{frequency()} is unreliable for xts objects (e.g. it can return a
+#' minuscule fraction based on second-level spacing), so on the numeric
+#' decimal-year x-axis (\code{use_date_scale = FALSE}) the shift is instead
+#' derived from the median spacing of the same numeric index
+#' (\code{getNumericTimeIndex}) used to plot the data, keeping units
+#' consistent. For ts objects, and for the Date-based x-axis
+#' (\code{use_date_scale = TRUE}), \code{frequency()} remains the basis for
+#' the shift, unchanged from previous behavior (there, any such shift is
+#' sub-day and gets absorbed by \code{scale_x_date}'s Date coercion anyway).
+#'
+#' @param x object of class ts or xts
+#' @param use_date_scale logical, is this plotted on a Date-based x-axis?
+#' @noRd
+getLineToMiddleShift <- function(x, use_date_scale = FALSE) {
+  if (use_date_scale || inherits(x, "ts")) {
+    return((1 / frequency(x)) / 2)
+  }
+  xx <- getNumericTimeIndex(x)
+  if (length(xx) < 2) {
+    return(0)
+  }
+  stats::median(diff(xx)) / 2
+}
+
 getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt, manual_ticks) {
   global_x <- list()
 
@@ -99,31 +175,6 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     all_ts <- tsl
   }
 
-  days_in_year <- function(y) {
-    ifelse(((y %% 4 == 0) & (y %% 100 != 0)) | (y %% 400 == 0), 366, 365)
-  }
-  get_time_index <- function(x) {
-    if (inherits(x, "ts")) {
-      return(time(x))
-    }
-    if (!inherits(x, "xts")) stop("Input must be 'ts' or 'xts'.")
-
-    idx <- zoo::index(x)
-    tcl <- attr(attr(x, "index"), "tclass")
-    if (is.null(tcl)) tcl <- class(idx)
-
-    if ("yearqtr" %in% tcl) {
-      return(as.numeric(zoo::as.yearqtr(idx)))
-    }
-    if ("yearmon" %in% tcl) {
-      return(as.numeric(zoo::as.yearmon(idx)))
-    }
-
-    y <- as.numeric(format(idx, "%Y"))
-    d <- as.numeric(format(idx, "%j"))
-    y + (d - 1) / days_in_year(y)
-  }
-
   if (is.null(manual_ticks)) {
     if (fill_up) {
       all_ts <- lapply(all_ts, function(x) {
@@ -132,7 +183,7 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     }
 
     # Compute combined range
-    all_time <- unlist(lapply(all_ts, get_time_index))
+    all_time <- unlist(lapply(all_ts, getNumericTimeIndex))
     global_x$x_range <- range(all_time)
 
     # Align to quarters
@@ -187,7 +238,9 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     scales <- sapply(all_ts, function(x) {
       if (inherits(x, "xts")) xts::periodicity(x)$scale else "ts"
     })
-    if ("daily" %in% scales) {
+    if ("hourly" %in% scales) {
+      "hourly"
+    } else if ("daily" %in% scales) {
       "daily"
     } else if ("weekly" %in% scales) {
       "weekly"
@@ -195,6 +248,8 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
       "monthly"
     } else if ("quarterly" %in% scales) {
       "quarterly"
+    } else if ("yearly" %in% scales) {
+      "annual"
     } else if ("ts" %in% scales) {
       "ts"
     } else {
