@@ -6,6 +6,7 @@ Changes in version 0.4.3
  * tsggplotly: rewritten with working custom hover text and a real secondary y-axis (built from the same axis metadata used to draw the plot); removed dead commented-out code
  * tsggplot: quiet argument now wired through consistently (returns axis metadata alongside the plot when FALSE), matching tsplot's behavior
  * tsggplot: fixed overlapping yearly x-axis labels on longer series / narrower plots
+ * tsggplotly: fixed overlapping yearly x-axis labels in the interactive plot too (the static fix above doesn't carry over automatically); new x_tick_mode argument ("thin"/"auto") lets you choose between our own overlap-avoidance or handing tick placement to Plotly
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1

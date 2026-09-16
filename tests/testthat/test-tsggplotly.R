@@ -113,3 +113,36 @@ test_that("tsggplotly", {
   expect_false(is.null(meta$right_y))
   expect_equal(built$x$layout$yaxis2$range, meta$right_y$y_range)
 })
+
+test_that("tsggplotly x_tick_mode (#15)", {
+  # 40 yearly labels won't all fit at the assumed default width -- this is
+  # the same overlap guide_axis(check.overlap = TRUE) hides visually for
+  # the static plot, which ggplotly() can't see (it reads the scale's
+  # break/label data, not the rendered grob)
+  long_ts <- ts(runif(40 * 12), start = c(1950, 1), frequency = 12)
+  p <- tsggplot(list(A = long_ts))
+
+  expect_equal(eval(formals(tsggplotly)$x_tick_mode), c("thin", "auto"))
+
+  fig_thin <- tsggplotly(p)
+  xa_thin <- fig_thin$x$layout$xaxis
+  expect_equal(xa_thin$tickmode, "array")
+  # tick marks/gridlines stay at every year...
+  expect_equal(length(xa_thin$tickvals), 40)
+  # ...but most of the labels text got blanked out to avoid overlap
+  expect_true(sum(xa_thin$ticktext == "") > 20)
+  expect_true(any(xa_thin$ticktext != ""))
+
+  fig_auto <- tsggplotly(p, x_tick_mode = "auto")
+  xa_auto <- fig_auto$x$layout$xaxis
+  expect_equal(xa_auto$tickmode, "auto")
+  expect_null(xa_auto$tickvals)
+  expect_null(xa_auto$ticktext)
+
+  # a short series with few yearly labels shouldn't lose any of them
+  short_ts <- ts(runif(5 * 12), start = c(2010, 1), frequency = 12)
+  p_short <- tsggplot(list(A = short_ts))
+  fig_short <- tsggplotly(p_short)
+  xa_short <- fig_short$x$layout$xaxis
+  expect_true(all(xa_short$ticktext != ""))
+})

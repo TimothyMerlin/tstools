@@ -4,12 +4,21 @@
 \alias{tsggplotly}
 \title{Convert ggplot2 time series object to plotly object}
 \usage{
-tsggplotly(p, ...)
+tsggplotly(p, ..., x_tick_mode = c("thin", "auto"))
 }
 \arguments{
 \item{p}{ggplot2 figure, as returned by \code{\link{tsggplot}}}
 
 \item{...}{additional arguments passed on to \code{\link[plotly]{ggplotly}}}
+
+\item{x_tick_mode}{character, how to avoid overlapping x-axis tick labels
+in the interactive plot (see #13, #15). \code{"thin"} (the default)
+estimates which yearly labels would overlap at the given/assumed width
+and blanks them out, the same way the static \code{tsggplot()} plot
+does, while still drawing every tick mark. \code{"auto"} instead hands
+tick placement entirely to Plotly (\code{tickmode = "auto"}), which
+recomputes "nice" tick positions dynamically as the plot is resized or
+zoomed, at the cost of no longer aligning ticks to exact year starts.}
 }
 \description{
 Convert ggplot2 time series object to plotly object
