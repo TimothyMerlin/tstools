@@ -824,7 +824,8 @@ tsggplot.list <- function(...,
             date_labels = "%Y",
             limits = as.Date(global_x$x_range),
             expand = c(0, 0)
-          )
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
       } else {
         p <- p +
           scale_x_continuous(
@@ -834,7 +835,9 @@ tsggplot.list <- function(...,
             limits = c(global_x$x_range[1], global_x$x_range[2]),
             expand = c(0, 0)
           ) +
-          guides(x = guide_axis(minor.ticks = TRUE))
+          # check.overlap drops whichever yearly labels would collide, the
+          # same fallback base R's axis() applies automatically in tsplot().
+          guides(x = guide_axis(minor.ticks = TRUE, check.overlap = TRUE))
       }
 
       if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
@@ -878,14 +881,16 @@ tsggplot.list <- function(...,
           scale_x_date(
             limits = as.Date(global_x$x_range, origin = "1970-01-01"),
             expand = c(0, 0)
-          )
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
       } else {
         p <- p +
           scale_x_continuous(
             breaks = global_x$yearly_tick_pos,
             limits = c(global_x$x_range[1], global_x$x_range[2]),
             expand = c(0, 0)
-          )
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
       }
     }
   } else {
@@ -923,13 +928,8 @@ tsggplot.list <- function(...,
 
   if (!is.null(labs)) {
     lab_args <- labs[!vapply(labs, is.null, logical(1))]
-    # y_right isn't a real ggplot2 label/aesthetic -- it's this package's own
-    # convention for the secondary axis title, already used directly above
-    # (sec_axis(name = labs$y_right)) and attached via tsggplot_meta below.
-    # Passing it to ggplot2::labs() would only store it on p$labels$y_right,
-    # which nothing reads, while making ggplot2 re-emit an "Ignoring unknown
-    # labels" message every time the plot is later built/printed (not just
-    # once here) -- so it's dropped before the call instead.
+    # y_right isn't a real ggplot2 label; passing it to labs() only
+    # triggers an "Ignoring unknown labels" message on every build.
     lab_args$y_right <- NULL
     p <- p + do.call(ggplot2::labs, lab_args)
   }
