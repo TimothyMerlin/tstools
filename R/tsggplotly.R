@@ -87,6 +87,10 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   x_tick_mode <- match.arg(x_tick_mode)
   dots <- list(...)
   meta <- attr(p, "tsggplot_meta")
+  text_family <- p$theme$text$family
+  if (is.null(text_family) || !nzchar(text_family)) {
+    text_family <- "sans"
+  }
 
   # Collect each series' custom hover text ("value: ...") from the line/point
   # layer data before conversion. It's a plain data column, not an aes()
@@ -107,6 +111,12 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   p <- plotly::ggplotly(p, ...)
 
   xa <- p$x$layout$xaxis
+  # Whether the "thin" mode ends up blanking any labels at all -- if so, the
+  # x-axis needs its own visible tick marks (see below), since the rest of
+  # this plot draws no gridlines/ticks and relies on the label text alone to
+  # mark each position; otherwise a blanked label reads as a vanished tick,
+  # not just a hidden one.
+  x_ticks_thinned <- FALSE
   if (identical(xa$tickmode, "array") && length(xa$tickvals) > 1) {
     if (x_tick_mode == "auto") {
       p$x$layout$xaxis$tickmode <- "auto"
@@ -117,11 +127,13 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     } else {
       width_px <- if (is.null(dots$width)) 700 else dots$width
       fontsize_pt <- if (is.null(xa$tickfont$size)) 11 else xa$tickfont$size
-      p$x$layout$xaxis$ticktext <- thin_plotly_x_labels(
+      thinned <- thin_plotly_x_labels(
         xa$tickvals, xa$ticktext, xa$range,
         width_in = width_px / 96,
         fontsize_pt = fontsize_pt
       )
+      x_ticks_thinned <- any(thinned != xa$ticktext)
+      p$x$layout$xaxis$ticktext <- thinned
     }
   }
 
@@ -134,16 +146,33 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     }
   }
 
+  # Blanking overlapping labels (x_ticks_thinned) leaves some yearly
+  # positions with no label; without a visible tick mark there, and with no
+  # gridlines drawn anywhere on this axis, that reads as the tick having
+  # vanished rather than just its label being hidden -- so give every
+  # position a small mark in that case, using the same styling ggplotly()
+  # already picked up from the static plot's tick decor.
+  xaxis_layout <- if (x_ticks_thinned) {
+    list(
+      ticks = "outside",
+      ticklen = 4,
+      tickwidth = xa$tickwidth,
+      tickcolor = xa$tickcolor
+    )
+  } else {
+    list(ticks = "")
+  }
+
   layout_args <- list(
     p = p,
     paper_bgcolor = "rgba(0,0,0,0)",
     plot_bgcolor = "rgba(0,0,0,0)",
-    xaxis = list(ticks = ""),
-    font = list(family = "Verdana"),
-    title = list(font = list(family = "Verdana")),
-    hoverlabel = list(font = list(family = "Verdana")),
+    xaxis = xaxis_layout,
+    font = list(family = text_family),
+    title = list(font = list(family = text_family)),
+    hoverlabel = list(font = list(family = text_family)),
     legend = list(
-      font = list(family = "Verdana"),
+      font = list(family = text_family),
       orientation = "h",
       x = 0.95,
       y = -0.05,

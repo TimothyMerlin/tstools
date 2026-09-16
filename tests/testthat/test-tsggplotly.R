@@ -53,7 +53,9 @@ test_that("tsggplotly", {
   expect_equal(built$x$layout$yaxis2$tickvals, meta$right_y$y_ticks)
   expect_equal(built$x$layout$yaxis2$overlaying, "y")
 
-  expect_equal(built$x$layout$font$family, "Verdana")
+  # the interactive plot's font follows the theme passed to tsggplot()
+  # rather than a hardcoded family
+  expect_equal(built$x$layout$font$family, theme$text$family)
   expect_equal(built$x$layout$legend$orientation, "h")
 })
 
