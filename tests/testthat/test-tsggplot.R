@@ -20,7 +20,12 @@ test_that("tsggplot sets custom labels correctly", {
   # Check if the labels are set correctly
   expect_equal(p$labels$x, labs$x)
   expect_equal(p$labels$y, labs$y)
-  expect_equal(p$labels$y_right, labs$y_right)
+  # y_right isn't a real ggplot2 label -- it's not passed to ggplot2::labs()
+  # (which would just store it inertly on p$labels$y_right while making
+  # ggplot2 emit an "Ignoring unknown labels" message on every subsequent
+  # build/print of the plot); it's read from tsggplot_meta instead, which is
+  # what tsggplotly() actually uses for the secondary axis title.
+  expect_equal(attr(p, "tsggplot_meta")$y_right_label, labs$y_right)
   expect_equal(p$labels$title, labs$title)
   expect_equal(p$labels$subtitle, labs$subtitle)
   expect_equal(p$labels$caption, labs$caption)
