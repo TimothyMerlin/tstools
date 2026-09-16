@@ -7,6 +7,8 @@ Changes in version 0.4.3
  * tsggplot: quiet argument now wired through consistently (returns axis metadata alongside the plot when FALSE), matching tsplot's behavior
  * tsggplot: fixed overlapping yearly x-axis labels on longer series / narrower plots
  * tsggplotly: fixed overlapping yearly x-axis labels in the interactive plot too (the static fix above doesn't carry over automatically); new x_tick_mode argument ("thin"/"auto") lets you choose between our own overlap-avoidance or handing tick placement to Plotly
+ * tsggplotly: interactive plot now follows the theme passed to tsggplot() instead of hardcoded styling -- font family, plot/panel background colour, and legend position/orientation/visibility (including legend.position = "none") all carry over; "thin" mode's tick marks are now drawn at the true year-start positions (matching the static plot's minor ticks) instead of the centered label positions
+ * tsggplot: when a tsr (right-axis) series is present, its legend is now grouped separately from the left-axis legend below the plot by default, matching tsplot; pass legend_all_left = TRUE (new theme parameter) to merge them back into one legend, as before. Static (print/save) output only -- tsggplotly() cannot convert the split legend and errors with a reminder to pass legend_all_left = TRUE first. New dependency: ggnewscale
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1

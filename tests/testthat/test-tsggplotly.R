@@ -12,7 +12,10 @@ test_that("tsggplotly", {
     plot.title = element_text(size = 30, face = "bold", color = "red"),
     plot.subtitle = element_text(size = 20),
     plot.caption = element_text(size = 25),
-    plot.tag = element_text(size = 15)
+    plot.tag = element_text(size = 15),
+    # tsggplotly() can't convert the split (ggnewscale-based) legend, so
+    # charts headed there need the merged legend (see tsggplotly()'s guard).
+    legend_all_left = TRUE
   )
   expect_no_warning(p <- tsggplot(tsl, tsr = tsg, labs = labs, theme = theme))
 
@@ -147,4 +150,53 @@ test_that("tsggplotly x_tick_mode (#15)", {
   fig_short <- tsggplotly(p_short)
   xa_short <- fig_short$x$layout$xaxis
   expect_true(all(xa_short$ticktext != ""))
+
+  # tickvals/ticktext sit at mid_pts (label positions, centered within each
+  # year), not the true year-start positions -- so blanked-or-not, tick
+  # marks are drawn separately as shapes at the real year starts
+  # (meta$global_x$yearly_tick_pos), matching the static plot's minor
+  # ticks. Built explicitly (plotly::layout()'s own merge mishandles a
+  # plain list like "shapes", so tsggplotly() assigns it directly).
+  meta <- attr(p, "tsggplot_meta")
+  built_thin <- plotly::plotly_build(fig_thin)
+  shape_x <- sort(vapply(built_thin$x$layout$shapes, function(s) s$x0, numeric(1)))
+  expect_equal(shape_x, sort(as.numeric(meta$global_x$yearly_tick_pos)))
+
+  # "auto" mode hands ticks to Plotly entirely -- no manual shapes needed
+  built_auto <- plotly::plotly_build(fig_auto)
+  expect_equal(length(built_auto$x$layout$shapes), 0)
+})
+
+test_that("tsggplotly follows the theme's background and legend position", {
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+
+  # defaults: transparent backgrounds, legend visible
+  p_default <- tsggplot(list(A = long_ts))
+  built_default <- plotly::plotly_build(tsggplotly(p_default))
+  expect_equal(built_default$x$layout$paper_bgcolor, "rgba(0,0,0,0)")
+  expect_equal(built_default$x$layout$plot_bgcolor, "rgba(0,0,0,0)")
+  expect_true(built_default$x$layout$showlegend)
+
+  # custom plot/panel background colours carry over
+  p_bg <- tsggplot(list(A = long_ts),
+    theme = init_tsggplot_theme(
+      plot.background = ggplot2::element_rect(fill = "grey90"),
+      panel.background = ggplot2::element_rect(fill = "white")
+    )
+  )
+  built_bg <- plotly::plotly_build(tsggplotly(p_bg))
+  expect_equal(built_bg$x$layout$paper_bgcolor, "grey90")
+  expect_equal(built_bg$x$layout$plot_bgcolor, "white")
+
+  # legend.position = "none" actually hides the legend (ggplotly() alone
+  # does not act on this)
+  p_none <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(legend.position = "none"))
+  built_none <- plotly::plotly_build(tsggplotly(p_none))
+  expect_false(built_none$x$layout$showlegend)
+
+  # legend.position = "right" is left to ggplotly()'s own derivation
+  # instead of forcing a hardcoded bottom-right position
+  p_right <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(legend.position = "right"))
+  built_right <- plotly::plotly_build(tsggplotly(p_right))
+  expect_null(built_right$x$layout$legend$orientation)
 })
