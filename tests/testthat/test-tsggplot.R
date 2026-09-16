@@ -173,6 +173,32 @@ test_that("tsggplot ticks", {
   expect_false(p$theme$axis.ticks.x.bottom$inherit.blank)
 })
 
+test_that("tsggplot x-axis guide drops overlapping yearly labels (#13)", {
+  # guide_axis(check.overlap = TRUE) makes ggplot2 drop whichever x-axis
+  # labels would collide at draw time, the same fallback base R's axis()
+  # gives tsplot() for free. Exercise all four Global X-Axis branches
+  # (numeric vs. Date scale, crossed with the "mid"/"start" label position,
+  # which decides whether the segment_length/minor-ticks code path is used).
+  x_check_overlap <- function(p) {
+    p$guides$guides[["x"]]$params$check.overlap
+  }
+
+  ts_long <- window(AirPassengers, start = c(1949, 1), end = c(1960, 12))
+  weekly_long <- xts::xts(
+    seq_len(261),
+    order.by = seq(as.Date("2010-01-01"), by = "week", length.out = 261)
+  )
+
+  # "mid" label position (default) -> segment_length/minor-ticks branch
+  expect_true(x_check_overlap(tsggplot(list(ts_long))))
+  expect_true(x_check_overlap(tsggplot(list(weekly_long))))
+
+  # "start" label position -> no segment_length branch
+  start_theme <- init_tsggplot_theme(axis.text.x.pos = "start")
+  expect_true(x_check_overlap(tsggplot(list(ts_long), theme = start_theme)))
+  expect_true(x_check_overlap(tsggplot(list(weekly_long), theme = start_theme)))
+})
+
 test_that("tsggplot axis", {
   tsl <- list(AirPassengers = AirPassengers, JohnsonJohnson = JohnsonJohnson)
   theme <- init_tsggplot_theme(
