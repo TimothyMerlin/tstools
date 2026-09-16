@@ -923,7 +923,21 @@ tsggplot.list <- function(...,
 
   if (!is.null(labs)) {
     lab_args <- labs[!vapply(labs, is.null, logical(1))]
-    p <- p + do.call(ggplot2::labs, lab_args)
+    # y_right isn't a real ggplot2 label/aesthetic -- it's this package's own
+    # convention for the secondary axis title (also used directly above via
+    # sec_axis(name = labs$y_right) and attached via tsggplot_meta below).
+    # ggplot2::labs() still stores it on p$labels$y_right as-is (part of this
+    # function's existing contract), but warns "Ignoring unknown labels" for
+    # it every time, which is silenced here since it's expected, not an
+    # actual problem.
+    p <- withCallingHandlers(
+      p + do.call(ggplot2::labs, lab_args),
+      warning = function(w) {
+        if (grepl("^Ignoring unknown labels", conditionMessage(w))) {
+          invokeRestart("muffleWarning")
+        }
+      }
+    )
   }
 
   # Attach the axis metadata already computed above, so tsggplotly() can

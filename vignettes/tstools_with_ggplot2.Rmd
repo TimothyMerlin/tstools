@@ -89,7 +89,7 @@ The following example tweaks this 15 percent margin to an exaggerated 70 percent
 in order to show that an extra grid up top is added because the *y_tick_margin*
 parameter implies now that 70 percent of the outer most grid needs to stay clean.
  
-```{r}
+```{r,fig.width = 7,fig.height=6}
 tsggplot(short,
   theme = init_tsggplot_theme(y_tick_margin = .7)
 )
@@ -99,7 +99,7 @@ tsggplot(short,
 Often you just want to have a fixed scale, e.g., for an index that ranges from 0 to 100. Simply use the ``manual_value_ticks_l`` and ``manual_value_ticks_r`` arguments to specify manual ticks and grids.
 In case you use 2 y-axes make sure both manual value tick vectors are of the same length. 
 
-```{r}
+```{r,fig.width = 7,fig.height=6}
 tsggplot(KOF["kofbarometer"],
   manual_value_ticks_l = seq(60, 120, by = 20)
 )
