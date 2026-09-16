@@ -1,5 +1,5 @@
 #' @importFrom ggplot2 aes geom_rect .data
-draw_tsggplot_highlight <- function(p, global_x, left_y, theme, output_format) {
+draw_tsggplot_highlight <- function(p, global_x, left_y, theme) {
   hlw_start <- theme$highlight_window_start
   if (!any(is.na(hlw_start))) {
     if (!is.list(hlw_start)) {
@@ -35,22 +35,6 @@ draw_tsggplot_highlight <- function(p, global_x, left_y, theme, output_format) {
     ymin = left_y$y_range[1],
     ymax = left_y$y_range[2]
   )
-
-  ## inside your plotting helper
-  if (theme$highlight_window_alpha < 1 && capabilities("cairo") &&
-    getOption("bitmapType") != "cairo" && output_format == "plot") {
-    warning(
-      "Transparency requested but current device is not cairo.\n",
-      "Hightlight window may not correctly display.\n",
-      'Use options(bitmapType = "cairo") to enable cairo support.'
-    )
-  } else if (!capabilities("cairo")) {
-    warning(
-      "Transparency will not render correctly.\n",
-      "Hightlight window may not correctly display.\n",
-      "Consider using a Cairo device."
-    )
-  }
 
   p <- p + geom_rect(
     data = rect_df,

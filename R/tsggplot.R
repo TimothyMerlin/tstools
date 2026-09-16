@@ -681,7 +681,7 @@ tsggplot.list <- function(...,
     do.call(ggplot2::theme, theme_args)
 
   if (theme$highlight_window) {
-    p <- draw_tsggplot_highlight(p, global_x, left_y, theme, output_format)
+    p <- draw_tsggplot_highlight(p, global_x, left_y, theme)
   }
 
   # Split theme into left/right

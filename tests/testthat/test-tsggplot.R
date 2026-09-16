@@ -481,18 +481,15 @@ test_that("tsggplot with highlight window", {
     highlight_window_color = "red",
     highlight_window_alpha = 0.2
   )
-  if (capabilities("cairo") && getOption("bitmapType") != "cairo") {
-    expect_warning(tsggplot(
-      list(AirPassengers = AirPassengers),
-      theme = theme
-    ), "Transparency requested but current device is not cairo.")
-  }
+  # translucent geom_rect fill is composited by grid regardless of the
+  # device's bitmapType, unlike base graphics' rect(), so no cairo warning
+  expect_no_warning(tsggplot(
+    list(AirPassengers = AirPassengers),
+    theme = theme
+  ))
 
-  # Suppress cairo warning
-  suppressWarnings(
-    p <- tsggplot(list(AirPassengers = AirPassengers),
-      theme = theme
-    )
+  p <- tsggplot(list(AirPassengers = AirPassengers),
+    theme = theme
   )
 
   # find the geom_rect layer
@@ -512,11 +509,8 @@ test_that("tsggplot with highlight window", {
     highlight_window_start = c(1959, 1),
     highlight_window_end = c(1971, 1)
   )
-  # Suppress cairo warning
-  suppressWarnings(
-    p <- tsggplot(list(AirPassengers = AirPassengers),
-      theme = theme
-    )
+  p <- tsggplot(list(AirPassengers = AirPassengers),
+    theme = theme
   )
   # find the geom_rect layer
   ix <- which(sapply(
