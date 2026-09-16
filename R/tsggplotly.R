@@ -22,7 +22,7 @@
 #' @importFrom grid convertWidth grobWidth textGrob gpar
 #' @noRd
 thin_plotly_x_labels <- function(tickvals, ticktext, x_range, width_in = 7,
-                                  fontsize_pt = 11, pad_in = 0.08) {
+                                 fontsize_pt = 11, pad_in = 0.08) {
   if (length(tickvals) < 2) {
     return(ticktext)
   }
