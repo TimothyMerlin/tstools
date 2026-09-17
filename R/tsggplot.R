@@ -860,13 +860,21 @@ tsggplot.list <- function(...,
 
       # choose scale type depending on frequency
       if (global_x$dominant_freq %in% c("daily", "weekly")) {
+        date_scale_args <- list(
+          limits = as.Date(global_x$x_range),
+          expand = c(0, 0)
+        )
+        if (identical(theme$axis_x_date_ticks, "years")) {
+          # Fixed year-based spacing, regardless of the series' own span --
+          # matches the numeric (ts/monthly/quarterly/annual) x-axis'
+          # always-year-based convention, but produces an NA tick for
+          # anything shorter than a year (the "auto" default's whole
+          # reason for existing).
+          date_scale_args$date_breaks <- paste0(theme$axis_x_label_dt, " years")
+          date_scale_args$date_labels <- "%Y"
+        }
         p <- p +
-          scale_x_date(
-            date_breaks = paste0(theme$axis_x_label_dt, " years"),
-            date_labels = "%Y",
-            limits = as.Date(global_x$x_range),
-            expand = c(0, 0)
-          ) +
+          do.call(scale_x_date, date_scale_args) +
           guides(x = guide_axis(check.overlap = TRUE))
       } else {
         p <- p +

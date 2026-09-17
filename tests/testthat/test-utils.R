@@ -224,3 +224,26 @@ test_that("tsggplot still shows an x-axis label when only one yearly tick fits (
   expect_false(anyNA(x_scale$get_labels()))
   expect_equal(x_scale$get_labels(), 2023)
 })
+
+test_that("tsggplot's daily/weekly x-axis picks sensible tick spacing for its span (axis_x_date_ticks)", {
+  dates <- seq(as.Date("2023-01-01"), by = "day", length.out = 5)
+  daily_xts <- xts::xts(seq_along(dates), order.by = dates)
+
+  # "auto" (the default) lets ggplot2 pick day-level breaks for a short
+  # series instead of the always-year-based spacing, which produces an NA
+  # tick for anything shorter than a year
+  p_auto <- tsggplot(list(A = daily_xts), theme = init_tsggplot_theme(fill_year_with_nas = FALSE))
+  b_auto <- ggplot2::ggplot_build(p_auto)
+  x_auto <- b_auto$layout$panel_params[[1]]$x
+  expect_false(anyNA(x_auto$breaks))
+  expect_true(length(x_auto$breaks) >= 5)
+
+  # "years" keeps the old fixed year-based spacing as an explicit opt-in
+  p_years <- tsggplot(
+    list(A = daily_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE, axis_x_date_ticks = "years")
+  )
+  b_years <- ggplot2::ggplot_build(p_years)
+  x_years <- b_years$layout$panel_params[[1]]$x
+  expect_equal(x_years$get_labels()[!is.na(x_years$get_labels())], "2023")
+})

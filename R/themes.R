@@ -363,6 +363,14 @@ init_tsplot_print_theme <- function(
 #' (~0.19 years when fill_year_with_nas == TRUE, ~0.25 otherwise) once the
 #' series spans a quarter or more. Set to a specific value (0 for none) to
 #' override.
+#' @param axis_x_date_ticks character, only relevant for daily/weekly xts
+#' series (which plot on a real Date x-axis). \code{"auto"} (the default)
+#' lets ggplot2 pick sensible day/week/month/year tick spacing from the
+#' series' own span -- necessary for short series, since the alternative is
+#' always year-spaced regardless of span (broken for anything shorter than
+#' a year, e.g. producing an \code{NA} tick). \code{"years"} keeps that
+#' fixed year-based spacing (using axis_x_label_dt), matching the numeric
+#' (ts/monthly/quarterly/annual) x-axis' own always-year-based convention.
 #' @param band_fill_color character vector of hex colors for the bands if
 #' left_as_band == TRUE.
 #' @param bar_border_color character hex colors for the border around bars in
@@ -514,6 +522,7 @@ init_tsggplot_theme <- function(
   axis_x_label_dt = 1,
   axis_x_tick_dt = 1,
   axis_x_pad = NULL,
+  axis_x_date_ticks = "auto",
   auto_bottom_margin = FALSE,
   band_fill_color = c(
     ETH_Petrol = colors$ETH_Petrol$`100`,
