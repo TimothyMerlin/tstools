@@ -206,3 +206,21 @@ test_that("tsggplot doesn't error when the axis is too short for a quarterly tic
     theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
   ))
 })
+
+test_that("tsggplot still shows an x-axis label when only one yearly tick fits (short hourly series)", {
+  hourly_idx <- seq(as.POSIXct("2023-01-01", tz = "UTC"), by = "hour", length.out = 5 * 24)
+  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+  p <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
+  )
+
+  meta <- attr(p, "tsggplot_meta")
+  expect_equal(length(meta$global_x$yearly_tick_pos), 1)
+
+  b <- ggplot2::ggplot_build(p)
+  x_scale <- b$layout$panel_params[[1]]$x
+  expect_false(anyNA(x_scale$breaks))
+  expect_false(anyNA(x_scale$get_labels()))
+  expect_equal(x_scale$get_labels(), 2023)
+})

@@ -825,26 +825,38 @@ tsggplot.list <- function(...,
   if (!inherits(theme$axis.line.x, "element_blank")) {
     if (exists("segment_length")) {
       brks <- global_x$yearly_tick_pos
-      tick_spacing <- diff(brks)[1]
-      if (inherits(brks, "Date")) {
-        # --- DAILY / WEEKLY: compute midpoints as numeric days
-        mid_all <- as.Date(
-          c(
-            (as.numeric(brks[-length(brks)]) + as.numeric(brks[-1])) / 2,
-            as.numeric(brks[length(brks)]) + as.numeric(tick_spacing) / 2
-          ),
-          origin = "1970-01-01"
-        )
+      if (length(brks) < 2) {
+        # A single tick (e.g. a series short enough that only one yearly/
+        # quarterly boundary falls within its padded range) has no "next"
+        # tick to center a mid-point label between -- and the usual
+        # mid-point formula's result would fall outside [min(brks),
+        # max(brks)] and get filtered out anyway, leaving no breaks/labels
+        # at all. Label the single tick directly at its own position
+        # instead.
+        mid_pts <- brks
+        labs_pt <- global_x$year_labels_start
       } else {
-        # --- MONTHLY / QUARTERLY / ANNUAL: numeric scale
-        mid_all <- c(
-          (brks[-length(brks)] + brks[-1]) / 2,
-          brks[length(brks)] + tick_spacing / 2
-        )
+        tick_spacing <- diff(brks)[1]
+        if (inherits(brks, "Date")) {
+          # --- DAILY / WEEKLY: compute midpoints as numeric days
+          mid_all <- as.Date(
+            c(
+              (as.numeric(brks[-length(brks)]) + as.numeric(brks[-1])) / 2,
+              as.numeric(brks[length(brks)]) + as.numeric(tick_spacing) / 2
+            ),
+            origin = "1970-01-01"
+          )
+        } else {
+          # --- MONTHLY / QUARTERLY / ANNUAL: numeric scale
+          mid_all <- c(
+            (brks[-length(brks)] + brks[-1]) / 2,
+            brks[length(brks)] + tick_spacing / 2
+          )
+        }
+        is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
+        mid_pts <- mid_all[is_valid]
+        labs_pt <- global_x$year_labels_start[is_valid]
       }
-      is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
-      mid_pts <- mid_all[is_valid]
-      labs_pt <- global_x$year_labels_start[is_valid]
 
       # choose scale type depending on frequency
       if (global_x$dominant_freq %in% c("daily", "weekly")) {
