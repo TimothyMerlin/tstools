@@ -10,6 +10,7 @@ Changes in version 0.4.3
  * tsggplotly: interactive plot now follows the theme passed to tsggplot() instead of hardcoded styling -- font family, plot/panel background colour, and legend position/orientation/visibility (including legend.position = "none") all carry over; "thin" mode's tick marks are now drawn at the true year-start positions (matching the static plot's minor ticks) instead of the centered label positions
  * tsggplot: when a tsr (right-axis) series is present, its legend is now grouped separately from the left-axis legend below the plot by default, matching tsplot; pass legend_all_left = TRUE (new theme parameter) to merge them back into one legend, as before. Static (print/save) output only -- tsggplotly() cannot convert the split legend and errors with a reminder to pass legend_all_left = TRUE first. New dependency: ggnewscale
  * tsggplotly: x_tick_mode = "auto" now gives Plotly a real date-typed x-axis (reconstructed from tsggplot()'s numeric x) instead of a plain numeric one, so zooming in shows properly formatted month/day tick labels instead of decimal years like 2020.5
+ * tsggplot: the margin left after the last data point now scales with the series' own span instead of always being a fixed ~one-quarter-year margin, so a short daily/hourly series isn't dwarfed by several months of empty axis; new axis_x_pad theme parameter lets you set it explicitly (0 for none) instead of relying on the automatic scaling
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1

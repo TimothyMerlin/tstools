@@ -355,6 +355,14 @@ init_tsplot_print_theme <- function(
 #' series. If neq 1 then quarterly ticks will not be shown. Defaults to 1.
 #' @param axis_x_label_dt numeric The distance between labels on the x axis in
 #' years. Defaults to 2.
+#' @param axis_x_pad numeric how far past the last data point (and before the
+#' first, symmetrically) the x-axis extends, in years. Defaults to NULL,
+#' which scales the margin to the series' own span -- proportionally small
+#' for short series (so e.g. a few days of daily data isn't dwarfed by a
+#' fixed multi-month margin), capped at the classic one-quarter margin
+#' (~0.19 years when fill_year_with_nas == TRUE, ~0.25 otherwise) once the
+#' series spans a quarter or more. Set to a specific value (0 for none) to
+#' override.
 #' @param band_fill_color character vector of hex colors for the bands if
 #' left_as_band == TRUE.
 #' @param bar_border_color character hex colors for the border around bars in
@@ -505,6 +513,7 @@ init_tsggplot_theme <- function(
   sum_line_linewidth = 3,
   axis_x_label_dt = 1,
   axis_x_tick_dt = 1,
+  axis_x_pad = NULL,
   auto_bottom_margin = FALSE,
   band_fill_color = c(
     ETH_Petrol = colors$ETH_Petrol$`100`,

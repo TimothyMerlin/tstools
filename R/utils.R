@@ -164,8 +164,9 @@ getLineToMiddleShift <- function(x, use_date_scale = FALSE) {
   stats::median(diff(xx)) / 2
 }
 
-getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt, manual_ticks) {
+getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt, manual_ticks, pad = NULL) {
   global_x <- list()
+  x_pad <- 0
 
   # Combine left and right series
   if (!is.null(tsr)) {
@@ -185,13 +186,20 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     all_time <- unlist(lapply(all_ts, getNumericTimeIndex))
     global_x$x_range <- range(all_time)
 
-    # Align to quarters
+    # Align the start to the nearest quarter boundary at or before the data
     global_x$x_range[1] <- trunc(global_x$x_range[1] * 4) / 4
-    if (fill_up) {
-      global_x$x_range[2] <- trunc(global_x$x_range[2] * 4 + 0.76) / 4
-    } else {
-      global_x$x_range[2] <- trunc(global_x$x_range[2] * 4 + 1) / 4
-    }
+
+    # How far past the last data point to extend the visible axis, in
+    # years. A user-supplied pad (theme's axis_x_pad) applies as-is;
+    # otherwise it scales to the series' own span, so a handful of days of
+    # data isn't dwarfed by a fixed multi-month margin, capped at the
+    # classic one-quarter margin (~0.19y when fill_year_with_nas == TRUE,
+    # ~0.25y otherwise) once the series spans a quarter or more --
+    # preserving prior behavior there.
+    span <- diff(range(all_time))
+    default_cap <- if (fill_up) 0.19 else 0.25
+    x_pad <- if (is.null(pad)) min(default_cap, max(span * 0.25, 1 / 365)) else pad
+    global_x$x_range[2] <- global_x$x_range[2] + x_pad
 
     # Tick positions and labels
     global_x$yearly_tick_pos <- seq(
@@ -259,7 +267,14 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
   if (global_x$dominant_freq %in% c("daily", "weekly") && !is.null(global_x$quarterly_tick_pos)) {
     global_x$quarterly_tick_pos <- zoo::as.Date(zoo::as.yearqtr(global_x$quarterly_tick_pos))
     global_x$yearly_tick_pos <- zoo::as.Date(zoo::as.yearqtr(global_x$yearly_tick_pos))
-    global_x$x_range <- global_x$x_range <- range(do.call(c, lapply(all_ts, zoo::index)))
+    # zoo::index() may return POSIXct (not just Date) here, e.g. for xts
+    # built on POSIXct timestamps at daily resolution -- coerce to Date so
+    # the day-count padding below adds days, not seconds.
+    date_range <- range(as.Date(do.call(c, lapply(all_ts, zoo::index))))
+    # Same trailing margin as above, translated from years to days -- this
+    # branch otherwise recomputes x_range from the raw (possibly fill_up-
+    # padded) index and would lose it entirely.
+    global_x$x_range <- c(date_range[1], date_range[2] + round(x_pad * 365.25))
   }
 
   global_x

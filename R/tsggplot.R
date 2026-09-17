@@ -490,7 +490,8 @@ tsggplot.list <- function(...,
     fill_up_start = theme$fill_up_start,
     tick_dt = theme$axis_x_tick_dt,
     label_dt = theme$axis_x_label_dt,
-    manual_ticks_x
+    manual_ticks_x,
+    pad = theme$axis_x_pad
   )
 
   # daily/weekly xts data is plotted on a Date-based x-axis (scale_x_date);
@@ -870,38 +871,42 @@ tsggplot.list <- function(...,
       }
 
       if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
-        # Filter out overlapping quarterly ticks
+        # Filter out overlapping quarterly ticks -- a very short series (or
+        # a small axis_x_pad) may leave none beyond the yearly ones already
+        # drawn
         q_ticks <- setdiff(global_x$quarterly_tick_pos, brks)
 
-        # Build a df of segment endpoints plotted in data coordinates
-        panel <- ggplot_build(p)$layout$panel_params[[1]]
-        y_min <- panel$y.range[1]
-        y_rng <- diff(panel$y.range)
-        # cheating here a bit because we neeed to translate grid units
-        # (axis.minor.ticks.length) that make sense in the drawing coordinate
-        # to data coordinates
-        tick_h <- y_rng * segment_length / 100
+        if (length(q_ticks) > 0) {
+          # Build a df of segment endpoints plotted in data coordinates
+          panel <- ggplot_build(p)$layout$panel_params[[1]]
+          y_min <- panel$y.range[1]
+          y_rng <- diff(panel$y.range)
+          # cheating here a bit because we neeed to translate grid units
+          # (axis.minor.ticks.length) that make sense in the drawing coordinate
+          # to data coordinates
+          tick_h <- y_rng * segment_length / 100
 
-        tick_df <- data.frame(
-          x    = q_ticks,
-          xend = q_ticks,
-          y    = y_min,
-          yend = y_min + tick_h
-        )
+          tick_df <- data.frame(
+            x    = q_ticks,
+            xend = q_ticks,
+            y    = y_min,
+            yend = y_min + tick_h
+          )
 
-        geom_args <- c(
-          list(
-            data = tick_df,
-            mapping = aes(
-              x = .data$x, y = .data$y,
-              xend = .data$xend, yend = .data$yend
+          geom_args <- c(
+            list(
+              data = tick_df,
+              mapping = aes(
+                x = .data$x, y = .data$y,
+                xend = .data$xend, yend = .data$yend
+              ),
+              inherit.aes = FALSE
             ),
-            inherit.aes = FALSE
-          ),
-          segment_x_bottom
-        )
+            segment_x_bottom
+          )
 
-        p <- p + do.call(geom_segment, geom_args)
+          p <- p + do.call(geom_segment, geom_args)
+        }
       }
     } else {
       # no segment_length case
