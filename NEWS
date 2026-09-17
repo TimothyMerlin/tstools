@@ -12,6 +12,8 @@ Changes in version 0.4.3
  * tsggplotly: x_tick_mode = "auto" now gives Plotly a real date-typed x-axis (reconstructed from tsggplot()'s numeric x) instead of a plain numeric one, so zooming in shows properly formatted month/day tick labels instead of decimal years like 2020.5
  * tsggplot: the margin left after the last data point now scales with the series' own span instead of always being a fixed ~one-quarter-year margin, so a short daily/hourly series isn't dwarfed by several months of empty axis; new axis_x_pad theme parameter lets you set it explicitly (0 for none) instead of relying on the automatic scaling
  * tsggplot: daily/weekly xts series now pick sensible day/week/month/year x-axis tick spacing based on their own span by default, instead of always being year-spaced (which produced a broken NA tick for anything shorter than a year); axis_x_date_ticks = "years" theme parameter restores the old fixed year-based spacing
+ * tsggplot: fixed a crash/blank-axis case where a series short enough to have only one yearly tick in its range showed no x-axis ticks or labels at all
+ * tsggplot: hourly xts series now plot on a real datetime x-axis (scale_x_datetime), like daily/weekly's date axis, instead of the numeric decimal-year axis used for monthly/quarterly/ts data -- gets real hour/day/month tick labels (also respects axis_x_date_ticks) instead of decimal years like 2023.5; tsggplotly()'s x_tick_mode = "auto" reconstructs real datetimes for hourly series too
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1

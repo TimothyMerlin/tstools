@@ -275,6 +275,18 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     # branch otherwise recomputes x_range from the raw (possibly fill_up-
     # padded) index and would lose it entirely.
     global_x$x_range <- c(date_range[1], date_range[2] + round(x_pad * 365.25))
+  } else if (global_x$dominant_freq == "hourly" && !is.null(global_x$quarterly_tick_pos)) {
+    # Same idea as daily/weekly above, but keeping full POSIXct (not Date)
+    # precision throughout, since hourly data needs sub-day resolution --
+    # plotted on scale_x_datetime(), not scale_x_date().
+    raw_index <- do.call(c, lapply(all_ts, zoo::index))
+    tz <- attr(raw_index, "tzone")
+    if (is.null(tz)) tz <- ""
+    global_x$quarterly_tick_pos <- as.POSIXct(zoo::as.Date(zoo::as.yearqtr(global_x$quarterly_tick_pos)), tz = tz)
+    global_x$yearly_tick_pos <- as.POSIXct(zoo::as.Date(zoo::as.yearqtr(global_x$yearly_tick_pos)), tz = tz)
+    time_range <- range(as.POSIXct(raw_index, tz = tz))
+    # Same trailing margin as above, translated from years to seconds
+    global_x$x_range <- c(time_range[1], time_range[2] + x_pad * 365.25 * 86400)
   }
 
   global_x

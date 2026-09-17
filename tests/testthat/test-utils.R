@@ -207,11 +207,12 @@ test_that("tsggplot doesn't error when the axis is too short for a quarterly tic
   ))
 })
 
-test_that("tsggplot still shows an x-axis label when only one yearly tick fits (short hourly series)", {
-  hourly_idx <- seq(as.POSIXct("2023-01-01", tz = "UTC"), by = "hour", length.out = 5 * 24)
-  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+test_that("tsggplot still shows an x-axis label when only one yearly tick fits (short monthly series)", {
+  # a genuinely numeric-scale (non date/datetime) series short enough that
+  # its padded range contains only one yearly tick
+  short_monthly <- ts(1:3, start = c(2023, 1), frequency = 12)
   p <- tsggplot(
-    list(A = hourly_xts),
+    list(A = short_monthly),
     theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
   )
 
@@ -223,6 +224,36 @@ test_that("tsggplot still shows an x-axis label when only one yearly tick fits (
   expect_false(anyNA(x_scale$breaks))
   expect_false(anyNA(x_scale$get_labels()))
   expect_equal(x_scale$get_labels(), 2023)
+})
+
+test_that("tsggplot plots hourly xts series on a real datetime x-axis", {
+  hourly_idx <- seq(as.POSIXct("2023-01-01", tz = "UTC"), by = "hour", length.out = 5 * 24)
+  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+  p <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
+  )
+
+  meta <- attr(p, "tsggplot_meta")
+  expect_true(inherits(meta$global_x$x_range, "POSIXct"))
+  expect_true(inherits(meta$global_x$yearly_tick_pos, "POSIXct"))
+
+  # real day-level labels (e.g. "Jan 01"), not a single decimal-year label
+  b <- ggplot2::ggplot_build(p)
+  x_scale <- b$layout$panel_params[[1]]$x
+  labels <- x_scale$get_labels()
+  expect_false(anyNA(labels))
+  expect_true(all(grepl("^[A-Z][a-z]{2} \\d{2}$", labels)))
+  expect_true(length(labels) >= 3)
+
+  # the actual data lines up correctly with that datetime axis (line_to_
+  # middle off here so the plotted x isn't shifted by half a period)
+  p_no_shift <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE, line_to_middle = FALSE)
+  )
+  built_data <- ggplot2::ggplot_build(p_no_shift)$data[[1]]
+  expect_equal(as.numeric(built_data$x), as.numeric(hourly_idx), tolerance = 1e-6)
 })
 
 test_that("tsggplot's daily/weekly x-axis picks sensible tick spacing for its span (axis_x_date_ticks)", {

@@ -445,7 +445,10 @@ tsggplot(list("KOF Barometer" = kof_xts))
 
 `tsggplot` supports `xts` series at daily, weekly, monthly, quarterly, yearly,
 and hourly frequency -- each renders on the appropriate x-axis (a date axis
-for daily/weekly data, a numeric decimal-year axis otherwise).
+for daily/weekly data, a datetime axis for hourly data, and a numeric
+decimal-year axis otherwise). Daily/weekly/hourly axes pick sensible tick
+spacing automatically based on how much data there is (`axis_x_date_ticks`
+theme parameter); the numeric axis is always year-spaced.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 weekly_idx <- seq(as.Date("2020-01-06"), as.Date("2023-01-01"), by = "week")
@@ -470,7 +473,9 @@ hourly_xts <- xts(cumsum(rnorm(length(hourly_idx))), order.by = hourly_idx)
 # only spans a few days and the padding would just show mostly empty space.
 # The small margin left after the last data point scales automatically
 # with how much data there is; pass axis_x_pad (in years, 0 for none) to
-# override it directly.
+# override it directly. The x-axis itself is a real datetime axis, so it
+# gets real day labels (e.g. "Jan 01") automatically rather than needing
+# any of the above to show something meaningful.
 tsggplot(list("Hourly series" = hourly_xts),
   theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
 )

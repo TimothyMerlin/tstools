@@ -52,7 +52,7 @@
 #' @importFrom ggplot2 aes coord_cartesian element_blank element_line element_text geom_rect geom_segment ggplot
 #' ggplot_build ggsave guides guide_axis guide_legend margin sec_axis scale_color_manual
 #' scale_fill_manual scale_x_continuous scale_y_continuous waiver .data
-#' scale_x_date
+#' scale_x_date scale_x_datetime
 #'
 #' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
 #'          caption, tag)
@@ -494,11 +494,12 @@ tsggplot.list <- function(...,
     pad = theme$axis_x_pad
   )
 
-  # daily/weekly xts data is plotted on a Date-based x-axis (scale_x_date);
-  # everything else (ts, monthly/quarterly/annual/hourly xts) is plotted on
-  # a numeric decimal-year x-axis (scale_x_continuous) -- draw functions need
-  # to know which, so their data lines up with the axis built below.
-  use_date_scale <- global_x$dominant_freq %in% c("daily", "weekly")
+  # daily/weekly xts data is plotted on a Date-based x-axis (scale_x_date),
+  # hourly on a POSIXct-based one (scale_x_datetime); everything else (ts,
+  # monthly/quarterly/annual xts) is plotted on a numeric decimal-year
+  # x-axis (scale_x_continuous) -- draw functions need to know which, so
+  # their data lines up with the axis built below.
+  use_date_scale <- global_x$dominant_freq %in% c("daily", "weekly", "hourly")
 
   # y can't be global in the first place, cause
   # tsr and tsl have different scales....
@@ -825,37 +826,35 @@ tsggplot.list <- function(...,
   if (!inherits(theme$axis.line.x, "element_blank")) {
     if (exists("segment_length")) {
       brks <- global_x$yearly_tick_pos
-      if (length(brks) < 2) {
-        # A single tick (e.g. a series short enough that only one yearly/
-        # quarterly boundary falls within its padded range) has no "next"
-        # tick to center a mid-point label between -- and the usual
-        # mid-point formula's result would fall outside [min(brks),
-        # max(brks)] and get filtered out anyway, leaving no breaks/labels
-        # at all. Label the single tick directly at its own position
-        # instead.
-        mid_pts <- brks
-        labs_pt <- global_x$year_labels_start
-      } else {
-        tick_spacing <- diff(brks)[1]
-        if (inherits(brks, "Date")) {
-          # --- DAILY / WEEKLY: compute midpoints as numeric days
-          mid_all <- as.Date(
-            c(
-              (as.numeric(brks[-length(brks)]) + as.numeric(brks[-1])) / 2,
-              as.numeric(brks[length(brks)]) + as.numeric(tick_spacing) / 2
-            ),
-            origin = "1970-01-01"
-          )
+      is_date_scale <- global_x$dominant_freq %in% c("daily", "weekly", "hourly")
+
+      # Label mid-points (labels centered within each year's bin) are only
+      # used by the numeric (ts/monthly/quarterly/annual) scale below --
+      # date-based scales (daily/weekly/hourly) hand tick placement to
+      # ggplot2's own scale_x_date()/scale_x_datetime() instead, and their
+      # yearly_tick_pos/quarterly_tick_pos are Date/POSIXct, for which this
+      # arithmetic (e.g. summing two Date/POSIXct values) isn't meaningful.
+      if (!is_date_scale) {
+        if (length(brks) < 2) {
+          # A single tick (e.g. a series short enough that only one yearly/
+          # quarterly boundary falls within its padded range) has no "next"
+          # tick to center a mid-point label between -- and the usual
+          # mid-point formula's result would fall outside [min(brks),
+          # max(brks)] and get filtered out anyway, leaving no breaks/labels
+          # at all. Label the single tick directly at its own position
+          # instead.
+          mid_pts <- brks
+          labs_pt <- global_x$year_labels_start
         } else {
-          # --- MONTHLY / QUARTERLY / ANNUAL: numeric scale
+          tick_spacing <- diff(brks)[1]
           mid_all <- c(
             (brks[-length(brks)] + brks[-1]) / 2,
             brks[length(brks)] + tick_spacing / 2
           )
+          is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
+          mid_pts <- mid_all[is_valid]
+          labs_pt <- global_x$year_labels_start[is_valid]
         }
-        is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
-        mid_pts <- mid_all[is_valid]
-        labs_pt <- global_x$year_labels_start[is_valid]
       }
 
       # choose scale type depending on frequency
@@ -875,6 +874,18 @@ tsggplot.list <- function(...,
         }
         p <- p +
           do.call(scale_x_date, date_scale_args) +
+          guides(x = guide_axis(check.overlap = TRUE))
+      } else if (global_x$dominant_freq == "hourly") {
+        datetime_scale_args <- list(
+          limits = global_x$x_range,
+          expand = c(0, 0)
+        )
+        if (identical(theme$axis_x_date_ticks, "years")) {
+          datetime_scale_args$date_breaks <- paste0(theme$axis_x_label_dt, " years")
+          datetime_scale_args$date_labels <- "%Y"
+        }
+        p <- p +
+          do.call(scale_x_datetime, datetime_scale_args) +
           guides(x = guide_axis(check.overlap = TRUE))
       } else {
         p <- p +
@@ -934,6 +945,13 @@ tsggplot.list <- function(...,
         p <- p +
           scale_x_date(
             limits = as.Date(global_x$x_range, origin = "1970-01-01"),
+            expand = c(0, 0)
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
+      } else if (global_x$dominant_freq == "hourly") {
+        p <- p +
+          scale_x_datetime(
+            limits = global_x$x_range,
             expand = c(0, 0)
           ) +
           guides(x = guide_axis(check.overlap = TRUE))

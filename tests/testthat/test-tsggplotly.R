@@ -221,3 +221,21 @@ test_that("tsggplotly follows the theme's background and legend position", {
   built_right <- plotly::plotly_build(tsggplotly(p_right))
   expect_null(built_right$x$layout$legend$orientation)
 })
+
+test_that("tsggplotly x_tick_mode = 'auto' reconstructs real datetimes for hourly series", {
+  hourly_idx <- seq(as.POSIXct("2023-01-01", tz = "UTC"), by = "hour", length.out = 5 * 24)
+  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+  p <- tsggplot(list(A = hourly_xts), theme = init_tsggplot_theme(fill_year_with_nas = FALSE))
+
+  fig_auto <- tsggplotly(p, x_tick_mode = "auto")
+  built <- plotly::plotly_build(fig_auto)
+  expect_equal(built$x$layout$xaxis$type, "date")
+  expect_true(all(grepl("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$", built$x$data[[1]]$x)))
+  expect_equal(format(as.Date(built$x$data[[1]]$x[1])), "2023-01-01")
+
+  # "thin" mode isn't affected -- doesn't error and still produces the
+  # correct (already date-formatted) tick labels
+  fig_thin <- tsggplotly(p)
+  built_thin <- plotly::plotly_build(fig_thin)
+  expect_false(anyNA(built_thin$x$layout$xaxis$ticktext))
+})

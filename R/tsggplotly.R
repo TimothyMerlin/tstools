@@ -67,34 +67,39 @@ thin_plotly_x_labels <- function(tickvals, ticktext, x_range, width_in = 7,
   out
 }
 
-#' Reconstruct real dates from tsggplot()'s numeric x-axis positions
+#' Reconstruct real dates/datetimes from tsggplot()'s numeric x-axis positions
 #'
-#' \code{tsggplot()} plots x as a plain number for every frequency except
-#' daily/weekly (see \code{getNumericTimeIndex()} in utils.R): days-since-
-#' epoch for daily/weekly (the same numbers \code{scale_x_date()} uses
-#' internally), decimal-year (\code{year + fraction_of_year}) for everything
-#' else. \code{plotly::ggplotly()} always flattens this to a plain "linear"
-#' axis regardless -- even the daily/weekly case loses its Date typing on
-#' conversion -- so Plotly's auto zoom/tick logic sees bare numbers like
-#' 2020.5 with no notion of dates. This inverts either encoding back to real
-#' \code{Date}s so the x-axis can be declared \code{type = "date"} instead,
-#' letting Plotly's own date-aware tick formatter take over when zooming.
+#' \code{tsggplot()} plots x as a plain number for every frequency: days-
+#' since-epoch for daily/weekly, seconds-since-epoch for hourly (the same
+#' numbers \code{scale_x_date()}/\code{scale_x_datetime()} use internally),
+#' decimal-year (\code{year + fraction_of_year}) for everything else (see
+#' \code{getNumericTimeIndex()} in utils.R). \code{plotly::ggplotly()} always
+#' flattens this to a plain "linear" axis regardless -- even the daily/
+#' weekly/hourly cases lose their Date/POSIXct typing on conversion -- so
+#' Plotly's auto zoom/tick logic sees bare numbers like 2020.5 with no
+#' notion of dates. This inverts whichever encoding back to a real
+#' date/datetime string so the x-axis can be declared \code{type = "date"}
+#' instead, letting Plotly's own date-aware tick formatter take over when
+#' zooming.
 #'
-#' Exact for the daily/weekly (days-since-epoch) case. For the decimal-year
-#' case, this is approximate to within about a day (ts's \code{k/frequency}
-#' fractions and this day-of-year fraction don't perfectly agree) and
-#' includes whatever line_to_middle half-period shift was already baked into
-#' the plotted position -- both irrelevant for picking sensible zoomed tick
-#' labels, which is all this is used for.
+#' Exact for the daily/weekly (days-since-epoch) and hourly (seconds-since-
+#' epoch) cases. For the decimal-year case, this is approximate to within
+#' about a day (ts's \code{k/frequency} fractions and this day-of-year
+#' fraction don't perfectly agree) and includes whatever line_to_middle
+#' half-period shift was already baked into the plotted position -- both
+#' irrelevant for picking sensible zoomed tick labels, which is all this is
+#' used for.
 #'
 #' @param x numeric, tsggplot()'s plotted x positions
-#' @param use_date_scale logical, was this plotted with days-since-epoch
-#'   (\code{TRUE}, i.e. \code{scale_x_date()}/daily-weekly) or decimal-year
-#'   (\code{FALSE}) encoding?
+#' @param dominant_freq character, \code{meta$global_x$dominant_freq} --
+#'   which numeric encoding \code{x} is in (see above)
 #' @noRd
-tsggplotly_numeric_x_to_date <- function(x, use_date_scale) {
-  if (use_date_scale) {
+tsggplotly_numeric_x_to_date <- function(x, dominant_freq) {
+  if (isTRUE(dominant_freq %in% c("daily", "weekly"))) {
     return(as.Date(floor(x), origin = "1970-01-01"))
+  }
+  if (isTRUE(dominant_freq == "hourly")) {
+    return(format(as.POSIXct(x, origin = "1970-01-01", tz = "UTC"), "%Y-%m-%d %H:%M:%S"))
   }
   year <- floor(x)
   frac <- x - year
@@ -189,16 +194,16 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       # tsggplotly_numeric_x_to_date()), so its own zoom-aware tick
       # formatter can show month/day labels once zoomed in, rather than
       # decimal years like 2020.5 at every zoom level.
-      use_date_scale <- isTRUE(meta$global_x$dominant_freq %in% c("daily", "weekly"))
+      dominant_freq <- meta$global_x$dominant_freq
       if (!identical(xa$type, "date")) {
         p$x$layout$xaxis$type <- "date"
         if (!is.null(xa$range)) {
-          p$x$layout$xaxis$range <- as.character(tsggplotly_numeric_x_to_date(xa$range, use_date_scale))
+          p$x$layout$xaxis$range <- as.character(tsggplotly_numeric_x_to_date(xa$range, dominant_freq))
         }
         for (i in seq_along(p$x$data)) {
           trace_x <- p$x$data[[i]]$x
           if (is.numeric(trace_x)) {
-            p$x$data[[i]]$x <- as.character(tsggplotly_numeric_x_to_date(trace_x, use_date_scale))
+            p$x$data[[i]]$x <- as.character(tsggplotly_numeric_x_to_date(trace_x, dominant_freq))
           }
         }
       }
