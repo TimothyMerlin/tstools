@@ -67,6 +67,41 @@ thin_plotly_x_labels <- function(tickvals, ticktext, x_range, width_in = 7,
   out
 }
 
+#' Reconstruct real dates from tsggplot()'s numeric x-axis positions
+#'
+#' \code{tsggplot()} plots x as a plain number for every frequency except
+#' daily/weekly (see \code{getNumericTimeIndex()} in utils.R): days-since-
+#' epoch for daily/weekly (the same numbers \code{scale_x_date()} uses
+#' internally), decimal-year (\code{year + fraction_of_year}) for everything
+#' else. \code{plotly::ggplotly()} always flattens this to a plain "linear"
+#' axis regardless -- even the daily/weekly case loses its Date typing on
+#' conversion -- so Plotly's auto zoom/tick logic sees bare numbers like
+#' 2020.5 with no notion of dates. This inverts either encoding back to real
+#' \code{Date}s so the x-axis can be declared \code{type = "date"} instead,
+#' letting Plotly's own date-aware tick formatter take over when zooming.
+#'
+#' Exact for the daily/weekly (days-since-epoch) case. For the decimal-year
+#' case, this is approximate to within about a day (ts's \code{k/frequency}
+#' fractions and this day-of-year fraction don't perfectly agree) and
+#' includes whatever line_to_middle half-period shift was already baked into
+#' the plotted position -- both irrelevant for picking sensible zoomed tick
+#' labels, which is all this is used for.
+#'
+#' @param x numeric, tsggplot()'s plotted x positions
+#' @param use_date_scale logical, was this plotted with days-since-epoch
+#'   (\code{TRUE}, i.e. \code{scale_x_date()}/daily-weekly) or decimal-year
+#'   (\code{FALSE}) encoding?
+#' @noRd
+tsggplotly_numeric_x_to_date <- function(x, use_date_scale) {
+  if (use_date_scale) {
+    return(as.Date(floor(x), origin = "1970-01-01"))
+  }
+  year <- floor(x)
+  frac <- x - year
+  days_in_year <- ifelse(((year %% 4 == 0) & (year %% 100 != 0)) | (year %% 400 == 0), 366, 365)
+  as.Date(sprintf("%d-01-01", year)) + round(frac * days_in_year)
+}
+
 #' Convert ggplot2 time series object to plotly object
 #'
 #' @param p ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
@@ -80,9 +115,11 @@ thin_plotly_x_labels <- function(tickvals, ticktext, x_range, width_in = 7,
 #'   estimates which yearly labels would overlap at the given/assumed width
 #'   and blanks them out, the same way the static \code{tsggplot()} plot
 #'   does, while still drawing every tick mark. \code{"auto"} instead hands
-#'   tick placement entirely to Plotly (\code{tickmode = "auto"}), which
-#'   recomputes "nice" tick positions dynamically as the plot is resized or
-#'   zoomed, at the cost of no longer aligning ticks to exact year starts.
+#'   tick placement entirely to Plotly (\code{tickmode = "auto"}) on a real
+#'   date-typed x-axis, so Plotly recomputes "nice", properly date-formatted
+#'   tick positions dynamically as the plot is resized or zoomed (e.g.
+#'   month/day labels once zoomed in, instead of decimal years like
+#'   2020.5), at the cost of no longer aligning ticks to exact year starts.
 #'
 #' @importFrom ggplot2 calc_element
 #' @importFrom plotly ggplotly layout
@@ -147,6 +184,24 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       p$x$layout$xaxis$ticktext <- NULL
       p$x$layout$xaxis$categoryorder <- NULL
       p$x$layout$xaxis$categoryarray <- NULL
+
+      # Give Plotly real dates instead of tsggplot()'s plain numeric x (see
+      # tsggplotly_numeric_x_to_date()), so its own zoom-aware tick
+      # formatter can show month/day labels once zoomed in, rather than
+      # decimal years like 2020.5 at every zoom level.
+      use_date_scale <- isTRUE(meta$global_x$dominant_freq %in% c("daily", "weekly"))
+      if (!identical(xa$type, "date")) {
+        p$x$layout$xaxis$type <- "date"
+        if (!is.null(xa$range)) {
+          p$x$layout$xaxis$range <- as.character(tsggplotly_numeric_x_to_date(xa$range, use_date_scale))
+        }
+        for (i in seq_along(p$x$data)) {
+          trace_x <- p$x$data[[i]]$x
+          if (is.numeric(trace_x)) {
+            p$x$data[[i]]$x <- as.character(tsggplotly_numeric_x_to_date(trace_x, use_date_scale))
+          }
+        }
+      }
     } else {
       width_px <- if (is.null(dots$width)) 700 else dots$width
       fontsize_pt <- if (is.null(xa$tickfont$size)) 11 else xa$tickfont$size

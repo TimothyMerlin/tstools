@@ -144,6 +144,15 @@ test_that("tsggplotly x_tick_mode (#15)", {
   expect_null(xa_auto$tickvals)
   expect_null(xa_auto$ticktext)
 
+  # "auto" mode gives Plotly a real date-typed x-axis (instead of tsggplot's
+  # plain decimal-year numbers) so its own zoom/tick logic can format ticks
+  # as dates -- "thin" mode is untouched, still plain numeric.
+  expect_equal(xa_auto$type, "date")
+  expect_equal(xa_thin$type, "linear")
+  built_auto_data <- plotly::plotly_build(fig_auto)$x$data[[1]]
+  expect_true(all(grepl("^\\d{4}-\\d{2}-\\d{2}$", built_auto_data$x)))
+  expect_equal(as.integer(format(as.Date(built_auto_data$x[1]), "%Y")), 1950)
+
   # a short series with few yearly labels shouldn't lose any of them
   short_ts <- ts(runif(5 * 12), start = c(2010, 1), frequency = 12)
   p_short <- tsggplot(list(A = short_ts))
@@ -165,6 +174,18 @@ test_that("tsggplotly x_tick_mode (#15)", {
   # "auto" mode hands ticks to Plotly entirely -- no manual shapes needed
   built_auto <- plotly::plotly_build(fig_auto)
   expect_equal(length(built_auto$x$layout$shapes), 0)
+})
+
+test_that("tsggplotly x_tick_mode = 'auto' reconstructs exact dates for daily/weekly series", {
+  idx <- seq(as.Date("2020-01-01"), by = "day", length.out = 10)
+  daily_xts <- xts::xts(seq_along(idx), order.by = idx)
+  p <- tsggplot(list(A = daily_xts))
+
+  fig_auto <- tsggplotly(p, x_tick_mode = "auto")
+  built <- plotly::plotly_build(fig_auto)
+  expect_equal(built$x$layout$xaxis$type, "date")
+  # days-since-epoch encoding inverts exactly, no line_to_middle drift
+  expect_equal(as.Date(built$x$data[[1]]$x), idx)
 })
 
 test_that("tsggplotly follows the theme's background and legend position", {

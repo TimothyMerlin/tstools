@@ -391,6 +391,13 @@ init_tsplot_print_theme <- function(
 #' definition, defaults to 4.
 #' @param highlight_window_start integer vector highlight window start
 #' position, defaults to NA.
+#' @param legend_all_left logical When a \code{tsr} (right-axis) series is
+#' plotted, should all legend entries be merged into a single legend instead
+#' of two separately grouped ones (one for the left-axis series, one for the
+#' right-axis series) below the plot? Defaults to FALSE. Ignored when there
+#' is no \code{tsr}. Note this only
+#' affects static (print/save) output; \code{tsggplotly()} always renders a
+#' single merged legend regardless of this setting.
 #' @param line_colors character vector of hex colors for 6 lines.
 #' @param line_to_middle logical try to put a line into the middle of the
 #' plot. defaults to TRUE.
@@ -534,6 +541,7 @@ init_tsggplot_theme <- function(
   highlight_window_end = NA,
   highlight_window_freq = 4,
   highlight_window_start = NA,
+  legend_all_left = FALSE,
   line_colors = c(
     ETH_Green_60 = colors$ETH_Green$`60`,
     ETH_Green_100 = colors$ETH_Green$`100`,

@@ -423,6 +423,46 @@ test_that("tsggplot legend", {
   expect_equal(colour_line_2, unname(theme$line_colors[2]))
 })
 
+test_that("tsggplot splits the tsr legend left/right axis by default", {
+  # Plain lines on both axes: split into two colour scales via ggnewscale,
+  # each getting its own guide instead of one merged legend.
+  p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  expect_true(attr(p, "tsggplot_meta")$split_legend)
+  scale_aes <- vapply(p$scales$scales, function(s) paste(s$aesthetics, collapse = ","), character(1))
+  expect_true(any(grepl("^colour_ggnewscale_", scale_aes)))
+  expect_true("colour" %in% scale_aes)
+
+  # legend_all_left opts back into a single merged legend/colour scale.
+  p_merged <- tsggplot(list(a = AirPassengers),
+    tsr = list(b = JohnsonJohnson),
+    theme = init_tsggplot_theme(legend_all_left = TRUE)
+  )
+  expect_false(attr(p_merged, "tsggplot_meta")$split_legend)
+  merged_scale_aes <- vapply(p_merged$scales$scales, function(s) paste(s$aesthetics, collapse = ","), character(1))
+  expect_false(any(grepl("^colour_ggnewscale_", merged_scale_aes)))
+  expect_true("colour" %in% merged_scale_aes)
+
+  # No tsr at all: unaffected, single ordinary colour scale.
+  p_no_tsr <- tsggplot(list(a = AirPassengers))
+  expect_false(attr(p_no_tsr, "tsggplot_meta")$split_legend)
+
+  # left_as_bar + tsr: left (fill) and right (colour) are already on
+  # separate aesthetics, so no ggnewscale split is needed there.
+  p_bar <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson), left_as_bar = TRUE)
+  expect_false(attr(p_bar, "tsggplot_meta")$split_legend)
+})
+
+test_that("tsggplotly refuses to convert a split-legend plot", {
+  p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  expect_error(tsggplotly(p), "legend_all_left")
+
+  p_merged <- tsggplot(list(a = AirPassengers),
+    tsr = list(b = JohnsonJohnson),
+    theme = init_tsggplot_theme(legend_all_left = TRUE)
+  )
+  expect_no_error(tsggplotly(p_merged))
+})
+
 test_that("tsggplot modify the legend", {
   # Modify the legend title
   theme <- init_tsggplot_theme(

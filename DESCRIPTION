@@ -25,6 +25,7 @@ Depends:
     zoo (>= 1.7-12)
 Imports:
     data.table,
+    ggnewscale,
     ggplot2,
     grDevices,
     graphics,

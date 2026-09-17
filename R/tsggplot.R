@@ -700,6 +700,15 @@ tsggplot.list <- function(...,
     tt_r$ci_colors <- tt_r$ci_colors[start_r]
   }
 
+  # Whether the left- and right-axis series get two separately grouped
+  # legends below the plot (one per axis) instead of one legend merged from
+  # both. Only relevant when both axes are plain lines and thus share a
+  # single "colour" aesthetic -- left_as_bar/left_as_band already put the
+  # left series on a separate "fill" aesthetic, so those get a split legend
+  # "for free" further down without needing this. Static (print/save) output
+  # only: tsggplotly() still renders one merged legend for tsr charts.
+  split_legend <- !left_as_bar && !left_as_band && !is.null(tsr) && !isTRUE(theme$legend_all_left)
+
   if (!left_as_bar) {
     ci_left <- ci[names(ci) %in% names(tsl)]
     if (!is.null(ci_left)) {
@@ -728,6 +737,26 @@ tsggplot.list <- function(...,
   } else {
     # draw lineplot
     p <- draw_tsggplot_lines(p, tsl, theme = theme, bandplot = left_as_band, use_date_scale = use_date_scale)
+
+    if (split_legend) {
+      # tsl and tsr would otherwise share one "colour" aesthetic and get
+      # merged by ggplot2 into a single legend. Give the left-axis series
+      # their own colour scale/guide now, then start a fresh colour scale
+      # via new_scale_color() before the right-axis lines are drawn below,
+      # so each side ends up with its own, independently positioned guide.
+      # This has to happen right here, interleaved with the geoms it
+      # applies to -- ggnewscale tracks which "generation" of the colour
+      # aesthetic a scale belongs to by the order components are added to
+      # the plot, not by aesthetic name, so this scale/guide pair can't be
+      # deferred to the end the way the merged-legend case does below.
+      p <- p + scale_color_manual(
+        values = setNames(theme$line_colors[seq_along(tsl)], names(tsl))
+      )
+      if (auto_legend) {
+        p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom"))
+      }
+      p <- p + ggnewscale::new_scale_color()
+    }
   }
 
   # RIGHT PLOT #######################
@@ -911,19 +940,46 @@ tsggplot.list <- function(...,
     p <- p + scale_fill_manual(
       values = setNames(fill_colors, names(tsl)),
     )
+    p <- p + scale_color_manual(
+      values = setNames(theme$line_colors, line_names)
+    )
+    if (auto_legend) {
+      if (!is.null(tsr) && !isTRUE(theme$legend_all_left)) {
+        # left series (bars/bands) and right series (lines) are already on
+        # separate aesthetics (fill vs colour), so they already render as
+        # two separate guide boxes below the plot, no new_scale_color()
+        # needed.
+        p <- p + guides(
+          fill = guide_legend(ncol = theme$legend_col, position = "bottom"),
+          color = guide_legend(ncol = theme$legend_col, position = "bottom")
+        )
+      } else {
+        p <- p + guides(
+          color = guide_legend(ncol = theme$legend_col)
+        )
+      }
+    }
+  } else if (split_legend) {
+    # The left-axis colour scale/guide was already added above, right
+    # before new_scale_color() and the right-axis lines were drawn.
+    p <- p + scale_color_manual(
+      values = setNames(tt_r$line_colors, names(tsr))
+    )
+    if (auto_legend) {
+      p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom"))
+    }
   } else {
     line_names <- c(names(tsl), names(tsr))
-  }
-  p <- p + scale_color_manual(
-    values = setNames(theme$line_colors, line_names)
-  )
-
-  if (auto_legend) {
-    p <- p + guides(
-      color = guide_legend(
-        ncol = theme$legend_col
-      )
+    p <- p + scale_color_manual(
+      values = setNames(theme$line_colors, line_names)
     )
+    if (auto_legend) {
+      p <- p + guides(
+        color = guide_legend(
+          ncol = theme$legend_col
+        )
+      )
+    }
   }
 
   if (!is.null(labs)) {
@@ -940,7 +996,11 @@ tsggplot.list <- function(...,
     global_x = global_x,
     left_y = left_y,
     right_y = if (!is.null(tsr)) right_y else NULL,
-    y_right_label = labs$y_right
+    y_right_label = labs$y_right,
+    # tsggplotly() can't convert the ggnewscale-based split legend (see
+    # #16), so it needs to know to refuse/guard instead of silently
+    # producing a broken right-axis trace.
+    split_legend = split_legend
   )
 
   if (output_format != "plot") {
