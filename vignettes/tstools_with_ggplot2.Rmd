@@ -468,7 +468,12 @@ hourly_idx <- seq(as.POSIXct("2023-01-01 00:00", tz = "UTC"),
   by = "hour"
 )
 hourly_xts <- xts(cumsum(rnorm(length(hourly_idx))), order.by = hourly_idx)
-tsggplot(list("Hourly series" = hourly_xts))
+# fill_year_with_nas defaults to TRUE, padding the axis out to the entire
+# calendar year the data falls in -- turned off here since this example
+# only spans a few days and the padding would just show mostly empty space
+tsggplot(list("Hourly series" = hourly_xts),
+  theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
+)
 ```
 
 ## zoo objects
