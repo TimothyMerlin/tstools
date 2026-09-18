@@ -524,6 +524,12 @@ dynamically as you zoom, instead of tstools' default fixed yearly ticks.
 tsggplotly(p, x_tick_mode = "auto")
 ```
 
+Bar charts (stacked, grouped, with `sum_as_line`, ...) convert the same way.
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
+tsggplotly(tsggplot(tsb1, tsb2, tsb3, left_as_bar = TRUE))
+```
+
 # Export your chart to .pdf
 
 Saving your **tstools** chart to a .pdf document is as easy and convenient as

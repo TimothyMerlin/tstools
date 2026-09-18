@@ -326,3 +326,31 @@ test_that("tsggplotly reflects custom data-line and gridline styling from the th
   expect_equal(built$x$layout$yaxis$gridcolor, "rgba(0,255,0,1)")
   expect_true(built$x$layout$yaxis$gridwidth > 2) # default is < 1
 })
+
+test_that("tsggplotly converts stacked, grouped and sum_as_line bar charts", {
+  tsb1 <- ts(runif(20, -30, 20), start = c(2010, 1), frequency = 4)
+  tsb2 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 4)
+  tsb3 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 4)
+
+  p_stacked <- tsggplot(tsb1, tsb2, tsb3, left_as_bar = TRUE)
+  expect_no_error(fig_stacked <- tsggplotly(p_stacked))
+  built_stacked <- plotly::plotly_build(fig_stacked)
+  bar_traces <- Filter(function(d) identical(d$type, "bar"), built_stacked$x$data)
+  expect_equal(length(bar_traces), 3)
+  expect_true(all(vapply(bar_traces, function(d) length(d$x) == length(tsb1), logical(1))))
+
+  p_grouped <- tsggplot(tsb1, tsb2, tsb3, left_as_bar = TRUE, group_bar_chart = TRUE)
+  expect_no_error(fig_grouped <- tsggplotly(p_grouped))
+  built_grouped <- plotly::plotly_build(fig_grouped)
+  bar_traces_grouped <- Filter(function(d) identical(d$type, "bar"), built_grouped$x$data)
+  # dodged, not stacked: each series' bars sit at their own offset x
+  # positions rather than all three sharing the same x
+  x_by_trace <- lapply(bar_traces_grouped, function(d) d$x[1])
+  expect_equal(length(unique(x_by_trace)), 3)
+
+  p_sum <- tsggplot(list(tsb1, tsb2, tsb3), left_as_bar = TRUE, theme = init_tsggplot_theme(sum_as_line = TRUE))
+  expect_no_error(fig_sum <- tsggplotly(p_sum))
+  built_sum <- plotly::plotly_build(fig_sum)
+  expect_equal(length(Filter(function(d) identical(d$type, "bar"), built_sum$x$data)), 3)
+  expect_true(length(Filter(function(d) identical(d$type, "scatter"), built_sum$x$data)) >= 1)
+})
