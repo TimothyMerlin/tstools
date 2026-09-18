@@ -481,6 +481,26 @@ tsggplot(list("Hourly series" = hourly_xts),
 )
 ```
 
+### Highlight windows on a date/datetime x-axis
+
+For `ts`/monthly/quarterly/annual series, `highlight_window_start`/
+`highlight_window_end` take a `c(year, period)` pair, as shown earlier in
+the "Highlight windows: mark a period" section. That convention doesn't
+apply once the x-axis is a Date or datetime (daily/weekly/hourly xts) --
+instead, pass a `Date`/`POSIXct` value directly, or anything
+`as.Date()`/`as.POSIXct()` accepts, like a `"YYYY-MM-DD"` string.
+
+```{r,fig.width = 7,fig.height=6,echo=TRUE}
+tsggplot(list("Hourly series" = hourly_xts),
+  theme = init_tsggplot_theme(
+    fill_year_with_nas = FALSE,
+    highlight_window = TRUE,
+    highlight_window_start = "2023-01-03",
+    highlight_window_end = "2023-01-04"
+  )
+)
+```
+
 ## zoo objects
 
 A plain `zoo` object works the same way -- it's converted to `xts` internally
