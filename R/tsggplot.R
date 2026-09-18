@@ -711,6 +711,23 @@ tsggplot.list <- function(...,
   # only: tsggplotly() still renders one merged legend for tsr charts.
   split_legend <- !left_as_bar && !left_as_band && !is.null(tsr) && !isTRUE(theme$legend_all_left)
 
+  # tsggplotly() can't convert the split legend (ggnewscale's scale-renaming
+  # trick breaks plotly::ggplotly()'s geom conversion), so build the merged-
+  # legend equivalent here too and stash it for tsggplotly() to use
+  # transparently instead of erroring. Recursing with legend_all_left = TRUE
+  # makes the inner call's own split_legend FALSE, so this doesn't recurse
+  # further.
+  merged_legend_fallback <- NULL
+  if (split_legend) {
+    fallback_args <- as.list(environment())
+    fallback_args <- fallback_args[intersect(names(formals(tsggplot.list)), names(fallback_args))]
+    fallback_args$theme <- theme
+    fallback_args$theme$legend_all_left <- TRUE
+    fallback_args$quiet <- TRUE
+    fallback_args$output_format <- "plot"
+    merged_legend_fallback <- do.call(tsggplot.list, c(list(tsl), fallback_args))
+  }
+
   if (!left_as_bar) {
     ci_left <- ci[names(ci) %in% names(tsl)]
     if (!is.null(ci_left)) {
@@ -1041,9 +1058,9 @@ tsggplot.list <- function(...,
     right_y = if (!is.null(tsr)) right_y else NULL,
     y_right_label = labs$y_right,
     # tsggplotly() can't convert the ggnewscale-based split legend (see
-    # #16), so it needs to know to refuse/guard instead of silently
-    # producing a broken right-axis trace.
-    split_legend = split_legend
+    # #16), so it transparently converts merged_legend_fallback instead.
+    split_legend = split_legend,
+    merged_legend_fallback = merged_legend_fallback
   )
 
   if (output_format != "plot") {

@@ -111,9 +111,8 @@ tsggplotly_numeric_x_to_date <- function(x, dominant_freq) {
 #'
 #' @param p ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
 #'   a \code{tsr} (right-axis) series with the default split left/right
-#'   legend, this errors and asks for \code{legend_all_left = TRUE} (see
-#'   \code{\link{init_tsggplot_theme}}) instead, since that split legend
-#'   cannot currently be converted to plotly.
+#'   legend (which can't be converted to plotly), the merged-legend
+#'   equivalent \code{tsggplot()} built alongside it is used instead.
 #' @param ... additional arguments passed on to \code{\link[plotly]{ggplotly}}
 #' @param x_tick_mode character, how to avoid overlapping x-axis tick labels
 #'   in the interactive plot (see #13, #15). \code{"thin"} (the default)
@@ -135,15 +134,13 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   dots <- list(...)
   meta <- attr(p, "tsggplot_meta")
 
-  if (isTRUE(meta$split_legend)) {
-    stop(
-      "tsggplotly() cannot convert this plot: its left/right-axis legend ",
-      "was split using ggnewscale, which plotly::ggplotly() cannot ",
-      "translate (the split-off geom silently loses its data). Pass ",
-      "theme = init_tsggplot_theme(legend_all_left = TRUE) to tsggplot() ",
-      "to get a single merged legend that converts correctly, then call ",
-      "tsggplotly() on that plot instead."
-    )
+  # tsggplotly() can't convert the ggnewscale-based split legend (the
+  # split-off geom silently loses its data in plotly::ggplotly()) -- use
+  # the merged-legend equivalent tsggplot() already built for this instead,
+  # transparently.
+  if (isTRUE(meta$split_legend) && !is.null(meta$merged_legend_fallback)) {
+    p <- meta$merged_legend_fallback
+    meta <- attr(p, "tsggplot_meta")
   }
 
   text_family <- p$theme$text$family

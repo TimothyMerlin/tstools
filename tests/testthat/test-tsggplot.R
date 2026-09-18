@@ -452,9 +452,19 @@ test_that("tsggplot splits the tsr legend left/right axis by default", {
   expect_false(attr(p_bar, "tsggplot_meta")$split_legend)
 })
 
-test_that("tsggplotly refuses to convert a split-legend plot", {
+test_that("tsggplotly converts a split-legend plot via its merged-legend fallback", {
   p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
-  expect_error(tsggplotly(p), "legend_all_left")
+  meta <- attr(p, "tsggplot_meta")
+  expect_true(meta$split_legend)
+  expect_s3_class(meta$merged_legend_fallback, "ggplot")
+
+  expect_no_error(fig <- tsggplotly(p))
+  built <- plotly::plotly_build(fig)
+  traces <- setNames(built$x$data, sapply(built$x$data, function(d) if (is.null(d$name)) "" else d$name))
+  # both series' full data made it through, not just one (what "the
+  # split-off geom silently loses its data" would otherwise look like)
+  expect_equal(length(traces[["a"]]$x), length(AirPassengers))
+  expect_equal(length(traces[["b"]]$x), length(JohnsonJohnson))
 
   p_merged <- tsggplot(list(a = AirPassengers),
     tsr = list(b = JohnsonJohnson),

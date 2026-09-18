@@ -505,17 +505,14 @@ instead, as in the examples above.
 
 Any `tsggplot` figure can be converted into an interactive `plotly` chart with
 `tsggplotly()`, including custom hover text and a real secondary axis when a
-`tsr` (right-axis) series is present. A `tsr` plot needs
-`legend_all_left = TRUE` for this to work; `tsggplotly()` reminds you if you
-forget.
+`tsr` (right-axis) series is present.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
 library(plotly)
 
 p <- tsggplot(KOF["kofbarometer"],
   tsr = KOF["reference"],
-  labs = list(y_right = "Reference indicator"),
-  theme = init_tsggplot_theme(legend_all_left = TRUE)
+  labs = list(y_right = "Reference indicator")
 )
 tsggplotly(p)
 ```
