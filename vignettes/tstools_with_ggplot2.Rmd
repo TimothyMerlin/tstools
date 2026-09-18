@@ -522,7 +522,11 @@ Any `tsggplot` figure can be converted into an interactive `plotly` chart with
 `tsr` (right-axis) series is present. `tsggplotly()` cannot convert the split
 left/right legend described above, so a `tsr` plot headed for
 `tsggplotly()` needs `legend_all_left = TRUE`; `tsggplotly()` errors with a
-reminder to that effect if you forget.
+reminder to that effect if you forget. Note that `legend_all_left` won't
+visibly change anything about the interactive legend itself -- `tsggplotly()`
+always renders a single merged legend regardless, since it has no way to
+draw the split one at all; the parameter's only job here is making the plot
+convertible in the first place.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
 library(plotly)
