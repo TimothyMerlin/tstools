@@ -401,12 +401,22 @@ init_tsplot_print_theme <- function(
 #' @param highlight_window_alpha numeric for transparancy of highlight window.
 #' @param highlight_window_color character hex color code of highlight
 #' background, defaults to "#e9e9e9".
-#' @param highlight_window_end integer vector highlight window start position,
-#' defaults to NA.,
+#' @param highlight_window_end for a \code{ts}/monthly/quarterly/annual xts
+#' series, an integer \code{c(year, period)} vector (or list of them, paired
+#' with \code{highlight_window_start}), interpreted using
+#' \code{highlight_window_freq}. For a daily/weekly/hourly xts series (which
+#' plot on a Date/datetime x-axis instead), a \code{Date}/\code{POSIXct}
+#' value (or anything \code{as.Date()}/\code{as.POSIXct()} accepts, e.g. a
+#' \code{"YYYY-MM-DD"} string) instead -- \code{highlight_window_freq} is
+#' not used in this case. Defaults to NA, which highlights up to the end of
+#' the plotted range.
 #' @param highlight_window_freq integer frequency of the highlight window
-#' definition, defaults to 4.
-#' @param highlight_window_start integer vector highlight window start
-#' position, defaults to NA.
+#' definition, defaults to 4. Only used for \code{ts}/monthly/quarterly/
+#' annual series -- see \code{highlight_window_start}/
+#' \code{highlight_window_end}.
+#' @param highlight_window_start same format as \code{highlight_window_end}
+#' (see there), for the start of the window instead. Defaults to NA, which
+#' highlights starting 2 years before the end of the plotted range.
 #' @param legend_all_left logical When a \code{tsr} (right-axis) series is
 #' plotted, should all legend entries be merged into a single legend instead
 #' of two separately grouped ones (one for the left-axis series, one for the

@@ -564,6 +564,57 @@ test_that("tsggplot with highlight window", {
   expect_true(is.na(rect$aes_params$colour))
 })
 
+test_that("tsggplot highlight window on a date/datetime x-axis (daily/hourly)", {
+  get_rect_data <- function(p) {
+    ix <- which(sapply(p$layers, function(l) inherits(l$geom, "GeomRect")))
+    p$layers[[ix]]$data
+  }
+
+  # daily: default (NA start/end) highlights ~2 years before the end of the
+  # plotted range, not 2 days (the same "2" used for the numeric x-axis,
+  # applied literally to a Date would be almost invisible)
+  dates <- seq(as.Date("2015-01-01"), as.Date("2020-01-01"), by = "day")
+  daily_xts <- xts::xts(seq_along(dates), order.by = dates)
+  p_daily_default <- tsggplot(list(A = daily_xts), theme = init_tsggplot_theme(highlight_window = TRUE))
+  rect_daily_default <- get_rect_data(p_daily_default)
+  expect_true(inherits(rect_daily_default$xmin, "Date"))
+  expect_true(diff(c(rect_daily_default$xmin, rect_daily_default$xmax)) > 300)
+
+  # daily: explicit Date (or a parseable string) values are used directly,
+  # instead of being (mis)interpreted as a ts-style c(year, period) pair
+  p_daily_explicit <- tsggplot(
+    list(A = daily_xts),
+    theme = init_tsggplot_theme(
+      highlight_window = TRUE,
+      highlight_window_start = "2018-06-01",
+      highlight_window_end = as.Date("2018-12-31")
+    )
+  )
+  rect_daily_explicit <- get_rect_data(p_daily_explicit)
+  expect_equal(rect_daily_explicit$xmin, as.Date("2018-06-01"))
+  expect_equal(rect_daily_explicit$xmax, as.Date("2018-12-31"))
+
+  # hourly: same idea, but in POSIXct/seconds
+  hourly_idx <- seq(as.POSIXct("2020-01-01", tz = "UTC"), as.POSIXct("2023-01-01", tz = "UTC"), by = "hour")
+  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+  p_hourly_default <- tsggplot(list(A = hourly_xts), theme = init_tsggplot_theme(highlight_window = TRUE))
+  rect_hourly_default <- get_rect_data(p_hourly_default)
+  expect_true(inherits(rect_hourly_default$xmin, "POSIXct"))
+  expect_true(diff(c(rect_hourly_default$xmin, rect_hourly_default$xmax)) > 300) # days
+
+  p_hourly_explicit <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(
+      highlight_window = TRUE,
+      highlight_window_start = as.POSIXct("2022-06-01", tz = "UTC"),
+      highlight_window_end = as.POSIXct("2022-12-01", tz = "UTC")
+    )
+  )
+  rect_hourly_explicit <- get_rect_data(p_hourly_explicit)
+  expect_equal(as.numeric(rect_hourly_explicit$xmin), as.numeric(as.POSIXct("2022-06-01", tz = "UTC")))
+  expect_equal(as.numeric(rect_hourly_explicit$xmax), as.numeric(as.POSIXct("2022-12-01", tz = "UTC")))
+})
+
 test_that("tsggplot, with series starting not at start of year", {
   theme <- init_tsggplot_theme(fill_up_start = TRUE)
   p <- tsggplot(list(JohnsonJohnson = window(JohnsonJohnson, start = c(1960, 3))),
