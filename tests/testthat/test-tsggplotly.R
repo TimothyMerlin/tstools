@@ -306,3 +306,23 @@ test_that("tsggplotly gives left, right and secondary axes matching, theme-deriv
   built_blank <- plotly::plotly_build(tsggplotly(p_blank))
   expect_false(built_blank$x$layout$yaxis$showline)
 })
+
+test_that("tsggplotly reflects custom data-line and gridline styling from the theme", {
+  # these aren't something tsggplotly() touches itself (ggplotly() converts
+  # the geoms/panel grid natively), but worth locking in given the axis
+  # line case above shows theme styling silently not making it through is
+  # a real failure mode, not just a hypothetical one
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+  theme <- init_tsggplot_theme(
+    line_colors = c("#FF00FF"),
+    linewidth = 4,
+    panel.grid.major.y = ggplot2::element_line(colour = "#00FF00", linewidth = 3)
+  )
+  p <- tsggplot(list(A = long_ts), theme = theme)
+  built <- plotly::plotly_build(tsggplotly(p))
+
+  expect_equal(built$x$data[[1]]$line$color, "rgba(255,0,255,1)")
+  expect_true(built$x$data[[1]]$line$width > 10) # default is ~2-4
+  expect_equal(built$x$layout$yaxis$gridcolor, "rgba(0,255,0,1)")
+  expect_true(built$x$layout$yaxis$gridwidth > 2) # default is < 1
+})
