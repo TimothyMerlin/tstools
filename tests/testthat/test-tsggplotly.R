@@ -56,6 +56,13 @@ test_that("tsggplotly", {
   expect_equal(built$x$layout$yaxis2$tickvals, meta$right_y$y_ticks)
   expect_equal(built$x$layout$yaxis2$overlaying, "y")
 
+  # Plotly.js doesn't actually render an axis with no trace bound to it
+  # (ticks/line/title silently disappear), even though it's fully defined
+  # in the layout -- an invisible point on yaxis2 keeps it visible
+  yaxis2_traces <- Filter(function(d) identical(d$yaxis, "y2"), built$x$data)
+  expect_equal(length(yaxis2_traces), 1)
+  expect_equal(yaxis2_traces[[1]]$marker$opacity, 0)
+
   # the interactive plot's font follows the theme passed to tsggplot()
   # rather than a hardcoded family
   expect_equal(built$x$layout$font$family, theme$text$family)

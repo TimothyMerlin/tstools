@@ -286,11 +286,28 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       side = "right",
       range = meta$right_y$y_range,
       tickvals = meta$right_y$y_ticks,
-      automargin = TRUE
+      automargin = TRUE,
+      # Plotly draws a reference line at 0 on every axis by default; the
+      # static plot doesn't, and it's not meaningful here since 0 on this
+      # axis has no special significance beyond being part of the range.
+      zeroline = FALSE
     )
   }
 
   p <- do.call(plotly::layout, layout_args)
+
+  if (!is.null(meta) && !is.null(meta$right_y)) {
+    # Plotly.js won't actually render an axis with no trace bound to it --
+    # ticks, axis line and title all silently disappear -- even though it's
+    # fully defined in the layout above. Add one invisible point on yaxis2
+    # so the overlaid secondary axis actually shows up.
+    p <- plotly::add_trace(p,
+      x = p$x$layout$xaxis$range[1], y = mean(meta$right_y$y_range),
+      yaxis = "y2", type = "scatter", mode = "markers",
+      marker = list(opacity = 0), showlegend = FALSE,
+      hoverinfo = "skip", inherit = FALSE
+    )
+  }
 
   # rename legend items
   for (i in seq_along(p$x$data)) {
