@@ -147,6 +147,18 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   if (is.null(text_family) || !nzchar(text_family)) {
     text_family <- "sans"
   }
+  # ggplot2/R's generic font family aliases ("sans", "serif", "mono") are
+  # graphics-device names, not valid CSS -- a browser doesn't recognize
+  # "sans" and silently falls back to its own default (often a serif font),
+  # rather than matching the static plot's actual sans-serif look.
+  css_family_aliases <- c(
+    sans = "Arial, Helvetica, sans-serif",
+    serif = "Times New Roman, Times, serif",
+    mono = "Courier New, Courier, monospace"
+  )
+  if (text_family %in% names(css_family_aliases)) {
+    text_family <- css_family_aliases[[text_family]]
+  }
 
   # Resolve a fill colour from a theme element (e.g. panel.background),
   # falling back to fully transparent when the theme leaves it unset --

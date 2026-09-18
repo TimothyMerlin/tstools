@@ -64,8 +64,9 @@ test_that("tsggplotly", {
   expect_equal(yaxis2_traces[[1]]$marker$opacity, 0)
 
   # the interactive plot's font follows the theme passed to tsggplot()
-  # rather than a hardcoded family
-  expect_equal(built$x$layout$font$family, theme$text$family)
+  # (mapped to a real CSS font stack -- "sans" alone isn't valid CSS and
+  # browsers silently fall back to a serif font for it)
+  expect_equal(built$x$layout$font$family, "Arial, Helvetica, sans-serif")
   expect_equal(built$x$layout$legend$orientation, "h")
 })
 
@@ -245,4 +246,20 @@ test_that("tsggplotly x_tick_mode = 'auto' reconstructs real datetimes for hourl
   fig_thin <- tsggplotly(p)
   built_thin <- plotly::plotly_build(fig_thin)
   expect_false(anyNA(built_thin$x$layout$xaxis$ticktext))
+})
+
+test_that("tsggplotly maps R's generic font family aliases to real CSS font stacks", {
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+
+  for (alias in c("sans", "serif", "mono")) {
+    p <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(text = ggplot2::element_text(family = alias)))
+    built <- plotly::plotly_build(tsggplotly(p))
+    expect_match(built$x$layout$font$family, "^[A-Za-z ]+(, [A-Za-z ]+)*, (sans-serif|serif|monospace)$")
+    expect_false(identical(built$x$layout$font$family, alias))
+  }
+
+  # an already-real font name passes through unchanged
+  p_custom <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(text = ggplot2::element_text(family = "Georgia")))
+  built_custom <- plotly::plotly_build(tsggplotly(p_custom))
+  expect_equal(built_custom$x$layout$font$family, "Georgia")
 })
