@@ -303,6 +303,9 @@ tsggplot(tsb1, tsb2, tsb3,
 
 ### Adjust the highlight window
 
+Set `highlight_window_start`/`highlight_window_end` (`c(year, period)`
+pairs) to highlight a specific window instead of the default last 2 years.
+
 ```{r,fig.width = 7,fig.height=6}
 nt <- init_tsggplot_theme(highlight_window = TRUE)
 nt$highlight_window_start <- c(2017, 1)
@@ -313,6 +316,9 @@ tsggplot(tsb1, tsb2,
 ```
 
 ### Add a Box Around Your Plot
+
+Any `ggplot2` theme element works, since `tsggplot`'s theme is a regular
+`ggplot2` theme underneath -- here, `panel.border`.
 
 ```{r,fig.width = 7,fig.height=6}
 tt <- init_tsggplot_theme(
@@ -340,6 +346,9 @@ tsggplot(tsb1, tsb2, tsb3,
 
 ### Handling missings (NA Handling)
 
+By default a gap in the series just breaks the line. `NA_continue_line`
+draws through gaps instead, and `show_points` marks each observation.
+
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(missings,
   theme = init_tsggplot_theme(
@@ -352,12 +361,14 @@ tsggplot(missings,
 
 ### Fill up Year With NAs
 
+`fill_year_with_nas` defaults to `TRUE`, padding the axis out to the full
+calendar year even if the series doesn't span it yet.
+
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(ts2)
 ```
 
-
-### Fill up Year With NAs
+Turn it off to show only the actual data range instead.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(ts2,
@@ -368,7 +379,12 @@ tsggplot(ts2,
 
 ### Legends
 
+`tsggplot` builds the legend automatically from whatever names your series
+already have.
+
 ## Assign Names to Single Objects
+
+Name each series directly in the call to control its legend label.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(
@@ -377,21 +393,21 @@ tsggplot(
 )
 ```
 
-
-
 ## Legends Based on Names of List Elements
+
+A named list works the same way -- the legend uses the list's own names.
 
 ```{r,echo=TRUE}
 names(tslist)
 ```
-
-## Legends Based on Names of List Elements
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(tslist)
 ```
 
 ## Legends: multiple columns
+
+Spread the legend across multiple columns with `legend_col`.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(min_li,
@@ -417,11 +433,15 @@ tsggplot(KOF["kofbarometer"],
 
 ## Line Breaks in Legends
 
+A `\n` in a series name wraps its legend label onto multiple lines.
+
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot("Some like\n loooong legends\n with so many words" = ts1)
 ```
 
 ## Remember: auto_legend = FALSE
+
+Pass `auto_legend = FALSE` to turn the legend off entirely.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(KOF[1], auto_legend = FALSE)
