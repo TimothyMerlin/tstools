@@ -197,6 +197,27 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   plot_bg <- resolve_fill(ggplot2::calc_element("plot.background", p$theme)$fill)
   panel_bg <- resolve_fill(ggplot2::calc_element("panel.background", p$theme)$fill)
 
+  # ggplotly() sets its own axis line style per axis, inconsistently (e.g.
+  # the left y-axis came out black instead of the theme's actual grey, and
+  # the overlaid yaxis2 gets no line at all since it starts out undefined)
+  # -- read the theme directly instead for all three axes. Captured here,
+  # before p gets reassigned to the converted plotly object below -- a
+  # closure referencing p$theme directly would instead see that later,
+  # theme-less value once actually called.
+  static_theme <- p$theme
+  resolve_axis_line <- function(theme_key) {
+    el <- ggplot2::calc_element(theme_key, static_theme)
+    if (is.null(el) || inherits(el, "element_blank")) {
+      return(list(showline = FALSE))
+    }
+    list(
+      showline = TRUE,
+      linecolor = el$colour,
+      # ggplot2 linewidth -> plotly's pixel-based line width
+      linewidth = (if (is.null(el$linewidth)) 0.5 else as.numeric(el$linewidth)) * 96 / 72.27
+    )
+  }
+
   legend_position <- p$theme$legend.position
 
   # Collect each series' custom hover text ("value: ...") from the line/point
@@ -299,7 +320,6 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     p = p,
     paper_bgcolor = plot_bg,
     plot_bgcolor = panel_bg,
-    xaxis = list(ticks = ""),
     font = list(family = text_family),
     title = list(font = list(family = text_family)),
     hoverlabel = list(font = list(family = text_family)),
@@ -315,27 +335,42 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     )
   )
 
+  p <- do.call(plotly::layout, layout_args)
+
+  # Axis line style (showline/linecolor/linewidth) is set by direct
+  # assignment, not via the layout_args/plotly::layout() call above --
+  # plotly::layout() only queues changes into p$x$layoutAttrs, and its
+  # later merge doesn't reliably override values ggplotly() already set on
+  # xaxis/yaxis during conversion (e.g. it left the left y-axis black
+  # instead of the theme's actual colour).
+  p$x$layout$xaxis <- modifyList(p$x$layout$xaxis, c(list(ticks = ""), resolve_axis_line("axis.line.x")))
+  p$x$layout$yaxis <- modifyList(p$x$layout$yaxis, resolve_axis_line("axis.line.y.left"))
+
   # The right-axis series are already rescaled into the left axis's numeric
   # range (the same trick ggplot2's sec_axis() relies on for a static plot),
   # so the traces don't need to move to a second y-axis -- overlaying a
   # cosmetic yaxis2 with the *true* right-axis range/ticks over the same
   # panel area reproduces the same dual-axis look plotly-side.
   if (!is.null(meta) && !is.null(meta$right_y)) {
-    layout_args$yaxis2 <- list(
-      title = meta$y_right_label,
-      overlaying = "y",
-      side = "right",
-      range = meta$right_y$y_range,
-      tickvals = meta$right_y$y_ticks,
-      automargin = TRUE,
-      # Plotly draws a reference line at 0 on every axis by default; the
-      # static plot doesn't, and it's not meaningful here since 0 on this
-      # axis has no special significance beyond being part of the range.
-      zeroline = FALSE
+    p$x$layout$yaxis2 <- modifyList(
+      if (is.null(p$x$layout$yaxis2)) list() else p$x$layout$yaxis2,
+      c(
+        list(
+          title = meta$y_right_label,
+          overlaying = "y",
+          side = "right",
+          range = meta$right_y$y_range,
+          tickvals = meta$right_y$y_ticks,
+          automargin = TRUE,
+          # Plotly draws a reference line at 0 on every axis by default; the
+          # static plot doesn't, and it's not meaningful here since 0 on this
+          # axis has no special significance beyond being part of the range.
+          zeroline = FALSE
+        ),
+        resolve_axis_line("axis.line.y.right")
+      )
     )
   }
-
-  p <- do.call(plotly::layout, layout_args)
 
   if (!is.null(meta) && !is.null(meta$right_y)) {
     # Plotly.js won't actually render an axis with no trace bound to it --

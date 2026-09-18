@@ -278,3 +278,31 @@ test_that("tsggplotly fixes font aliases on individual elements too, not just th
   expect_true(not_sans(built$x$layout$yaxis$tickfont$family))
   expect_true(not_sans(built$x$layout$xaxis$tickfont$family))
 })
+
+test_that("tsggplotly gives left, right and secondary axes matching, theme-derived line styling", {
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+  theme <- init_tsggplot_theme(
+    axis.line.x = ggplot2::element_line(colour = "#123456", linewidth = 2),
+    axis.line.y.left = ggplot2::element_line(colour = "#123456", linewidth = 2),
+    axis.line.y.right = ggplot2::element_line(colour = "#123456", linewidth = 2)
+  )
+  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"), theme = theme)
+  built <- plotly::plotly_build(tsggplotly(p))
+
+  for (ax in list(built$x$layout$xaxis, built$x$layout$yaxis, built$x$layout$yaxis2)) {
+    expect_true(ax$showline)
+    expect_equal(ax$linecolor, "#123456")
+  }
+  # all three got the same linewidth conversion, not just whichever one
+  # ggplotly() happened to compute correctly on its own
+  expect_equal(built$x$layout$xaxis$linewidth, built$x$layout$yaxis$linewidth)
+  expect_equal(built$x$layout$yaxis$linewidth, built$x$layout$yaxis2$linewidth)
+
+  # element_blank() hides the line instead of leaving some stale default
+  p_blank <- tsggplot(
+    list(A = long_ts),
+    theme = init_tsggplot_theme(axis.line.y.left = ggplot2::element_blank())
+  )
+  built_blank <- plotly::plotly_build(tsggplotly(p_blank))
+  expect_false(built_blank$x$layout$yaxis$showline)
+})
