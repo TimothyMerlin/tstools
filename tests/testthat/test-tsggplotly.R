@@ -263,3 +263,18 @@ test_that("tsggplotly maps R's generic font family aliases to real CSS font stac
   built_custom <- plotly::plotly_build(tsggplotly(p_custom))
   expect_equal(built_custom$x$layout$font$family, "Georgia")
 })
+
+test_that("tsggplotly fixes font aliases on individual elements too, not just the global default", {
+  # plotly::ggplotly() sets its own explicit "sans" family on axis titles/
+  # tick labels (inherited from the static theme), which otherwise
+  # overrides the global layout$font default we set -- a real CSS font
+  # stack has to reach these individually too.
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"))
+  built <- plotly::plotly_build(tsggplotly(p))
+
+  not_sans <- function(family) !identical(family, "sans") && grepl("sans-serif", family)
+  expect_true(not_sans(built$x$layout$yaxis$title$font$family))
+  expect_true(not_sans(built$x$layout$yaxis$tickfont$family))
+  expect_true(not_sans(built$x$layout$xaxis$tickfont$family))
+})

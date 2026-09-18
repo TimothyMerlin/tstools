@@ -17,7 +17,7 @@ Changes in version 0.4.3
  * tsggplot: highlight_window_start/highlight_window_end now accept a Date/POSIXct value (or a "YYYY-MM-DD" string) directly for daily/weekly/hourly series, instead of only the ts-style c(year, period) + highlight_window_freq convention, which doesn't apply to those and silently produced a wrongly-positioned/invisible highlight; the default highlight (no start/end given) also now correctly spans ~2 years on those series instead of ~2 days or ~2 seconds
  * tsggplotly: no longer requires legend_all_left = TRUE for a tsr plot -- it now converts the merged-legend equivalent automatically instead of erroring
  * tsggplotly: fixed the secondary (right) y-axis not actually rendering at all in the interactive plot -- ticks, axis line and title were correctly present in the underlying data, but Plotly.js silently drops an axis with no trace bound to it; an invisible point is now added on that axis so it displays
- * tsggplotly: fixed the interactive plot rendering in a serif font instead of the theme's actual (sans-serif) font -- "sans"/"serif"/"mono" are R graphics-device font names, not valid CSS, so passing them straight through left the browser falling back to its own default; now mapped to a real font stack
+ * tsggplotly: fixed the interactive plot rendering in a serif font instead of the theme's actual (sans-serif) font -- "sans"/"serif"/"mono" are R graphics-device font names, not valid CSS, so passing them straight through left the browser falling back to its own default; now mapped to a real font stack everywhere ggplotly() sets one, including axis titles and tick labels (not just the plot's overall default)
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1

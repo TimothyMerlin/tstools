@@ -107,6 +107,32 @@ tsggplotly_numeric_x_to_date <- function(x, dominant_freq) {
   as.Date(sprintf("%d-01-01", year)) + round(frac * days_in_year)
 }
 
+#' Recursively remap R/ggplot2 font family aliases to real CSS font stacks
+#'
+#' \code{plotly::ggplotly()} sets an explicit \code{family} on many
+#' individual elements (axis titles, tick labels, ...) inherited straight
+#' from the static plot's theme -- \code{"sans"}/\code{"serif"}/\code{"mono"}
+#' aren't valid CSS, so those would otherwise keep falling back to whatever
+#' the browser's own default is, even after setting a real font stack on the
+#' top-level \code{layout$font}, which only covers elements that don't
+#' already have their own explicit \code{family}.
+#'
+#' @param x a (possibly deeply nested) list, e.g. \code{p$x$layout}
+#' @param aliases named character vector mapping alias -> real CSS font stack
+#' @noRd
+fix_font_family_aliases <- function(x, aliases) {
+  if (!is.list(x)) {
+    return(x)
+  }
+  if (is.character(x$family) && length(x$family) == 1 && x$family %in% names(aliases)) {
+    x$family <- aliases[[x$family]]
+  }
+  for (i in seq_along(x)) {
+    x[[i]] <- fix_font_family_aliases(x[[i]], aliases)
+  }
+  x
+}
+
 #' Convert ggplot2 time series object to plotly object
 #'
 #' @param p ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
@@ -143,10 +169,6 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     meta <- attr(p, "tsggplot_meta")
   }
 
-  text_family <- p$theme$text$family
-  if (is.null(text_family) || !nzchar(text_family)) {
-    text_family <- "sans"
-  }
   # ggplot2/R's generic font family aliases ("sans", "serif", "mono") are
   # graphics-device names, not valid CSS -- a browser doesn't recognize
   # "sans" and silently falls back to its own default (often a serif font),
@@ -156,8 +178,13 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     serif = "Times New Roman, Times, serif",
     mono = "Courier New, Courier, monospace"
   )
-  if (text_family %in% names(css_family_aliases)) {
-    text_family <- css_family_aliases[[text_family]]
+  to_css_family <- function(x) {
+    if (is.character(x) && x %in% names(css_family_aliases)) css_family_aliases[[x]] else x
+  }
+
+  text_family <- to_css_family(p$theme$text$family)
+  if (is.null(text_family) || !nzchar(text_family)) {
+    text_family <- css_family_aliases[["sans"]]
   }
 
   # Resolve a fill colour from a theme element (e.g. panel.background),
@@ -189,6 +216,8 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   }
 
   p <- plotly::ggplotly(p, ...)
+  p$x$layout <- fix_font_family_aliases(p$x$layout, css_family_aliases)
+  p$x$data <- fix_font_family_aliases(p$x$data, css_family_aliases)
 
   xa <- p$x$layout$xaxis
   if (identical(xa$tickmode, "array") && length(xa$tickvals) > 1) {
