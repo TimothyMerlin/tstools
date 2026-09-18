@@ -695,6 +695,19 @@ test_that("tsggplot, confidence intervals", {
   )
 })
 
+test_that("tsggplot, confidence intervals don't add a stray fill box to the colour legend key", {
+  # ggplot2 merges the CI's "fill" legend (draw_tsggplot_ci()) into the
+  # series' "colour" legend since there's no separate colour scale for the
+  # CI groups -- without override.aes, that merge makes every colour key
+  # (including the plain line's, which has no real fill value) draw with
+  # the fill geom's default background swatch, showing as a solid black
+  # box behind the line.
+  ci <- list("KOF Barometer" = list("80" = list(lb = KOF$baro_lo_80, ub = KOF$baro_hi_80)))
+  p <- tsggplot(list("KOF Barometer" = KOF$baro_point_fc), ci = ci)
+
+  expect_equal(p$guides$guides$colour$params$override.aes, list(fill = NA))
+})
+
 test_that("daily xts", {
   data("sample_matrix", package = "xts")
   x <- xts::as.xts(sample_matrix)

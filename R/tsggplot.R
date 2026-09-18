@@ -772,7 +772,7 @@ tsggplot.list <- function(...,
         values = setNames(theme$line_colors[seq_along(tsl)], names(tsl))
       )
       if (auto_legend) {
-        p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom"))
+        p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA)))
       }
       p <- p + ggnewscale::new_scale_color()
     }
@@ -1011,11 +1011,11 @@ tsggplot.list <- function(...,
         # needed.
         p <- p + guides(
           fill = guide_legend(ncol = theme$legend_col, position = "bottom"),
-          color = guide_legend(ncol = theme$legend_col, position = "bottom")
+          color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA))
         )
       } else {
         p <- p + guides(
-          color = guide_legend(ncol = theme$legend_col)
+          color = guide_legend(ncol = theme$legend_col, override.aes = list(fill = NA))
         )
       }
     }
@@ -1026,7 +1026,7 @@ tsggplot.list <- function(...,
       values = setNames(tt_r$line_colors, names(tsr))
     )
     if (auto_legend) {
-      p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom"))
+      p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA)))
     }
   } else {
     line_names <- c(names(tsl), names(tsr))
@@ -1036,7 +1036,8 @@ tsggplot.list <- function(...,
     if (auto_legend) {
       p <- p + guides(
         color = guide_legend(
-          ncol = theme$legend_col
+          ncol = theme$legend_col,
+          override.aes = list(fill = NA)
         )
       )
     }

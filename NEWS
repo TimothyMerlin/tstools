@@ -19,6 +19,7 @@ Changes in version 0.4.3
  * tsggplotly: fixed the secondary (right) y-axis not actually rendering at all in the interactive plot -- ticks, axis line and title were correctly present in the underlying data, but Plotly.js silently drops an axis with no trace bound to it; an invisible point is now added on that axis so it displays
  * tsggplotly: fixed the interactive plot rendering in a serif font instead of the theme's actual (sans-serif) font -- "sans"/"serif"/"mono" are R graphics-device font names, not valid CSS, so passing them straight through left the browser falling back to its own default; now mapped to a real font stack everywhere ggplotly() sets one, including axis titles and tick labels (not just the plot's overall default)
  * tsggplotly: fixed the left y-axis line rendering in black regardless of theme, and the right/secondary axis having no line at all, unlike the x-axis which was already correctly themed -- all three now consistently use the theme's actual axis.line colour/width
+ * tsggplot: fixed a stray black box appearing behind a series' line in the legend when the plot also uses confidence intervals (ci) -- ggplot2 merges the CI's fill legend into the colour legend, which without an override left every colour key (including the plain line's) drawing with the fill geom's default background swatch
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1
