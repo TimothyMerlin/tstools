@@ -444,11 +444,7 @@ tsggplot(list("KOF Barometer" = kof_xts))
 ## Supported frequencies
 
 `tsggplot` supports `xts` series at daily, weekly, monthly, quarterly, yearly,
-and hourly frequency -- each renders on the appropriate x-axis (a date axis
-for daily/weekly data, a datetime axis for hourly data, and a numeric
-decimal-year axis otherwise). Daily/weekly/hourly axes pick sensible tick
-spacing automatically based on how much data there is (`axis_x_date_ticks`
-theme parameter); the numeric axis is always year-spaced.
+and hourly frequency, each with an appropriate x-axis.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 weekly_idx <- seq(as.Date("2020-01-06"), as.Date("2023-01-01"), by = "week")
@@ -468,14 +464,8 @@ hourly_idx <- seq(as.POSIXct("2023-01-01 00:00", tz = "UTC"),
   by = "hour"
 )
 hourly_xts <- xts(cumsum(rnorm(length(hourly_idx))), order.by = hourly_idx)
-# fill_year_with_nas defaults to TRUE, padding the axis out to the entire
-# calendar year the data falls in -- turned off here since this example
-# only spans a few days and the padding would just show mostly empty space.
-# The small margin left after the last data point scales automatically
-# with how much data there is; pass axis_x_pad (in years, 0 for none) to
-# override it directly. The x-axis itself is a real datetime axis, so it
-# gets real day labels (e.g. "Jan 01") automatically rather than needing
-# any of the above to show something meaningful.
+# fill_year_with_nas defaults to TRUE and pads the axis to a full year;
+# turned off here since this example only spans a few days
 tsggplot(list("Hourly series" = hourly_xts),
   theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
 )
@@ -483,12 +473,8 @@ tsggplot(list("Hourly series" = hourly_xts),
 
 ### Highlight windows on a date/datetime x-axis
 
-For `ts`/monthly/quarterly/annual series, `highlight_window_start`/
-`highlight_window_end` take a `c(year, period)` pair, as shown earlier in
-the "Highlight windows: mark a period" section. That convention doesn't
-apply once the x-axis is a Date or datetime (daily/weekly/hourly xts) --
-instead, pass a `Date`/`POSIXct` value directly, or anything
-`as.Date()`/`as.POSIXct()` accepts, like a `"YYYY-MM-DD"` string.
+For daily/weekly/hourly xts series, pass a date string instead of the
+`c(year, period)` pair used above:
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE}
 tsggplot(list("Hourly series" = hourly_xts),
@@ -519,14 +505,9 @@ instead, as in the examples above.
 
 Any `tsggplot` figure can be converted into an interactive `plotly` chart with
 `tsggplotly()`, including custom hover text and a real secondary axis when a
-`tsr` (right-axis) series is present. `tsggplotly()` cannot convert the split
-left/right legend described above, so a `tsr` plot headed for
-`tsggplotly()` needs `legend_all_left = TRUE`; `tsggplotly()` errors with a
-reminder to that effect if you forget. Note that `legend_all_left` won't
-visibly change anything about the interactive legend itself -- `tsggplotly()`
-always renders a single merged legend regardless, since it has no way to
-draw the split one at all; the parameter's only job here is making the plot
-convertible in the first place.
+`tsr` (right-axis) series is present. A `tsr` plot needs
+`legend_all_left = TRUE` for this to work; `tsggplotly()` reminds you if you
+forget.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
 library(plotly)
@@ -539,13 +520,8 @@ p <- tsggplot(KOF["kofbarometer"],
 tsggplotly(p)
 ```
 
-For longer series, `tsggplotly()` avoids overlapping yearly x-axis labels the
-same way the static plot does (blanking out labels that would collide, while
-still drawing every tick mark). If you'd rather Plotly pick "nice" tick
-positions dynamically as the plot is resized or zoomed -- at the cost of no
-longer aligning ticks to exact year starts -- pass `x_tick_mode = "auto"`.
-This also gives Plotly a real date-typed x-axis, so as you zoom in the tick
-labels switch to months/days instead of staying decimal years like `2020.5`.
+Pass `x_tick_mode = "auto"` to let Plotly pick its own tick positions
+dynamically as you zoom, instead of tstools' default fixed yearly ticks.
 
 ```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
 tsggplotly(p, x_tick_mode = "auto")
