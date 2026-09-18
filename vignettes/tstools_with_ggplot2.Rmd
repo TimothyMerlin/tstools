@@ -9,6 +9,9 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\usepackage[utf8]{inputenc}
 ---
+# tsggplot vs. tsplot
+`tstools` already provides `tsplot()`, which produces base R plots with the same convenient defaults (colors, legends, dual y-axes, highlight windows, fan charts, and more). `tsggplot()` gives you the same defaults but returns a real `ggplot` object, so you can extend it with any ggplot2 layer, scale, or theme. It also has an interactive sibling, `tsggplotly()`, which turns a `tsggplot()` plot into an interactive Plotly widget with hover tooltips and zooming. Use `tsplot()` for quick base R output, and `tsggplot()`/`tsggplotly()` when you want a ggplot2 object to extend or an interactive chart.
+
 # Graphs
 
 ## Before we get started...
