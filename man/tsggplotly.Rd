@@ -23,3 +23,10 @@ zoomed, at the cost of no longer aligning ticks to exact year starts.}
 \description{
 Convert ggplot2 time series object to plotly object
 }
+\details{
+If the theme's \code{text} font family is a single font name with no CSS
+fallback (e.g. \code{"Comic Sans MS"} rather than
+\code{"Comic Sans MS, cursive"}), this warns that the viewer's browser
+will silently substitute its own default font if that one isn't
+installed, rather than erroring -- give a full font stack to avoid it.
+}

@@ -150,6 +150,11 @@ fix_font_family_aliases <- function(x, aliases) {
 #'   tick positions dynamically as the plot is resized or zoomed (e.g.
 #'   month/day labels once zoomed in, instead of decimal years like
 #'   2020.5), at the cost of no longer aligning ticks to exact year starts.
+#' @details If the theme's \code{text} font family is a single font name
+#'   with no CSS fallback (e.g. \code{"Comic Sans MS"} rather than
+#'   \code{"Comic Sans MS, cursive"}), this warns that the viewer's browser
+#'   will silently substitute its own default font if that one isn't
+#'   installed, rather than erroring -- give a full font stack to avoid it.
 #'
 #' @importFrom ggplot2 calc_element
 #' @importFrom plotly ggplotly layout
@@ -180,6 +185,34 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   )
   to_css_family <- function(x) {
     if (is.character(x) && x %in% names(css_family_aliases)) css_family_aliases[[x]] else x
+  }
+
+  # A single font name with no CSS fallback stack (e.g. "Comic Sans MS"
+  # instead of "Comic Sans MS, cursive") isn't inherently wrong, but if it
+  # isn't installed on the viewer's system, the browser silently falls back
+  # to its own default rather than erroring -- the same failure mode as the
+  # "sans"/"serif"/"mono" aliases above, just for a font the theme names
+  # explicitly instead of one of R's graphics-device generics. These are
+  # common enough to be installed almost everywhere that warning about them
+  # would just be noise.
+  web_safe_fonts <- c(
+    "Arial", "Helvetica", "Helvetica Neue", "Verdana", "Georgia", "Tahoma",
+    "Times New Roman", "Times", "Courier New", "Courier", "Trebuchet MS",
+    "Impact", "Segoe UI", "Calibri"
+  )
+  collect_risky_families <- function(x, acc = character(0)) {
+    if (!is.list(x)) {
+      return(acc)
+    }
+    fam <- x$family
+    if (is.character(fam) && length(fam) == 1 && nzchar(fam) &&
+      !grepl(",", fam, fixed = TRUE) && !(fam %in% web_safe_fonts)) {
+      acc <- union(acc, fam)
+    }
+    for (i in seq_along(x)) {
+      acc <- collect_risky_families(x[[i]], acc)
+    }
+    acc
   }
 
   text_family <- to_css_family(p$theme$text$family)
@@ -457,6 +490,20 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
 
       p$x$data[[i]]$name <- name
     }
+  }
+
+  risky_families <- collect_risky_families(p$x$layout)
+  if (length(risky_families) > 0) {
+    noun <- if (length(risky_families) > 1) "font families" else "font family"
+    warning(
+      "tsggplotly(): the theme uses ", noun, " ",
+      paste(sprintf('"%s"', risky_families), collapse = ", "),
+      " with no CSS fallback. If not installed in the viewer's browser, Plotly will ",
+      "silently render in its own default font instead of erroring. Consider a full font ",
+      "stack instead, e.g. theme(text = element_text(family = \"",
+      risky_families[1], ", Arial, sans-serif\")).",
+      call. = FALSE
+    )
   }
 
   p

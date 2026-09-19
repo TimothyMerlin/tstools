@@ -264,6 +264,35 @@ test_that("tsggplotly maps R's generic font family aliases to real CSS font stac
   expect_equal(built_custom$x$layout$font$family, "Georgia")
 })
 
+test_that("tsggplotly warns about a theme font with no CSS fallback stack", {
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+
+  # a common, essentially-always-installed font: no warning
+  p_safe <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(text = ggplot2::element_text(family = "Georgia")))
+  expect_no_warning(tsggplotly(p_safe))
+
+  # one of the R/ggplot2 aliases this function already maps to a full CSS
+  # stack: no warning either
+  p_alias <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(text = ggplot2::element_text(family = "sans")))
+  expect_no_warning(tsggplotly(p_alias))
+
+  # a font the user already gave a fallback stack for: no warning
+  p_stack <- tsggplot(
+    list(A = long_ts),
+    theme = init_tsggplot_theme(text = ggplot2::element_text(family = "Comic Sans MS, cursive"))
+  )
+  expect_no_warning(tsggplotly(p_stack))
+
+  # an obscure/decorative font with no fallback: warn, since the viewer's
+  # browser will otherwise just silently substitute its own default instead
+  # of the theme's actual intended font if it isn't installed
+  p_risky <- tsggplot(
+    list(A = long_ts),
+    theme = init_tsggplot_theme(text = ggplot2::element_text(family = "Comic Sans MS"))
+  )
+  expect_warning(tsggplotly(p_risky), "Comic Sans MS")
+})
+
 test_that("tsggplotly fixes font aliases on individual elements too, not just the global default", {
   # plotly::ggplotly() sets its own explicit "sans" family on axis titles/
   # tick labels (inherited from the static theme), which otherwise
