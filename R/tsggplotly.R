@@ -77,10 +77,12 @@ thin_plotly_x_labels <- function(tickvals, ticktext, x_range, width_in = 7,
 #' flattens this to a plain "linear" axis regardless -- even the daily/
 #' weekly/hourly cases lose their Date/POSIXct typing on conversion -- so
 #' Plotly's auto zoom/tick logic sees bare numbers like 2020.5 with no
-#' notion of dates. This inverts whichever encoding back to a real
-#' date/datetime string so the x-axis can be declared \code{type = "date"}
-#' instead, letting Plotly's own date-aware tick formatter take over when
-#' zooming.
+#' notion of dates. This inverts whichever encoding back to a real Date/
+#' POSIXct object (kept as such, not a character string, so a trace's x
+#' still reads as continuous rather than discrete data -- see the
+#' populate_categorical_axes() comment at this function's call site) so the
+#' x-axis can be declared \code{type = "date"} instead, letting Plotly's own
+#' date-aware tick formatter take over when zooming.
 #'
 #' Exact for the daily/weekly (days-since-epoch) and hourly (seconds-since-
 #' epoch) cases. For the decimal-year case, this is approximate to within
@@ -99,7 +101,7 @@ tsggplotly_numeric_x_to_date <- function(x, dominant_freq) {
     return(as.Date(floor(x), origin = "1970-01-01"))
   }
   if (isTRUE(dominant_freq == "hourly")) {
-    return(format(as.POSIXct(x, origin = "1970-01-01", tz = "UTC"), "%Y-%m-%d %H:%M:%S"))
+    return(as.POSIXct(x, origin = "1970-01-01", tz = "UTC"))
   }
   year <- floor(x)
   frac <- x - year
@@ -327,15 +329,30 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       # formatter can show month/day labels once zoomed in, rather than
       # decimal years like 2020.5 at every zoom level.
       dominant_freq <- meta$global_x$dominant_freq
+      # format() rather than as.character(): POSIXct's as.character() drops
+      # the time-of-day entirely for a vector where every element happens
+      # to land exactly at midnight (an easy thing for a range's start/end
+      # to do), silently reverting to a bare date and confusing Plotly's
+      # date parser for what's still an hourly series.
+      format_range <- function(d) if (inherits(d, "POSIXct")) format(d, "%Y-%m-%d %H:%M:%S") else as.character(d)
       if (!identical(xa$type, "date")) {
         p$x$layout$xaxis$type <- "date"
         if (!is.null(xa$range)) {
-          p$x$layout$xaxis$range <- as.character(tsggplotly_numeric_x_to_date(xa$range, dominant_freq))
+          p$x$layout$xaxis$range <- format_range(tsggplotly_numeric_x_to_date(xa$range, dominant_freq))
         }
         for (i in seq_along(p$x$data)) {
           trace_x <- p$x$data[[i]]$x
           if (is.numeric(trace_x)) {
-            p$x$data[[i]]$x <- as.character(tsggplotly_numeric_x_to_date(trace_x, dominant_freq))
+            # Left as a real Date/POSIXct object, not a character string --
+            # plotly_build()'s populate_categorical_axes() classifies any
+            # character trace x as discrete data (is.discrete() treats
+            # is.character() as true), silently re-populating
+            # categoryorder/categoryarray with every one of its (possibly
+            # hundreds of) unique values even though tickmode is "auto" and
+            # tickvals/ticktext were just cleared above -- keeping the
+            # actual Date/POSIXct class avoids that path entirely, and
+            # Plotly's own JSON serialization already renders it correctly.
+            p$x$data[[i]]$x <- tsggplotly_numeric_x_to_date(trace_x, dominant_freq)
           }
         }
       }
@@ -420,10 +437,19 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   # would just double them up. "auto" mode draws no substitute of its own
   # and hands tick placement (and, on a date axis, tick density/hierarchy)
   # entirely to Plotly already, so it gets Plotly's own default tick
-  # appearance too, rather than one derived from the static plot's theme --
-  # ticks just need to be switched on ("outside" instead of "" / off), not
-  # styled to match a fixed position/length concept "auto" doesn't use.
-  xaxis_ticks <- if (x_tick_mode == "auto") list(ticks = "outside") else list(ticks = "")
+  # appearance too, rather than one derived from the static plot's theme.
+  # That means not just switching "ticks" on, but also actually removing
+  # ggplotly()'s own ticklen/tickwidth/tickcolor (inherited from the static
+  # plot's *major* tick length, which is zeroed out by the "mid" label-
+  # positioning hack) rather than leaving them at that stale 0 -- an
+  # explicit 0 renders an invisible (zero-length) tick regardless of
+  # "ticks", unlike the field being genuinely absent, which is what lets
+  # Plotly's own non-zero default (5px) take over.
+  xaxis_ticks <- if (x_tick_mode == "auto") {
+    list(ticks = "outside", ticklen = NULL, tickwidth = NULL, tickcolor = NULL)
+  } else {
+    list(ticks = "")
+  }
   p$x$layout$xaxis <- modifyList(p$x$layout$xaxis, c(xaxis_ticks, resolve_axis_line("axis.line.x")))
   p$x$layout$yaxis <- modifyList(p$x$layout$yaxis, resolve_axis_line("axis.line.y.left"))
 

@@ -193,6 +193,25 @@ test_that("tsggplotly x_tick_mode (#15)", {
   # Plotly, so its native tick appearance is the appropriate match too.
   expect_equal(built_auto$x$layout$xaxis$ticks, "outside")
   expect_equal(built_thin$x$layout$xaxis$ticks, "")
+
+  # ticklen/tickwidth/tickcolor must actually be absent (not merely left at
+  # ggplotly()'s own derived value of 0, inherited from the static plot's
+  # zeroed-out *major* tick length) -- an explicit 0 renders an invisible,
+  # zero-length tick regardless of "ticks", unlike the field being
+  # genuinely unset, which is what lets Plotly's own non-zero default apply.
+  expect_null(built_auto$x$layout$xaxis$ticklen)
+  expect_null(built_auto$x$layout$xaxis$tickwidth)
+  expect_null(built_auto$x$layout$xaxis$tickcolor)
+
+  # plotly_build()'s populate_categorical_axes() treats any *character*
+  # trace x as discrete data and silently re-populates categoryorder/
+  # categoryarray with every unique value (regardless of tickmode/type)
+  # unless ticktext/tickvals are already set -- both are deliberately NULL
+  # in "auto" mode, so this only stays off if the trace x itself is a real
+  # Date/POSIXct object rather than a formatted date string.
+  expect_null(built_auto$x$layout$xaxis$categoryorder)
+  expect_null(built_auto$x$layout$xaxis$categoryarray)
+  expect_s3_class(built_auto$x$data[[1]]$x, "Date")
 })
 
 test_that("tsggplotly x_tick_mode = 'auto' reconstructs exact dates for daily/weekly series", {
@@ -204,7 +223,7 @@ test_that("tsggplotly x_tick_mode = 'auto' reconstructs exact dates for daily/we
   built <- plotly::plotly_build(fig_auto)
   expect_equal(built$x$layout$xaxis$type, "date")
   # days-since-epoch encoding inverts exactly, no line_to_middle drift
-  expect_equal(as.Date(built$x$data[[1]]$x), idx)
+  expect_equal(as.Date(built$x$data[[1]]$x), idx, ignore_attr = TRUE)
 })
 
 test_that("tsggplotly follows the theme's background and legend position", {
@@ -251,6 +270,15 @@ test_that("tsggplotly x_tick_mode = 'auto' reconstructs real datetimes for hourl
   expect_equal(built$x$layout$xaxis$type, "date")
   expect_true(all(grepl("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$", built$x$data[[1]]$x)))
   expect_equal(format(as.Date(built$x$data[[1]]$x[1])), "2023-01-01")
+  # kept as a real POSIXct, not a formatted string (see the
+  # populate_categorical_axes() test above for why that matters)
+  expect_s3_class(built$x$data[[1]]$x, "POSIXct")
+
+  # the series starts exactly at midnight -- as.character() on a POSIXct
+  # silently drops the time-of-day for a vector where every element lands
+  # on one, which a 2-element range (start, end) can easily do even when
+  # the full trace (with plenty of non-midnight hours) doesn't
+  expect_equal(built$x$layout$xaxis$range[1], "2023-01-01 00:00:00")
 
   # "thin" mode isn't affected -- doesn't error and still produces the
   # correct (already date-formatted) tick labels
