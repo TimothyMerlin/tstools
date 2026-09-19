@@ -81,7 +81,6 @@ draw_ts_bars <- function(x, group_bar_chart = FALSE, theme = NULL) {
 }
 
 #' @importFrom ggplot2 aes geom_col position_dodge2 position_stack
-#' scale_fill_manual
 draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL, use_date_scale = FALSE) {
   n_ts <- length(x)
   series <- names(x)
@@ -96,15 +95,14 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL, use_
     )
   }))
 
-  # Define the dodge width and fill colors based on the theme settings
-  fill_colors <- theme$bar_fill_color[1:n_ts]
-  fill_colors <- setNames(theme$bar_fill_color[1:n_ts], colnames(x))
-
   if (group_bar_chart && n_ts > 1) {
     position <- position_dodge2(padding = theme$bar_gap, preserve = "single")
   } else {
     position <- position_stack()
   }
+  # fill colors/legend are applied once by the caller's own
+  # scale_fill_manual() (tsggplot.list()), which would otherwise replace
+  # this one anyway and print a "Scale for fill is already present" message
   p <- p +
     geom_col(
       data = data,
@@ -117,10 +115,6 @@ draw_tsggplot_bars <- function(p, x, group_bar_chart = FALSE, theme = NULL, use_
       just = 0,
       colour = theme$bar_border_color,
       linewidth = theme$bar_border_linewidth
-    ) +
-    scale_fill_manual(
-      values = fill_colors,
-      guide = "none" # removes legend for group
     )
 
   p

@@ -11,7 +11,7 @@ test_that("getGlobalXInfo_tsggplot, ts", {
   )
 
   expected <- list(
-    x_range = c(1949, 1961),
+    x_range = c(1949, 1961.19),
     yearly_tick_pos = c(
       1949, 1950, 1951, 1952, 1953, 1954, 1955,
       1956, 1957, 1958, 1959, 1960, 1961
@@ -63,10 +63,8 @@ test_that("getGlobalXInfo_tsggplot, xts", {
 
   expected <-
     list(
-      x_range = structure(c(1167692400, 1199142000), class = c(
-        "POSIXct",
-        "POSIXt"
-      )), yearly_tick_pos = structure(c(13514, 13879), class = "Date"),
+      x_range = structure(c(13514, 13947), class = "Date"),
+      yearly_tick_pos = structure(c(13514, 13879), class = "Date"),
       year_labels_start = c(2007, 2008), min_year = 2007, max_year = 2008,
       quarterly_tick_pos = structure(c(
         13514, 13604, 13695, 13787,
@@ -92,10 +90,8 @@ test_that("getGlobalXInfo_tsggplot, xts, don't fill year", {
 
   expected <-
     list(
-      x_range = structure(c(1167692400, 1183154400), class = c(
-        "POSIXct",
-        "POSIXt"
-      )), yearly_tick_pos = structure(13514, class = "Date"),
+      x_range = structure(c(13514, 13738), class = "Date"),
+      yearly_tick_pos = structure(13514, class = "Date"),
       year_labels_start = 2007, min_year = 2007, max_year = 2007,
       quarterly_tick_pos = structure(c(13514, 13604, 13695), class = "Date"),
       dominant_freq = "daily"
@@ -120,7 +116,7 @@ test_that("getGlobalXInfo_tsggplot, xts", {
   )
 
   expected <- list(
-    x_range = c(1949, 1981),
+    x_range = c(1949, 1981.19),
     yearly_tick_pos = c(
       1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960,
       1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972,
@@ -157,4 +153,128 @@ test_that("getGlobalXInfo_tsggplot, xts", {
   )
 
   expect_equal(out, expected)
+})
+
+test_that("getGlobalXInfo_tsggplot adapts the trailing pad to the series span (axis_x_pad)", {
+  theme <- init_tsggplot_theme(fill_year_with_nas = FALSE)
+
+  # a short series gets a small, proportional pad rather than the old
+  # fixed one-quarter margin (which would dwarf a few days of data)
+  short_ts <- ts(1:5, start = c(2010, 1), frequency = 365)
+  out_short <- getGlobalXInfo_tsggplot(
+    list(A = short_ts), NULL,
+    theme$fill_year_with_nas, theme$fill_up_start,
+    theme$axis_x_tick_dt, theme$axis_x_label_dt, NULL
+  )
+  span <- diff(range(stats::time(short_ts)))
+  expect_true(diff(out_short$x_range) > span)
+  expect_true(diff(out_short$x_range) < 0.25)
+
+  # a long series still gets ~the classic one-quarter margin
+  out_long <- getGlobalXInfo_tsggplot(
+    list(A = AirPassengers), NULL,
+    theme$fill_year_with_nas, theme$fill_up_start,
+    theme$axis_x_tick_dt, theme$axis_x_label_dt, NULL
+  )
+  expect_equal(out_long$x_range[2] - max(stats::time(AirPassengers)), 0.25, tolerance = 0.01)
+
+  # an explicit axis_x_pad overrides the automatic scaling entirely
+  out_pad0 <- getGlobalXInfo_tsggplot(
+    list(A = short_ts), NULL,
+    theme$fill_year_with_nas, theme$fill_up_start,
+    theme$axis_x_tick_dt, theme$axis_x_label_dt, NULL,
+    pad = 0
+  )
+  expect_equal(out_pad0$x_range[2], max(stats::time(short_ts)))
+
+  # same adaptive behavior for the daily/weekly (Date-scale) branch, which
+  # otherwise recomputes x_range from the raw index and would drop the pad
+  short_daily <- xts::xts(1:5, order.by = seq(as.Date("2023-01-01"), by = "day", length.out = 5))
+  out_daily <- getGlobalXInfo_tsggplot(
+    list(A = short_daily), NULL,
+    theme$fill_year_with_nas, theme$fill_up_start,
+    theme$axis_x_tick_dt, theme$axis_x_label_dt, NULL
+  )
+  expect_true(out_daily$x_range[2] > as.Date("2023-01-05"))
+  expect_true(out_daily$x_range[2] < as.Date("2023-01-05") + 30)
+})
+
+test_that("tsggplot doesn't error when the axis is too short for a quarterly tick", {
+  short_daily <- xts::xts(1:5, order.by = seq(as.Date("2023-01-01"), by = "day", length.out = 5))
+  expect_no_error(tsggplot(
+    list(A = short_daily),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
+  ))
+})
+
+test_that("tsggplot still shows an x-axis label when only one yearly tick fits (short monthly series)", {
+  # a genuinely numeric-scale (non date/datetime) series short enough that
+  # its padded range contains only one yearly tick
+  short_monthly <- ts(1:3, start = c(2023, 1), frequency = 12)
+  p <- tsggplot(
+    list(A = short_monthly),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
+  )
+
+  meta <- attr(p, "tsggplot_meta")
+  expect_equal(length(meta$global_x$yearly_tick_pos), 1)
+
+  b <- ggplot2::ggplot_build(p)
+  x_scale <- b$layout$panel_params[[1]]$x
+  expect_false(anyNA(x_scale$breaks))
+  expect_false(anyNA(x_scale$get_labels()))
+  expect_equal(x_scale$get_labels(), 2023)
+})
+
+test_that("tsggplot plots hourly xts series on a real datetime x-axis", {
+  hourly_idx <- seq(as.POSIXct("2023-01-01", tz = "UTC"), by = "hour", length.out = 5 * 24)
+  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+  p <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE)
+  )
+
+  meta <- attr(p, "tsggplot_meta")
+  expect_true(inherits(meta$global_x$x_range, "POSIXct"))
+  expect_true(inherits(meta$global_x$yearly_tick_pos, "POSIXct"))
+
+  # real day-level labels (e.g. "Jan 01"), not a single decimal-year label
+  b <- ggplot2::ggplot_build(p)
+  x_scale <- b$layout$panel_params[[1]]$x
+  labels <- x_scale$get_labels()
+  expect_false(anyNA(labels))
+  expect_true(all(grepl("^[A-Z][a-z]{2} \\d{2}$", labels)))
+  expect_true(length(labels) >= 3)
+
+  # the actual data lines up correctly with that datetime axis (line_to_
+  # middle off here so the plotted x isn't shifted by half a period)
+  p_no_shift <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE, line_to_middle = FALSE)
+  )
+  built_data <- ggplot2::ggplot_build(p_no_shift)$data[[1]]
+  expect_equal(as.numeric(built_data$x), as.numeric(hourly_idx), tolerance = 1e-6)
+})
+
+test_that("tsggplot's daily/weekly x-axis picks sensible tick spacing for its span (axis_x_date_ticks)", {
+  dates <- seq(as.Date("2023-01-01"), by = "day", length.out = 5)
+  daily_xts <- xts::xts(seq_along(dates), order.by = dates)
+
+  # "auto" (the default) lets ggplot2 pick day-level breaks for a short
+  # series instead of the always-year-based spacing, which produces an NA
+  # tick for anything shorter than a year
+  p_auto <- tsggplot(list(A = daily_xts), theme = init_tsggplot_theme(fill_year_with_nas = FALSE))
+  b_auto <- ggplot2::ggplot_build(p_auto)
+  x_auto <- b_auto$layout$panel_params[[1]]$x
+  expect_false(anyNA(x_auto$breaks))
+  expect_true(length(x_auto$breaks) >= 5)
+
+  # "years" keeps the old fixed year-based spacing as an explicit opt-in
+  p_years <- tsggplot(
+    list(A = daily_xts),
+    theme = init_tsggplot_theme(fill_year_with_nas = FALSE, axis_x_date_ticks = "years")
+  )
+  b_years <- ggplot2::ggplot_build(p_years)
+  x_years <- b_years$layout$panel_params[[1]]$x
+  expect_equal(x_years$get_labels()[!is.na(x_years$get_labels())], "2023")
 })

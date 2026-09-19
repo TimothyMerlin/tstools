@@ -52,7 +52,7 @@
 #' @importFrom ggplot2 aes coord_cartesian element_blank element_line element_text geom_rect geom_segment ggplot
 #' ggplot_build ggsave guides guide_axis guide_legend margin sec_axis scale_color_manual
 #' scale_fill_manual scale_x_continuous scale_y_continuous waiver .data
-#' scale_x_date
+#' scale_x_date scale_x_datetime
 #'
 #' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
 #'          caption, tag)
@@ -250,6 +250,55 @@ tsggplot.xts <- function(...,
   )
 }
 
+#' @export
+tsggplot.zoo <- function(...,
+                         tsr = NULL,
+                         ci = NULL,
+                         left_as_bar = FALSE,
+                         group_bar_chart = FALSE,
+                         relative_bar_chart = FALSE,
+                         left_as_band = FALSE,
+                         labs = NULL,
+                         find_ticks_function = "findTicks",
+                         overall_xlim = NULL,
+                         overall_ylim = NULL,
+                         manual_date_ticks = NULL,
+                         manual_value_ticks_l = NULL,
+                         manual_value_ticks_r = NULL,
+                         manual_ticks_x = NULL,
+                         theme = NULL,
+                         quiet = TRUE,
+                         auto_legend = TRUE,
+                         output_format = "plot",
+                         save = list(
+                           filename = "tsplot",
+                           height = 210,
+                           width = 297,
+                           units = "mm"
+                         )) {
+  li <- list(...)
+  li <- lapply(li, xts::as.xts)
+  tsggplot(li,
+    tsr = tsr,
+    ci = ci,
+    left_as_bar = left_as_bar,
+    group_bar_chart = group_bar_chart,
+    relative_bar_chart = relative_bar_chart,
+    left_as_band = left_as_band,
+    labs = labs,
+    find_ticks_function = find_ticks_function,
+    manual_date_ticks = manual_date_ticks,
+    overall_xlim = overall_xlim,
+    overall_ylim = overall_ylim,
+    manual_value_ticks_l = manual_value_ticks_l,
+    manual_value_ticks_r = manual_value_ticks_r,
+    manual_ticks_x = manual_ticks_x,
+    auto_legend = auto_legend,
+    theme = theme,
+    output_format = output_format,
+    save = save
+  )
+}
 
 #' @export
 tsggplot.list <- function(...,
@@ -441,14 +490,16 @@ tsggplot.list <- function(...,
     fill_up_start = theme$fill_up_start,
     tick_dt = theme$axis_x_tick_dt,
     label_dt = theme$axis_x_label_dt,
-    manual_ticks_x
+    manual_ticks_x,
+    pad = theme$axis_x_pad
   )
 
-  # daily/weekly xts data is plotted on a Date-based x-axis (scale_x_date);
-  # everything else (ts, monthly/quarterly/annual/hourly xts) is plotted on
-  # a numeric decimal-year x-axis (scale_x_continuous) -- draw functions need
-  # to know which, so their data lines up with the axis built below.
-  use_date_scale <- global_x$dominant_freq %in% c("daily", "weekly")
+  # daily/weekly xts data is plotted on a Date-based x-axis (scale_x_date),
+  # hourly on a POSIXct-based one (scale_x_datetime); everything else (ts,
+  # monthly/quarterly/annual xts) is plotted on a numeric decimal-year
+  # x-axis (scale_x_continuous) -- draw functions need to know which, so
+  # their data lines up with the axis built below.
+  use_date_scale <- global_x$dominant_freq %in% c("daily", "weekly", "hourly")
 
   # y can't be global in the first place, cause
   # tsr and tsl have different scales....
@@ -582,6 +633,15 @@ tsggplot.list <- function(...,
     theme_args$legend.position <- "none"
   }
 
+  if (!is.null(tsr) && !isTRUE(theme$legend_all_left)) {
+    # Left- and right-axis series get their own, separately grouped guide-box
+    # below the plot. ggplot2 places guide-boxes right next to each other by
+    # default, which reads as one continuous legend -- add spacing so the two
+    # groups are visually distinguishable, matching tsplot's topleft/topright
+    # placement.
+    theme_args$legend.spacing.x <- unit(2, "cm")
+  }
+
   if (!inherits(theme$axis.line.y, "element_blank")) {
     # If the y-axis line theme is not identical to the default ggplot2
     # element_line
@@ -632,7 +692,7 @@ tsggplot.list <- function(...,
     do.call(ggplot2::theme, theme_args)
 
   if (theme$highlight_window) {
-    p <- draw_tsggplot_highlight(p, global_x, left_y, theme, output_format)
+    p <- draw_tsggplot_highlight(p, global_x, left_y, theme)
   }
 
   # Split theme into left/right
@@ -649,6 +709,32 @@ tsggplot.list <- function(...,
     tt_r$point_symbol <- tt_r$point_symbol[start_r]
     tt_r$NA_continue_line <- tt_r$NA_continue_line[start_r]
     tt_r$ci_colors <- tt_r$ci_colors[start_r]
+  }
+
+  # Whether the left- and right-axis series get two separately grouped
+  # legends below the plot (one per axis) instead of one legend merged from
+  # both. Only relevant when both axes are plain lines and thus share a
+  # single "colour" aesthetic -- left_as_bar/left_as_band already put the
+  # left series on a separate "fill" aesthetic, so those get a split legend
+  # "for free" further down without needing this. Static (print/save) output
+  # only: tsggplotly() still renders one merged legend for tsr charts.
+  split_legend <- !left_as_bar && !left_as_band && !is.null(tsr) && !isTRUE(theme$legend_all_left)
+
+  # tsggplotly() can't convert the split legend (ggnewscale's scale-renaming
+  # trick breaks plotly::ggplotly()'s geom conversion), so build the merged-
+  # legend equivalent here too and stash it for tsggplotly() to use
+  # transparently instead of erroring. Recursing with legend_all_left = TRUE
+  # makes the inner call's own split_legend FALSE, so this doesn't recurse
+  # further.
+  merged_legend_fallback <- NULL
+  if (split_legend) {
+    fallback_args <- as.list(environment())
+    fallback_args <- fallback_args[intersect(names(formals(tsggplot.list)), names(fallback_args))]
+    fallback_args$theme <- theme
+    fallback_args$theme$legend_all_left <- TRUE
+    fallback_args$quiet <- TRUE
+    fallback_args$output_format <- "plot"
+    merged_legend_fallback <- do.call(tsggplot.list, c(list(tsl), fallback_args))
   }
 
   if (!left_as_bar) {
@@ -679,6 +765,26 @@ tsggplot.list <- function(...,
   } else {
     # draw lineplot
     p <- draw_tsggplot_lines(p, tsl, theme = theme, bandplot = left_as_band, use_date_scale = use_date_scale)
+
+    if (split_legend) {
+      # tsl and tsr would otherwise share one "colour" aesthetic and get
+      # merged by ggplot2 into a single legend. Give the left-axis series
+      # their own colour scale/guide now, then start a fresh colour scale
+      # via new_scale_color() before the right-axis lines are drawn below,
+      # so each side ends up with its own, independently positioned guide.
+      # This has to happen right here, interleaved with the geoms it
+      # applies to -- ggnewscale tracks which "generation" of the colour
+      # aesthetic a scale belongs to by the order components are added to
+      # the plot, not by aesthetic name, so this scale/guide pair can't be
+      # deferred to the end the way the merged-legend case does below.
+      p <- p + scale_color_manual(
+        values = setNames(theme$line_colors[seq_along(tsl)], names(tsl))
+      )
+      if (auto_legend) {
+        p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA)))
+      }
+      p <- p + ggnewscale::new_scale_color()
+    }
   }
 
   # RIGHT PLOT #######################
@@ -746,36 +852,67 @@ tsggplot.list <- function(...,
   if (!inherits(theme$axis.line.x, "element_blank")) {
     if (exists("segment_length")) {
       brks <- global_x$yearly_tick_pos
-      tick_spacing <- diff(brks)[1]
-      if (inherits(brks, "Date")) {
-        # --- DAILY / WEEKLY: compute midpoints as numeric days
-        mid_all <- as.Date(
-          c(
-            (as.numeric(brks[-length(brks)]) + as.numeric(brks[-1])) / 2,
-            as.numeric(brks[length(brks)]) + as.numeric(tick_spacing) / 2
-          ),
-          origin = "1970-01-01"
-        )
-      } else {
-        # --- MONTHLY / QUARTERLY / ANNUAL: numeric scale
-        mid_all <- c(
-          (brks[-length(brks)] + brks[-1]) / 2,
-          brks[length(brks)] + tick_spacing / 2
-        )
+      is_date_scale <- global_x$dominant_freq %in% c("daily", "weekly", "hourly")
+
+      # Label mid-points (labels centered within each year's bin) are only
+      # used by the numeric (ts/monthly/quarterly/annual) scale below --
+      # date-based scales (daily/weekly/hourly) hand tick placement to
+      # ggplot2's own scale_x_date()/scale_x_datetime() instead, and their
+      # yearly_tick_pos/quarterly_tick_pos are Date/POSIXct, for which this
+      # arithmetic (e.g. summing two Date/POSIXct values) isn't meaningful.
+      if (!is_date_scale) {
+        if (length(brks) < 2) {
+          # A single tick (e.g. a series short enough that only one yearly/
+          # quarterly boundary falls within its padded range) has no "next"
+          # tick to center a mid-point label between -- and the usual
+          # mid-point formula's result would fall outside [min(brks),
+          # max(brks)] and get filtered out anyway, leaving no breaks/labels
+          # at all. Label the single tick directly at its own position
+          # instead.
+          mid_pts <- brks
+          labs_pt <- global_x$year_labels_start
+        } else {
+          tick_spacing <- diff(brks)[1]
+          mid_all <- c(
+            (brks[-length(brks)] + brks[-1]) / 2,
+            brks[length(brks)] + tick_spacing / 2
+          )
+          is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
+          mid_pts <- mid_all[is_valid]
+          labs_pt <- global_x$year_labels_start[is_valid]
+        }
       }
-      is_valid <- mid_all >= min(brks) & mid_all <= max(brks)
-      mid_pts <- mid_all[is_valid]
-      labs_pt <- global_x$year_labels_start[is_valid]
 
       # choose scale type depending on frequency
       if (global_x$dominant_freq %in% c("daily", "weekly")) {
+        date_scale_args <- list(
+          limits = as.Date(global_x$x_range),
+          expand = c(0, 0)
+        )
+        if (identical(theme$axis_x_date_ticks, "years")) {
+          # Fixed year-based spacing, regardless of the series' own span --
+          # matches the numeric (ts/monthly/quarterly/annual) x-axis'
+          # always-year-based convention, but produces an NA tick for
+          # anything shorter than a year (the "auto" default's whole
+          # reason for existing).
+          date_scale_args$date_breaks <- paste0(theme$axis_x_label_dt, " years")
+          date_scale_args$date_labels <- "%Y"
+        }
         p <- p +
-          scale_x_date(
-            date_breaks = paste0(theme$axis_x_label_dt, " years"),
-            date_labels = "%Y",
-            limits = as.Date(global_x$x_range),
-            expand = c(0, 0)
-          )
+          do.call(scale_x_date, date_scale_args) +
+          guides(x = guide_axis(check.overlap = TRUE))
+      } else if (global_x$dominant_freq == "hourly") {
+        datetime_scale_args <- list(
+          limits = global_x$x_range,
+          expand = c(0, 0)
+        )
+        if (identical(theme$axis_x_date_ticks, "years")) {
+          datetime_scale_args$date_breaks <- paste0(theme$axis_x_label_dt, " years")
+          datetime_scale_args$date_labels <- "%Y"
+        }
+        p <- p +
+          do.call(scale_x_datetime, datetime_scale_args) +
+          guides(x = guide_axis(check.overlap = TRUE))
       } else {
         p <- p +
           scale_x_continuous(
@@ -785,42 +922,48 @@ tsggplot.list <- function(...,
             limits = c(global_x$x_range[1], global_x$x_range[2]),
             expand = c(0, 0)
           ) +
-          guides(x = guide_axis(minor.ticks = TRUE))
+          # check.overlap drops whichever yearly labels would collide, the
+          # same fallback base R's axis() applies automatically in tsplot().
+          guides(x = guide_axis(minor.ticks = TRUE, check.overlap = TRUE))
       }
 
       if (theme$quarterly_ticks && is.null(manual_ticks_x) && !is.null(global_x$quarterly_tick_pos)) {
-        # Filter out overlapping quarterly ticks
+        # Filter out overlapping quarterly ticks -- a very short series (or
+        # a small axis_x_pad) may leave none beyond the yearly ones already
+        # drawn
         q_ticks <- setdiff(global_x$quarterly_tick_pos, brks)
 
-        # Build a df of segment endpoints plotted in data coordinates
-        panel <- ggplot_build(p)$layout$panel_params[[1]]
-        y_min <- panel$y.range[1]
-        y_rng <- diff(panel$y.range)
-        # cheating here a bit because we neeed to translate grid units
-        # (axis.minor.ticks.length) that make sense in the drawing coordinate
-        # to data coordinates
-        tick_h <- y_rng * segment_length / 100
+        if (length(q_ticks) > 0) {
+          # Build a df of segment endpoints plotted in data coordinates
+          panel <- ggplot_build(p)$layout$panel_params[[1]]
+          y_min <- panel$y.range[1]
+          y_rng <- diff(panel$y.range)
+          # cheating here a bit because we neeed to translate grid units
+          # (axis.minor.ticks.length) that make sense in the drawing coordinate
+          # to data coordinates
+          tick_h <- y_rng * segment_length / 100
 
-        tick_df <- data.frame(
-          x    = q_ticks,
-          xend = q_ticks,
-          y    = y_min,
-          yend = y_min + tick_h
-        )
+          tick_df <- data.frame(
+            x    = q_ticks,
+            xend = q_ticks,
+            y    = y_min,
+            yend = y_min + tick_h
+          )
 
-        geom_args <- c(
-          list(
-            data = tick_df,
-            mapping = aes(
-              x = .data$x, y = .data$y,
-              xend = .data$xend, yend = .data$yend
+          geom_args <- c(
+            list(
+              data = tick_df,
+              mapping = aes(
+                x = .data$x, y = .data$y,
+                xend = .data$xend, yend = .data$yend
+              ),
+              inherit.aes = FALSE
             ),
-            inherit.aes = FALSE
-          ),
-          segment_x_bottom
-        )
+            segment_x_bottom
+          )
 
-        p <- p + do.call(geom_segment, geom_args)
+          p <- p + do.call(geom_segment, geom_args)
+        }
       }
     } else {
       # no segment_length case
@@ -829,14 +972,23 @@ tsggplot.list <- function(...,
           scale_x_date(
             limits = as.Date(global_x$x_range, origin = "1970-01-01"),
             expand = c(0, 0)
-          )
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
+      } else if (global_x$dominant_freq == "hourly") {
+        p <- p +
+          scale_x_datetime(
+            limits = global_x$x_range,
+            expand = c(0, 0)
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
       } else {
         p <- p +
           scale_x_continuous(
             breaks = global_x$yearly_tick_pos,
             limits = c(global_x$x_range[1], global_x$x_range[2]),
             expand = c(0, 0)
-          )
+          ) +
+          guides(x = guide_axis(check.overlap = TRUE))
       }
     }
   } else {
@@ -857,23 +1009,54 @@ tsggplot.list <- function(...,
     p <- p + scale_fill_manual(
       values = setNames(fill_colors, names(tsl)),
     )
+    p <- p + scale_color_manual(
+      values = setNames(theme$line_colors, line_names)
+    )
+    if (auto_legend) {
+      if (!is.null(tsr) && !isTRUE(theme$legend_all_left)) {
+        # left series (bars/bands) and right series (lines) are already on
+        # separate aesthetics (fill vs colour), so they already render as
+        # two separate guide boxes below the plot, no new_scale_color()
+        # needed.
+        p <- p + guides(
+          fill = guide_legend(ncol = theme$legend_col, position = "bottom"),
+          color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA))
+        )
+      } else {
+        p <- p + guides(
+          color = guide_legend(ncol = theme$legend_col, override.aes = list(fill = NA))
+        )
+      }
+    }
+  } else if (split_legend) {
+    # The left-axis colour scale/guide was already added above, right
+    # before new_scale_color() and the right-axis lines were drawn.
+    p <- p + scale_color_manual(
+      values = setNames(tt_r$line_colors, names(tsr))
+    )
+    if (auto_legend) {
+      p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA)))
+    }
   } else {
     line_names <- c(names(tsl), names(tsr))
-  }
-  p <- p + scale_color_manual(
-    values = setNames(theme$line_colors, line_names)
-  )
-
-  if (auto_legend) {
-    p <- p + guides(
-      color = guide_legend(
-        ncol = theme$legend_col
-      )
+    p <- p + scale_color_manual(
+      values = setNames(theme$line_colors, line_names)
     )
+    if (auto_legend) {
+      p <- p + guides(
+        color = guide_legend(
+          ncol = theme$legend_col,
+          override.aes = list(fill = NA)
+        )
+      )
+    }
   }
 
   if (!is.null(labs)) {
     lab_args <- labs[!vapply(labs, is.null, logical(1))]
+    # y_right isn't a real ggplot2 label; passing it to labs() only
+    # triggers an "Ignoring unknown labels" message on every build.
+    lab_args$y_right <- NULL
     p <- p + do.call(ggplot2::labs, lab_args)
   }
 
@@ -883,7 +1066,11 @@ tsggplot.list <- function(...,
     global_x = global_x,
     left_y = left_y,
     right_y = if (!is.null(tsr)) right_y else NULL,
-    y_right_label = labs$y_right
+    y_right_label = labs$y_right,
+    # tsggplotly() can't convert the ggnewscale-based split legend (see
+    # #16), so it transparently converts merged_legend_fallback instead.
+    split_legend = split_legend,
+    merged_legend_fallback = merged_legend_fallback
   )
 
   if (output_format != "plot") {

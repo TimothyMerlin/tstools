@@ -20,7 +20,8 @@ test_that("tsggplot sets custom labels correctly", {
   # Check if the labels are set correctly
   expect_equal(p$labels$x, labs$x)
   expect_equal(p$labels$y, labs$y)
-  expect_equal(p$labels$y_right, labs$y_right)
+  # y_right isn't a real ggplot2 label; it lives in tsggplot_meta instead.
+  expect_equal(attr(p, "tsggplot_meta")$y_right_label, labs$y_right)
   expect_equal(p$labels$title, labs$title)
   expect_equal(p$labels$subtitle, labs$subtitle)
   expect_equal(p$labels$caption, labs$caption)
@@ -170,6 +171,32 @@ test_that("tsggplot ticks", {
   expect_null(p$theme$axis.ticks.x.bottom$lineend)
   expect_false(p$theme$axis.ticks.x.bottom$arrow)
   expect_false(p$theme$axis.ticks.x.bottom$inherit.blank)
+})
+
+test_that("tsggplot x-axis guide drops overlapping yearly labels (#13)", {
+  # guide_axis(check.overlap = TRUE) makes ggplot2 drop whichever x-axis
+  # labels would collide at draw time, the same fallback base R's axis()
+  # gives tsplot() for free. Exercise all four Global X-Axis branches
+  # (numeric vs. Date scale, crossed with the "mid"/"start" label position,
+  # which decides whether the segment_length/minor-ticks code path is used).
+  x_check_overlap <- function(p) {
+    p$guides$guides[["x"]]$params$check.overlap
+  }
+
+  ts_long <- window(AirPassengers, start = c(1949, 1), end = c(1960, 12))
+  weekly_long <- xts::xts(
+    seq_len(261),
+    order.by = seq(as.Date("2010-01-01"), by = "week", length.out = 261)
+  )
+
+  # "mid" label position (default) -> segment_length/minor-ticks branch
+  expect_true(x_check_overlap(tsggplot(list(ts_long))))
+  expect_true(x_check_overlap(tsggplot(list(weekly_long))))
+
+  # "start" label position -> no segment_length branch
+  start_theme <- init_tsggplot_theme(axis.text.x.pos = "start")
+  expect_true(x_check_overlap(tsggplot(list(ts_long), theme = start_theme)))
+  expect_true(x_check_overlap(tsggplot(list(weekly_long), theme = start_theme)))
 })
 
 test_that("tsggplot axis", {
@@ -396,6 +423,81 @@ test_that("tsggplot legend", {
   expect_equal(colour_line_2, unname(theme$line_colors[2]))
 })
 
+test_that("tsggplot splits the tsr legend left/right axis by default", {
+  # Plain lines on both axes: split into two colour scales via ggnewscale,
+  # each getting its own guide instead of one merged legend.
+  p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  expect_true(attr(p, "tsggplot_meta")$split_legend)
+  scale_aes <- vapply(p$scales$scales, function(s) paste(s$aesthetics, collapse = ","), character(1))
+  expect_true(any(grepl("^colour_ggnewscale_", scale_aes)))
+  expect_true("colour" %in% scale_aes)
+
+  # legend_all_left opts back into a single merged legend/colour scale.
+  p_merged <- tsggplot(list(a = AirPassengers),
+    tsr = list(b = JohnsonJohnson),
+    theme = init_tsggplot_theme(legend_all_left = TRUE)
+  )
+  expect_false(attr(p_merged, "tsggplot_meta")$split_legend)
+  merged_scale_aes <- vapply(p_merged$scales$scales, function(s) paste(s$aesthetics, collapse = ","), character(1))
+  expect_false(any(grepl("^colour_ggnewscale_", merged_scale_aes)))
+  expect_true("colour" %in% merged_scale_aes)
+
+  # No tsr at all: unaffected, single ordinary colour scale.
+  p_no_tsr <- tsggplot(list(a = AirPassengers))
+  expect_false(attr(p_no_tsr, "tsggplot_meta")$split_legend)
+
+  # left_as_bar + tsr: left (fill) and right (colour) are already on
+  # separate aesthetics, so no ggnewscale split is needed there.
+  p_bar <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson), left_as_bar = TRUE)
+  expect_false(attr(p_bar, "tsggplot_meta")$split_legend)
+})
+
+test_that("tsggplot adds spacing between the left/right legend guide-boxes so they read as two groups", {
+  # ggplot2 places separate guide-boxes right next to each other by default,
+  # which looks like one continuous legend even though they're structurally
+  # distinct -- legend.spacing.x is the only thing that visually tells them
+  # apart, so it must actually be set whenever there are two guide-boxes to
+  # separate.
+  p_split <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  expect_equal(p_split$theme$legend.spacing.x, unit(2, "cm"))
+
+  p_bar <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson), left_as_bar = TRUE)
+  expect_equal(p_bar$theme$legend.spacing.x, unit(2, "cm"))
+
+  # Merged legend and no-tsr cases only ever render a single guide-box, so
+  # the extra spacing would have no visible effect there -- confirm it's
+  # left at ggplot2's default instead of being set unconditionally.
+  p_merged <- tsggplot(list(a = AirPassengers),
+    tsr = list(b = JohnsonJohnson),
+    theme = init_tsggplot_theme(legend_all_left = TRUE)
+  )
+  expect_null(p_merged$theme$legend.spacing.x)
+
+  p_no_tsr <- tsggplot(list(a = AirPassengers))
+  expect_null(p_no_tsr$theme$legend.spacing.x)
+})
+
+test_that("tsggplotly converts a split-legend plot via its merged-legend fallback", {
+  p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  meta <- attr(p, "tsggplot_meta")
+  expect_true(meta$split_legend)
+  expect_s3_class(meta$merged_legend_fallback, "ggplot")
+
+  expect_no_error(fig <- tsggplotly(p))
+  built <- plotly::plotly_build(fig)
+  traces <- setNames(built$x$data, sapply(built$x$data, function(d) if (is.null(d$name)) "" else d$name))
+  # both series' full data made it through, not just one (what "the
+  # split-off geom silently loses its data" would otherwise look like)
+  expect_equal(length(traces[["a"]]$x), length(AirPassengers))
+  expect_equal(length(traces[["b"]]$x), length(JohnsonJohnson))
+
+  p_merged <- tsggplot(list(a = AirPassengers),
+    tsr = list(b = JohnsonJohnson),
+    theme = init_tsggplot_theme(legend_all_left = TRUE)
+  )
+  expect_no_error(tsggplotly(p_merged))
+})
+
 test_that("tsggplot modify the legend", {
   # Modify the legend title
   theme <- init_tsggplot_theme(
@@ -454,18 +556,15 @@ test_that("tsggplot with highlight window", {
     highlight_window_color = "red",
     highlight_window_alpha = 0.2
   )
-  if (capabilities("cairo") && getOption("bitmapType") != "cairo") {
-    expect_warning(tsggplot(
-      list(AirPassengers = AirPassengers),
-      theme = theme
-    ), "Transparency requested but current device is not cairo.")
-  }
+  # translucent geom_rect fill is composited by grid regardless of the
+  # device's bitmapType, unlike base graphics' rect(), so no cairo warning
+  expect_no_warning(tsggplot(
+    list(AirPassengers = AirPassengers),
+    theme = theme
+  ))
 
-  # Suppress cairo warning
-  suppressWarnings(
-    p <- tsggplot(list(AirPassengers = AirPassengers),
-      theme = theme
-    )
+  p <- tsggplot(list(AirPassengers = AirPassengers),
+    theme = theme
   )
 
   # find the geom_rect layer
@@ -485,11 +584,8 @@ test_that("tsggplot with highlight window", {
     highlight_window_start = c(1959, 1),
     highlight_window_end = c(1971, 1)
   )
-  # Suppress cairo warning
-  suppressWarnings(
-    p <- tsggplot(list(AirPassengers = AirPassengers),
-      theme = theme
-    )
+  p <- tsggplot(list(AirPassengers = AirPassengers),
+    theme = theme
   )
   # find the geom_rect layer
   ix <- which(sapply(
@@ -501,6 +597,57 @@ test_that("tsggplot with highlight window", {
   expect_false(rect$inherit.aes)
   expect_equal(rect$aes_params$fill, theme$highlight_window_color)
   expect_true(is.na(rect$aes_params$colour))
+})
+
+test_that("tsggplot highlight window on a date/datetime x-axis (daily/hourly)", {
+  get_rect_data <- function(p) {
+    ix <- which(sapply(p$layers, function(l) inherits(l$geom, "GeomRect")))
+    p$layers[[ix]]$data
+  }
+
+  # daily: default (NA start/end) highlights ~2 years before the end of the
+  # plotted range, not 2 days (the same "2" used for the numeric x-axis,
+  # applied literally to a Date would be almost invisible)
+  dates <- seq(as.Date("2015-01-01"), as.Date("2020-01-01"), by = "day")
+  daily_xts <- xts::xts(seq_along(dates), order.by = dates)
+  p_daily_default <- tsggplot(list(A = daily_xts), theme = init_tsggplot_theme(highlight_window = TRUE))
+  rect_daily_default <- get_rect_data(p_daily_default)
+  expect_true(inherits(rect_daily_default$xmin, "Date"))
+  expect_true(diff(c(rect_daily_default$xmin, rect_daily_default$xmax)) > 300)
+
+  # daily: explicit Date (or a parseable string) values are used directly,
+  # instead of being (mis)interpreted as a ts-style c(year, period) pair
+  p_daily_explicit <- tsggplot(
+    list(A = daily_xts),
+    theme = init_tsggplot_theme(
+      highlight_window = TRUE,
+      highlight_window_start = "2018-06-01",
+      highlight_window_end = as.Date("2018-12-31")
+    )
+  )
+  rect_daily_explicit <- get_rect_data(p_daily_explicit)
+  expect_equal(rect_daily_explicit$xmin, as.Date("2018-06-01"))
+  expect_equal(rect_daily_explicit$xmax, as.Date("2018-12-31"))
+
+  # hourly: same idea, but in POSIXct/seconds
+  hourly_idx <- seq(as.POSIXct("2020-01-01", tz = "UTC"), as.POSIXct("2023-01-01", tz = "UTC"), by = "hour")
+  hourly_xts <- xts::xts(seq_along(hourly_idx), order.by = hourly_idx)
+  p_hourly_default <- tsggplot(list(A = hourly_xts), theme = init_tsggplot_theme(highlight_window = TRUE))
+  rect_hourly_default <- get_rect_data(p_hourly_default)
+  expect_true(inherits(rect_hourly_default$xmin, "POSIXct"))
+  expect_true(diff(c(rect_hourly_default$xmin, rect_hourly_default$xmax)) > 300) # days
+
+  p_hourly_explicit <- tsggplot(
+    list(A = hourly_xts),
+    theme = init_tsggplot_theme(
+      highlight_window = TRUE,
+      highlight_window_start = as.POSIXct("2022-06-01", tz = "UTC"),
+      highlight_window_end = as.POSIXct("2022-12-01", tz = "UTC")
+    )
+  )
+  rect_hourly_explicit <- get_rect_data(p_hourly_explicit)
+  expect_equal(as.numeric(rect_hourly_explicit$xmin), as.numeric(as.POSIXct("2022-06-01", tz = "UTC")))
+  expect_equal(as.numeric(rect_hourly_explicit$xmax), as.numeric(as.POSIXct("2022-12-01", tz = "UTC")))
 })
 
 test_that("tsggplot, with series starting not at start of year", {
@@ -571,6 +718,19 @@ test_that("tsggplot, confidence intervals", {
       "95% ci for KOF Barometer TEST"
     )
   )
+})
+
+test_that("tsggplot, confidence intervals don't add a stray fill box to the colour legend key", {
+  # ggplot2 merges the CI's "fill" legend (draw_tsggplot_ci()) into the
+  # series' "colour" legend since there's no separate colour scale for the
+  # CI groups -- without override.aes, that merge makes every colour key
+  # (including the plain line's, which has no real fill value) draw with
+  # the fill geom's default background swatch, showing as a solid black
+  # box behind the line.
+  ci <- list("KOF Barometer" = list("80" = list(lb = KOF$baro_lo_80, ub = KOF$baro_hi_80)))
+  p <- tsggplot(list("KOF Barometer" = KOF$baro_point_fc), ci = ci)
+
+  expect_equal(p$guides$guides$colour$params$override.aes, list(fill = NA))
 })
 
 test_that("daily xts", {
@@ -666,4 +826,19 @@ test_that("xts", {
     ci = ci,
     theme = theme
   )
+})
+
+test_that("zoo (#5)", {
+  idx <- as.Date("2020-01-01") + 0:23
+  x_zoo <- zoo::zoo(1:24, idx)
+
+  expect_no_error(p_zoo <- tsggplot(list("Zoo" = x_zoo)))
+  expect_s3_class(p_zoo, "ggplot")
+
+  # should match the equivalent xts input exactly
+  p_xts <- tsggplot(list("Zoo" = xts::as.xts(x_zoo)))
+  b_zoo <- ggplot2::ggplot_build(p_zoo)
+  b_xts <- ggplot2::ggplot_build(p_xts)
+  expect_equal(b_zoo$data[[1]]$x, b_xts$data[[1]]$x)
+  expect_equal(b_zoo$data[[1]]$y, b_xts$data[[1]]$y)
 })
