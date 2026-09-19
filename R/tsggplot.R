@@ -633,6 +633,15 @@ tsggplot.list <- function(...,
     theme_args$legend.position <- "none"
   }
 
+  if (!is.null(tsr) && !isTRUE(theme$legend_all_left)) {
+    # Left- and right-axis series get their own, separately grouped guide-box
+    # below the plot. ggplot2 places guide-boxes right next to each other by
+    # default, which reads as one continuous legend -- add spacing so the two
+    # groups are visually distinguishable, matching tsplot's topleft/topright
+    # placement.
+    theme_args$legend.spacing.x <- unit(2, "cm")
+  }
+
   if (!inherits(theme$axis.line.y, "element_blank")) {
     # If the y-axis line theme is not identical to the default ggplot2
     # element_line

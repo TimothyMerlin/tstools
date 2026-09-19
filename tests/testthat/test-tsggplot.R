@@ -452,6 +452,31 @@ test_that("tsggplot splits the tsr legend left/right axis by default", {
   expect_false(attr(p_bar, "tsggplot_meta")$split_legend)
 })
 
+test_that("tsggplot adds spacing between the left/right legend guide-boxes so they read as two groups", {
+  # ggplot2 places separate guide-boxes right next to each other by default,
+  # which looks like one continuous legend even though they're structurally
+  # distinct -- legend.spacing.x is the only thing that visually tells them
+  # apart, so it must actually be set whenever there are two guide-boxes to
+  # separate.
+  p_split <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  expect_equal(p_split$theme$legend.spacing.x, unit(2, "cm"))
+
+  p_bar <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson), left_as_bar = TRUE)
+  expect_equal(p_bar$theme$legend.spacing.x, unit(2, "cm"))
+
+  # Merged legend and no-tsr cases only ever render a single guide-box, so
+  # the extra spacing would have no visible effect there -- confirm it's
+  # left at ggplot2's default instead of being set unconditionally.
+  p_merged <- tsggplot(list(a = AirPassengers),
+    tsr = list(b = JohnsonJohnson),
+    theme = init_tsggplot_theme(legend_all_left = TRUE)
+  )
+  expect_null(p_merged$theme$legend.spacing.x)
+
+  p_no_tsr <- tsggplot(list(a = AirPassengers))
+  expect_null(p_no_tsr$theme$legend.spacing.x)
+})
+
 test_that("tsggplotly converts a split-legend plot via its merged-legend fallback", {
   p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
   meta <- attr(p, "tsggplot_meta")
