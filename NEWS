@@ -21,6 +21,7 @@ Changes in version 0.4.3
  * tsggplotly: fixed the left y-axis line rendering in black regardless of theme, and the right/secondary axis having no line at all, unlike the x-axis which was already correctly themed -- all three now consistently use the theme's actual axis.line colour/width
  * tsggplot: fixed a stray black box appearing behind a series' line in the legend when the plot also uses confidence intervals (ci) -- ggplot2 merges the CI's fill legend into the colour legend, which without an override left every colour key (including the plain line's) drawing with the fill geom's default background swatch
  * tsggplot: the left- and right-axis legends (split by default when a tsr series is present) now have visible spacing between them -- ggplot2 placed the two guide-boxes right next to each other with no gap, so they read as one continuous legend instead of the two distinct groups described in the docs
+ * tsggplotly: fixed tick label font size being inconsistent across the left, right and x axes (ggplotly()'s own font-size detection is unreliable and could be off by 50% or more between axes on an identically-themed plot) and axis/legend text rendering in the wrong colour (ggplot2's actual inherited default, e.g. axis text's grey30, wasn't resolved -- only explicitly-set theme values were) -- both now read the theme directly, the same way axis line styling already did
 Changes in version 0.4.2
  * Load XLSX files as data.table instead of data.frame
 Changes in version 0.4.1

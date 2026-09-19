@@ -203,8 +203,13 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   # -- read the theme directly instead for all three axes. Captured here,
   # before p gets reassigned to the converted plotly object below -- a
   # closure referencing p$theme directly would instead see that later,
-  # theme-less value once actually called.
-  static_theme <- p$theme
+  # theme-less value once actually called. complete_theme() resolves
+  # inherited defaults (e.g. axis.text's actual grey30-ish colour, which
+  # isn't set explicitly anywhere in the theme) the same way ggplot2 does at
+  # render time -- p$theme alone only holds the *overridden* elements, so
+  # anything relying on inheritance would otherwise fall back to ggplot2's
+  # internal placeholder defaults instead of the real rendered value.
+  static_theme <- ggplot2::complete_theme(p$theme)
   resolve_axis_line <- function(theme_key) {
     el <- ggplot2::calc_element(theme_key, static_theme)
     if (is.null(el) || inherits(el, "element_blank")) {
@@ -215,6 +220,41 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       linecolor = el$colour,
       # ggplot2 linewidth -> plotly's pixel-based line width
       linewidth = (if (is.null(el$linewidth)) 0.5 else as.numeric(el$linewidth)) * 96 / 72.27
+    )
+  }
+
+  # A single named value, wrapped in a list only when non-NULL -- avoids
+  # ever embedding a bare NULL as a nested list value (see the yaxis2$title
+  # comment below for why that matters).
+  maybe_list <- function(name, value) {
+    if (is.null(value)) list() else setNames(list(value), name)
+  }
+
+  # Plotly colour fields want a CSS colour string; col2rgb()/rgba() handles
+  # named colours, 6- and 8-digit hex alike, rather than assuming a format.
+  to_plotly_color <- function(colour) {
+    if (is.null(colour) || is.na(colour)) {
+      return(NULL)
+    }
+    rgb <- grDevices::col2rgb(colour, alpha = TRUE)
+    sprintf("rgba(%d,%d,%d,%s)", rgb[1], rgb[2], rgb[3], round(rgb[4] / 255, 3))
+  }
+
+  # ggplotly() derives tick label font size/colour by measuring the actual
+  # rendered grobs, which is unreliable across different axis/guide setups --
+  # e.g. it measured the (identically-themed, size = 13) x- and y-axis tick
+  # labels as 17px and 12px respectively for the exact same plot. Read the
+  # theme directly instead, the same way resolve_axis_line() does.
+  resolve_text_font <- function(theme_key) {
+    el <- ggplot2::calc_element(theme_key, static_theme)
+    if (is.null(el) || inherits(el, "element_blank")) {
+      return(NULL)
+    }
+    list(
+      family = to_css_family(el$family),
+      # ggplot2 font size (pt) -> plotly's pixel-based font size
+      size = as.numeric(el$size) * 96 / 72.27,
+      color = to_plotly_color(el$colour)
     )
   }
 
@@ -320,19 +360,16 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     p = p,
     paper_bgcolor = plot_bg,
     plot_bgcolor = panel_bg,
-    font = list(family = text_family),
-    title = list(font = list(family = text_family)),
-    hoverlabel = list(font = list(family = text_family)),
+    font = resolve_text_font("text"),
+    title = maybe_list("font", resolve_text_font("plot.title")),
+    hoverlabel = maybe_list("font", resolve_text_font("text")),
     # ggplotly() already derives orientation/x/y/xanchor for "bottom",
     # "top", "left" and "right" straight from theme$legend.position, so
     # those are left alone here; only "none" needs a manual assist, since
     # ggplotly() doesn't act on it (the legend and its trace entries stay
     # visible otherwise).
     showlegend = !identical(legend_position, "none"),
-    legend = list(
-      font = list(family = text_family),
-      title = list(text = "")
-    )
+    legend = c(maybe_list("font", resolve_text_font("legend.text")), list(title = list(text = "")))
   )
 
   p <- do.call(plotly::layout, layout_args)
@@ -346,21 +383,43 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   p$x$layout$xaxis <- modifyList(p$x$layout$xaxis, c(list(ticks = ""), resolve_axis_line("axis.line.x")))
   p$x$layout$yaxis <- modifyList(p$x$layout$yaxis, resolve_axis_line("axis.line.y.left"))
 
+  # Tick label font: same reasoning as the axis line style above -- read the
+  # theme directly rather than trust ggplotly()'s own (unreliable) derived
+  # size/colour. Axis title font: usually blank (tsggplot only turns titles
+  # on when a label is actually supplied), so resolve_text_font() returning
+  # NULL here is expected and harmless.
+  p$x$layout$xaxis$tickfont <- resolve_text_font("axis.text.x")
+  p$x$layout$yaxis$tickfont <- resolve_text_font("axis.text.y.left")
+  p$x$layout$xaxis$title <- modifyList(p$x$layout$xaxis$title, list(font = resolve_text_font("axis.title.x")))
+  p$x$layout$yaxis$title <- modifyList(p$x$layout$yaxis$title, list(font = resolve_text_font("axis.title.y")))
+
   # The right-axis series are already rescaled into the left axis's numeric
   # range (the same trick ggplot2's sec_axis() relies on for a static plot),
   # so the traces don't need to move to a second y-axis -- overlaying a
   # cosmetic yaxis2 with the *true* right-axis range/ticks over the same
   # panel area reproduces the same dual-axis look plotly-side.
   if (!is.null(meta) && !is.null(meta$right_y)) {
+    # A NULL embedded as a *nested* list value (e.g. list(text = NULL, font =
+    # NULL)) isn't the same as a NULL at this list's own top level -- the
+    # latter is what modifyList() below treats as "leave unset", but the
+    # former survives into the merged yaxis2 as a real list of NULLs, which
+    # later crashes plotly_build()'s schema validation. Build it with only
+    # the keys that actually have a value instead.
+    right_title <- if (is.null(meta$y_right_label)) {
+      NULL
+    } else {
+      c(list(text = meta$y_right_label), maybe_list("font", resolve_text_font("axis.title.y.right")))
+    }
     p$x$layout$yaxis2 <- modifyList(
       if (is.null(p$x$layout$yaxis2)) list() else p$x$layout$yaxis2,
       c(
         list(
-          title = meta$y_right_label,
+          title = right_title,
           overlaying = "y",
           side = "right",
           range = meta$right_y$y_range,
           tickvals = meta$right_y$y_ticks,
+          tickfont = resolve_text_font("axis.text.y.right"),
           automargin = TRUE,
           # Plotly draws a reference line at 0 on every axis by default; the
           # static plot doesn't, and it's not meaningful here since 0 on this

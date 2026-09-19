@@ -51,7 +51,7 @@ test_that("tsggplotly", {
   # a real, non-guessed secondary axis, built from the true right-axis
   # range/ticks attached to the plot as tsggplot_meta
   meta <- attr(p, "tsggplot_meta")
-  expect_equal(built$x$layout$yaxis2$title, labs$y_right)
+  expect_equal(built$x$layout$yaxis2$title$text, labs$y_right)
   expect_equal(built$x$layout$yaxis2$range, meta$right_y$y_range)
   expect_equal(built$x$layout$yaxis2$tickvals, meta$right_y$y_ticks)
   expect_equal(built$x$layout$yaxis2$overlaying, "y")
@@ -305,6 +305,55 @@ test_that("tsggplotly gives left, right and secondary axes matching, theme-deriv
   )
   built_blank <- plotly::plotly_build(tsggplotly(p_blank))
   expect_false(built_blank$x$layout$yaxis$showline)
+})
+
+test_that("tsggplotly gives left, right and secondary axes matching, theme-derived tick label fonts", {
+  # ggplotly() derives tick label font size/colour by measuring rendered
+  # grobs, which is unreliable across axes -- confirmed by comparing against
+  # a plain vanilla ggplot2 plot, where left/right came out identical: for
+  # this exact same (evenly-themed, size = 10 both sides) plot, it measured
+  # the x-axis tick labels as ~50% bigger than the y-axis ones. Read the
+  # theme directly instead, like the axis line/colour case above.
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+  theme <- init_tsggplot_theme(
+    axis.text.x = ggplot2::element_text(size = 10),
+    axis.text.y.left = ggplot2::element_text(size = 10),
+    axis.text.y.right = ggplot2::element_text(size = 10)
+  )
+  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"), theme = theme)
+  built <- plotly::plotly_build(tsggplotly(p))
+
+  sizes <- vapply(
+    list(built$x$layout$xaxis, built$x$layout$yaxis, built$x$layout$yaxis2),
+    function(ax) ax$tickfont$size,
+    numeric(1)
+  )
+  expect_equal(sizes[1], sizes[2])
+  expect_equal(sizes[2], sizes[3])
+
+  colors <- vapply(
+    list(built$x$layout$xaxis, built$x$layout$yaxis, built$x$layout$yaxis2),
+    function(ax) ax$tickfont$color,
+    character(1)
+  )
+  expect_equal(colors[1], colors[2])
+  expect_equal(colors[2], colors[3])
+
+  # axis.text colour ("grey30"-ish by ggplot2 default) isn't set anywhere in
+  # tsggplot's own theme, so this only comes out right if the *inherited*
+  # default is resolved (e.g. via ggplot2::complete_theme()), not just the
+  # theme's own explicitly-set elements.
+  expect_equal(colors[1], "rgba(77,77,77,1)")
+
+  # right-axis title text still carries a font (not silently dropped when
+  # building it defensively around the "no right label" case)
+  expect_false(is.null(built$x$layout$yaxis2$title$font))
+
+  # a tsr plot with no right-axis label doesn't crash plotly_build() (this
+  # used to error: "attempt to set an attribute on NULL", from embedding a
+  # bare NULL as a nested list(text = NULL, font = NULL) value)
+  p_no_label <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), theme = theme)
+  expect_no_error(plotly::plotly_build(tsggplotly(p_no_label)))
 })
 
 test_that("tsggplotly reflects custom data-line and gridline styling from the theme", {
