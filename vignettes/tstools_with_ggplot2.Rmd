@@ -223,9 +223,9 @@ tslist <- generate_random_ts(4,
 tsggplot(tslist, left_as_band = TRUE)
 ```
 
-## Multiple Y-axis with different scales (line charts)
+## Multiple Y-axes with different scales (line charts)
 
-In order to compare indicators it's covenient in some domains to plot 
+In order to compare indicators it's convenient in some domains to plot
 two time series of completely different scale, e.g., a growth rate and
 an indicator indexed at 100, to each other. Whenever the absolute level 
 is not overly interesting but rather the lead-lag structure and the
@@ -347,7 +347,7 @@ tsggplot(tsb1, tsb2, tsb3,
 )
 ```
 
-### Handling missings (NA Handling)
+### Missing values (NA handling)
 
 By default a gap in the series just breaks the line. `NA_continue_line`
 draws through gaps instead, and `show_points` marks each observation.
@@ -380,12 +380,12 @@ tsggplot(ts2,
 ```
 
 
-### Legends
+## Legends
 
 `tsggplot` builds the legend automatically from whatever names your series
 already have.
 
-## Assign Names to Single Objects
+### Assign Names to Single Objects
 
 Name each series directly in the call to control its legend label.
 
@@ -396,7 +396,7 @@ tsggplot(
 )
 ```
 
-## Legends Based on Names of List Elements
+### Legends Based on Names of List Elements
 
 A named list works the same way -- the legend uses the list's own names.
 
@@ -408,7 +408,7 @@ names(tslist)
 tsggplot(tslist)
 ```
 
-## Legends: multiple columns
+### Legends: multiple columns
 
 Spread the legend across multiple columns with `legend_col`.
 
@@ -419,7 +419,7 @@ tsggplot(min_li,
 ```
 
 
-## Legends for Left and Right Y-Axis Series
+### Legends for Left and Right Y-Axis Series
 
 When a `tsr` (right-axis) series is present, its legend entries are grouped
 separately from the left-axis series' legend entries -- both still sit below
@@ -434,7 +434,7 @@ tsggplot(KOF["kofbarometer"],
 )
 ```
 
-## Line Breaks in Legends
+### Line Breaks in Legends
 
 A `\n` in a series name wraps its legend label onto multiple lines.
 
@@ -442,7 +442,7 @@ A `\n` in a series name wraps its legend label onto multiple lines.
 tsggplot("Some like\n loooong legends\n with so many words" = ts1)
 ```
 
-## Remember: auto_legend = FALSE
+### Remember: auto_legend = FALSE
 
 Pass `auto_legend = FALSE` to turn the legend off entirely.
 
@@ -567,16 +567,15 @@ tsggplot(KOF[1],
 Notice the optional print theme and *output_wide* parameter: You can export 4:3 (default) format .pdf files as well as 16:9 (wide) using the convenience *output_format* theme parameter. Notice also that you do not necessarily have to use the print theme. What is important is not to wrap the call in `pdf()` and `dev.off()` calls
 when using the `output_format="pdf"` option. 
 
-# Frequenctly asked questions (FAQs)
+# Frequently asked questions (FAQs)
 
-## 1. Can I combine **tsggplot** calls with **ggplot** (themes)?
+## 1. Can I combine **tsggplot** with regular **ggplot2** code?
 
 Yes, **tsggplot** is based on ggplot2. You can simply add enhancements to the plot by passing the figure to subsequent ggplot2 calls.
 
-## 2. How can I change of my lines, bars and areas?
+## 2. How can I change the colors of my lines, bars and areas?
 
-We have multiple pre-defined vectors for different chart types. 
-All of them are easy to adjust. Also
+We have multiple pre-defined vectors for different chart types, all easy to adjust:
 
 ```{r,eval=FALSE,echo=TRUE}
 init_tsggplot_theme(
