@@ -182,6 +182,17 @@ test_that("tsggplotly x_tick_mode (#15)", {
   # "auto" mode hands ticks to Plotly entirely -- no manual shapes needed
   built_auto <- plotly::plotly_build(fig_auto)
   expect_equal(length(built_auto$x$layout$shapes), 0)
+
+  # "auto" mode's tick *marks* need to actually be automatic too, not just
+  # the labels -- ticks were unconditionally suppressed (ticks = "") further
+  # down, which made sense for "thin" mode (which draws its own instead, the
+  # shapes checked above) but silently left "auto" with moving/reformatting
+  # labels and no visible tick marks at all. Length/width/colour are left to
+  # Plotly's own defaults rather than a static-theme-derived value -- "auto"
+  # already hands tick placement (and, on a date axis, tick density) to
+  # Plotly, so its native tick appearance is the appropriate match too.
+  expect_equal(built_auto$x$layout$xaxis$ticks, "outside")
+  expect_equal(built_thin$x$layout$xaxis$ticks, "")
 })
 
 test_that("tsggplotly x_tick_mode = 'auto' reconstructs exact dates for daily/weekly series", {

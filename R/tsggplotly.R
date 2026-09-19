@@ -413,7 +413,18 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   # later merge doesn't reliably override values ggplotly() already set on
   # xaxis/yaxis during conversion (e.g. it left the left y-axis black
   # instead of the theme's actual colour).
-  p$x$layout$xaxis <- modifyList(p$x$layout$xaxis, c(list(ticks = ""), resolve_axis_line("axis.line.x")))
+  #
+  # Native tick marks are suppressed in "thin" mode because it draws its own
+  # instead (the tick_shapes block above, at the true year-start positions
+  # ggplotly() has no concept of) -- leaving Plotly's native ticks on too
+  # would just double them up. "auto" mode draws no substitute of its own
+  # and hands tick placement (and, on a date axis, tick density/hierarchy)
+  # entirely to Plotly already, so it gets Plotly's own default tick
+  # appearance too, rather than one derived from the static plot's theme --
+  # ticks just need to be switched on ("outside" instead of "" / off), not
+  # styled to match a fixed position/length concept "auto" doesn't use.
+  xaxis_ticks <- if (x_tick_mode == "auto") list(ticks = "outside") else list(ticks = "")
+  p$x$layout$xaxis <- modifyList(p$x$layout$xaxis, c(xaxis_ticks, resolve_axis_line("axis.line.x")))
   p$x$layout$yaxis <- modifyList(p$x$layout$yaxis, resolve_axis_line("axis.line.y.left"))
 
   # Tick label font: same reasoning as the axis line style above -- read the
