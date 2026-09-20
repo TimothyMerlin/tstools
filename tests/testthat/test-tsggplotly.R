@@ -214,6 +214,25 @@ test_that("tsggplotly x_tick_mode (#15)", {
   expect_s3_class(built_auto$x$data[[1]]$x, "Date")
 })
 
+test_that("tsggplotly x_tick_mode = 'auto' with a tsr series doesn't warn about mixed discrete/non-discrete axes", {
+  # The invisible dummy point added to force yaxis2 to render (see the
+  # add_trace() comment) used to take its x position straight from
+  # p$x$layout$xaxis$range[1] -- fine normally, but "auto" mode has already
+  # reformatted that range into a plain date/datetime *string* by this
+  # point, while every real trace's x is a Date/POSIXct object. Plotly
+  # warns "Can't display both discrete & non-discrete data on same axis"
+  # (and prints that warning straight into any Rmd chunk that renders the
+  # plot) whenever a character x sits next to a Date one like that.
+  long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
+  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"))
+
+  expect_no_warning(fig_auto <- tsggplotly(p, x_tick_mode = "auto"))
+  expect_no_warning(built <- plotly::plotly_build(fig_auto))
+
+  dummy_trace <- Filter(function(d) identical(d$yaxis, "y2"), built$x$data)[[1]]
+  expect_s3_class(dummy_trace$x, "Date")
+})
+
 test_that("tsggplotly x_tick_mode = 'auto' reconstructs exact dates for daily/weekly series", {
   idx <- seq(as.Date("2020-01-01"), by = "day", length.out = 10)
   daily_xts <- xts::xts(seq_along(idx), order.by = idx)

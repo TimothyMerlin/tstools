@@ -506,8 +506,18 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     # ticks, axis line and title all silently disappear -- even though it's
     # fully defined in the layout above. Add one invisible point on yaxis2
     # so the overlaid secondary axis actually shows up.
+    #
+    # Its x position is taken from an existing trace, not
+    # p$x$layout$xaxis$range[1] -- in "auto" mode that range has already
+    # been reformatted to a plain date/datetime *string* (see above), which
+    # doesn't match the real traces' actual Date/POSIXct x any more. Mixing
+    # a character x on one trace with Date x on the others made Plotly warn
+    # "Can't display both discrete & non-discrete data on same axis" and
+    # print that warning right into any document that renders this plot.
+    # Borrowing a real trace's x sidesteps needing to know or replicate
+    # whichever type/format the x-axis currently uses.
     p <- plotly::add_trace(p,
-      x = p$x$layout$xaxis$range[1], y = mean(meta$right_y$y_range),
+      x = p$x$data[[1]]$x[1], y = mean(meta$right_y$y_range),
       yaxis = "y2", type = "scatter", mode = "markers",
       marker = list(opacity = 0), showlegend = FALSE,
       hoverinfo = "skip", inherit = FALSE
