@@ -7,8 +7,6 @@ Changes in development version
  * tsggplot: daily/weekly xts series with fill_year_with_nas keep the closing year tick on the axis in time zones ahead of UTC
  * tsggplotly: the axes are no longer titled in the interactive plot (series are named by the legend and hover text); new axis_titles = TRUE argument shows the titles set through labs
  * tsggplot: setting only labs$y_right no longer makes a stray "value" title appear on the left axis (labs$y partial-matched y_right), in the static and the interactive plot
-
-Changes in version 0.4.3
  * tsggplot: added support for zoo objects
  * tsggplot: added support for yearly and hourly xts frequencies, verified weekly/daily
  * tsggplot: fixed x-position handling for xts series so plotted data lines up with axis ticks (affected yearly/hourly/monthly/quarterly xts)
