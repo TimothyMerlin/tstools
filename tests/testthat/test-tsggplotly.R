@@ -572,6 +572,39 @@ test_that("tsggplotly keeps the subtitle as a styled second title line", {
   expect_match(built_only_sub$x$layout$title$text, "Sub</span>")
 })
 
+test_that("tsggplotly hides a subtitle the theme hides and escapes HTML in it", {
+  x <- ts(rnorm(20), start = c(2010, 1), frequency = 4)
+
+  theme_blank <- init_tsggplot_theme(plot.subtitle = ggplot2::element_blank())
+  built <- plotly::plotly_build(tsggplotly(
+    tsggplot(list(A = x), labs = list(title = "Main", subtitle = "Sub"), theme = theme_blank)
+  ))
+  expect_false(grepl("Sub", built$x$layout$title$text))
+
+  built_esc <- plotly::plotly_build(tsggplotly(
+    tsggplot(list(A = x), labs = list(title = "Main", subtitle = "a < b & c"))
+  ))
+  expect_match(built_esc$x$layout$title$text, "a &lt; b &amp; c</span>", fixed = TRUE)
+})
+
+test_that("tsggplotly only takes the highlight window out, not other rectangles", {
+  x <- ts(rnorm(24), start = c(2018, 1), frequency = 4)
+  theme <- init_tsggplot_theme(
+    highlight_window = TRUE,
+    highlight_window_start = c(2022, 1),
+    highlight_window_end = c(2023, 4)
+  )
+  p <- tsggplot(list(A = x), theme = theme) +
+    ggplot2::geom_rect(
+      data = data.frame(xmin = 2019, xmax = 2020, ymin = -1, ymax = 1),
+      ggplot2::aes(xmin = .data$xmin, xmax = .data$xmax, ymin = .data$ymin, ymax = .data$ymax),
+      inherit.aes = FALSE
+    )
+  built <- plotly::plotly_build(tsggplotly(p))
+  expect_length(Filter(function(s) identical(s$type, "rect"), built$x$layout$shapes), 1)
+  expect_true(any(vapply(built$x$data, function(d) identical(d$fill, "toself"), logical(1))))
+})
+
 test_that("tsggplotly draws the highlight window as a shape below the traces", {
   x <- ts(rnorm(24), start = c(2018, 1), frequency = 4)
   theme <- init_tsggplot_theme(

@@ -70,6 +70,8 @@ draw_tsggplot_highlight <- function(p, global_x, left_y, theme) {
     ymin = left_y$y_range[1],
     ymax = left_y$y_range[2]
   )
+  # marks the layer for tsggplotly()
+  attr(rect_df, "tsggplot_highlight") <- TRUE
 
   p <- p + geom_rect(
     data = rect_df,

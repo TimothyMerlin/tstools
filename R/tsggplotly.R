@@ -315,21 +315,20 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   # ggplotly() ignores labs(subtitle) altogether, added back below
   subtitle <- p$labels$subtitle
 
-  # ggplotly() turns the highlight window (the only plain GeomRect layer,
-  # GeomCol inherits from it) into a filled scatter trace, which Plotly
-  # always draws above bar traces, so it would wash the bars out. Taken out
-  # here, redrawn below as layout shapes placed below the traces, like in
-  # the static plot.
+  # ggplotly() turns the highlight window into a filled scatter trace, which
+  # Plotly always draws above bar traces, so it would wash the bars out.
+  # Taken out here, redrawn below as layout shapes placed below the traces,
+  # like in the static plot.
   highlight <- NULL
-  is_rect_layer <- vapply(p$layers, function(l) identical(class(l$geom)[1], "GeomRect"), logical(1))
-  if (any(is_rect_layer)) {
-    hl_layer <- p$layers[[which(is_rect_layer)[1]]]
+  is_hl_layer <- vapply(p$layers, function(l) isTRUE(attr(l$data, "tsggplot_highlight")), logical(1))
+  if (any(is_hl_layer)) {
+    hl_layer <- p$layers[[which(is_hl_layer)[1]]]
     highlight <- list(
       data = hl_layer$data,
       fill = hl_layer$aes_params$fill,
       alpha = hl_layer$aes_params$alpha
     )
-    p$layers <- p$layers[!is_rect_layer]
+    p$layers <- p$layers[!is_hl_layer]
   }
 
   p <- plotly::ggplotly(p, ...)
@@ -534,25 +533,30 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     p$x$layout$title$text <- title_text
   }
   has_title <- !is.null(title_text) && nzchar(trimws(title_text))
-  has_subtitle <- !is.null(subtitle) && nzchar(subtitle)
+  sub_font <- resolve_text_font("plot.subtitle")
+  # resolve_text_font() is NULL when the theme hides the subtitle
+  has_subtitle <- !is.null(subtitle) && nzchar(subtitle) && !is.null(sub_font)
   if (has_title || has_subtitle) {
     line_height <- 1.2
     # ggplotly()'s own top margin already holds one title line
     gg_title_size <- if (has_title && !is.null(p$x$layout$title$font$size)) p$x$layout$title$font$size else 0
     title_size <- resolve_text_font("plot.title")$size
     if (is.null(title_size)) title_size <- if (gg_title_size > 0) gg_title_size else 16
-    sub_font <- resolve_text_font("plot.subtitle")
-    sub_size <- if (is.null(sub_font$size)) 16 else sub_font$size
+    sub_size <- if (has_subtitle && !is.null(sub_font$size)) sub_font$size else 16
 
-    n_title_lines <- if (has_title) 1 + lengths(regmatches(title_text, gregexpr("<br\\s*/?>|\n", title_text))) else 0
-    block_height <- (n_title_lines * title_size + (if (has_subtitle) sub_size else 0)) * line_height
+    count_lines <- function(x) 1 + lengths(regmatches(x, gregexpr("<br\\s*/?>|\n", x)))
+    n_title_lines <- if (has_title) count_lines(title_text) else 0
+    n_sub_lines <- if (has_subtitle) count_lines(subtitle) else 0
+    block_height <- (n_title_lines * title_size + n_sub_lines * sub_size) * line_height
 
     if (has_subtitle) {
       sub_style <- c(
         if (!is.null(sub_font$size)) sprintf("font-size:%gpx", sub_font$size),
         if (!is.null(sub_font$color)) sprintf("color:%s", sub_font$color)
       )
-      sub_html <- sprintf("<span style=\"%s\">%s</span>", paste(sub_style, collapse = ";"), subtitle)
+      # plain text in the static plot, so not to be read as HTML
+      sub_text <- gsub(">", "&gt;", gsub("<", "&lt;", gsub("&", "&amp;", subtitle, fixed = TRUE), fixed = TRUE), fixed = TRUE)
+      sub_html <- sprintf("<span style=\"%s\">%s</span>", paste(sub_style, collapse = ";"), sub_text)
       p$x$layout$title$text <- if (has_title) paste0(title_text, "<br>", sub_html) else sub_html
     }
     p$x$layout$title$y <- 1
