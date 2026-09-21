@@ -280,6 +280,13 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     # branch otherwise recomputes x_range from the raw (possibly fill_up-
     # padded) index and would lose it entirely.
     global_x$x_range <- c(date_range[1], date_range[2] + round(x_pad * 365.25))
+    # as.Date() converts via UTC, so in a time zone ahead of UTC the filled
+    # year ends a day short of the closing year tick, which would fall off
+    # the axis
+    last_tick <- max(global_x$yearly_tick_pos)
+    if (fill_up && last_tick - global_x$x_range[2] == 1) {
+      global_x$x_range[2] <- last_tick
+    }
   } else if (global_x$dominant_freq == "hourly" && !is.null(global_x$quarterly_tick_pos)) {
     # Same idea as daily/weekly above, but keeping full POSIXct (not Date)
     # precision throughout, since hourly data needs sub-day resolution --

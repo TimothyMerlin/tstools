@@ -63,7 +63,7 @@ test_that("getGlobalXInfo_tsggplot, xts", {
 
   expected <-
     list(
-      x_range = structure(c(13514, 13878), class = "Date"),
+      x_range = structure(c(13514, 13879), class = "Date"),
       yearly_tick_pos = structure(c(13514, 13879), class = "Date"),
       year_labels_start = c(2007, 2008), min_year = 2007, max_year = 2008,
       quarterly_tick_pos = structure(c(
