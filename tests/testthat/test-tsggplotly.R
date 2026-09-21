@@ -605,3 +605,27 @@ test_that("tsggplotly draws the highlight window as a shape below the traces", {
   s_auto <- Filter(function(s) identical(s$layer, "below"), auto$x$layout$shapes)[[1]]
   expect_match(as.character(s_auto$x0), "^2022-")
 })
+
+test_that("tsggplotly makes room in the top margin for every title line", {
+  x <- ts(rnorm(20), start = c(2010, 1), frequency = 4)
+  margin_t <- function(...) {
+    built <- plotly::plotly_build(tsggplotly(tsggplot(list(A = x), labs = list(...))))
+    built$x$layout$margin$t
+  }
+
+  one <- margin_t(title = "Main", subtitle = "Sub")
+  two <- margin_t(title = "Main\nsecond line", subtitle = "Sub")
+  expect_gt(two, one)
+
+  # no padding spaces inside the <b> tag, which would indent only line one
+  built_title <- plotly::plotly_build(tsggplotly(tsggplot(list(A = x), labs = list(title = "Main"))))
+  expect_match(built_title$x$layout$title$text, "^<b>Main</b>$")
+
+  # the title, not just the subtitle, needs the extra room
+  expect_gt(margin_t(title = "Main\nsecond line"), margin_t(title = "Main"))
+
+  # title pinned to the top so the block grows downwards into the margin
+  built <- plotly::plotly_build(tsggplotly(tsggplot(list(A = x), labs = list(title = "Main", subtitle = "Sub"))))
+  expect_equal(built$x$layout$title$yanchor, "top")
+  expect_equal(built$x$layout$title$yref, "container")
+})

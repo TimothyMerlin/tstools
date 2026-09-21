@@ -517,24 +517,50 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     p$x$layout$shapes <- c(p$x$layout$shapes, highlight_shapes)
   }
 
-  # The bundled plotly.js has no native subtitle, so it becomes a second
-  # line of the title, sized/coloured from plot.subtitle. Assigned directly
-  # (like the axis styles below), since layout() only queues its changes.
-  if (!is.null(subtitle) && nzchar(subtitle)) {
+  # ggplotly() only makes room in the top margin for a one-line title, and
+  # Plotly centres the title in that margin, so a multi-line title (a "\n" in
+  # it, turned into <br /> by Plotly later on) or a subtitle would run into
+  # the plot. The bundled plotly.js has no native subtitle either, so it
+  # becomes a further line of the title, sized/coloured from plot.subtitle.
+  # The title is pinned to the top of the figure and the top margin sized to
+  # the lines it actually has. Assigned directly (like the axis styles
+  # below), since layout() only queues its changes.
+  title_text <- p$x$layout$title$text
+  if (!is.null(title_text)) {
+    # ggplotly() wraps a bold title as "<b> title </b>", and that leading
+    # space indents just the first line
+    title_text <- sub("\\s+(</[bi]>)$", "\\1", sub("^(<[bi]>)\\s+", "\\1", title_text))
+    p$x$layout$title$text <- title_text
+  }
+  has_title <- !is.null(title_text) && nzchar(trimws(title_text))
+  has_subtitle <- !is.null(subtitle) && nzchar(subtitle)
+  if (has_title || has_subtitle) {
+    line_height <- 1.2
+    # ggplotly()'s own top margin already holds one title line
+    gg_title_size <- if (has_title && !is.null(p$x$layout$title$font$size)) p$x$layout$title$font$size else 0
+    title_size <- resolve_text_font("plot.title")$size
+    if (is.null(title_size)) title_size <- if (gg_title_size > 0) gg_title_size else 16
     sub_font <- resolve_text_font("plot.subtitle")
-    sub_style <- c(
-      if (!is.null(sub_font$size)) sprintf("font-size:%gpx", sub_font$size),
-      if (!is.null(sub_font$color)) sprintf("color:%s", sub_font$color)
-    )
-    sub_html <- sprintf("<span style=\"%s\">%s</span>", paste(sub_style, collapse = ";"), subtitle)
-    title_text <- p$x$layout$title$text
-    p$x$layout$title$text <- if (is.null(title_text) || !nzchar(trimws(title_text))) {
-      sub_html
-    } else {
-      paste0(title_text, "<br>", sub_html)
+    sub_size <- if (is.null(sub_font$size)) 16 else sub_font$size
+
+    n_title_lines <- if (has_title) 1 + lengths(regmatches(title_text, gregexpr("<br\\s*/?>|\n", title_text))) else 0
+    block_height <- (n_title_lines * title_size + (if (has_subtitle) sub_size else 0)) * line_height
+
+    if (has_subtitle) {
+      sub_style <- c(
+        if (!is.null(sub_font$size)) sprintf("font-size:%gpx", sub_font$size),
+        if (!is.null(sub_font$color)) sprintf("color:%s", sub_font$color)
+      )
+      sub_html <- sprintf("<span style=\"%s\">%s</span>", paste(sub_style, collapse = ";"), subtitle)
+      p$x$layout$title$text <- if (has_title) paste0(title_text, "<br>", sub_html) else sub_html
     }
-    # room for the extra line, on top of the title's own
-    p$x$layout$margin$t <- p$x$layout$margin$t + (if (is.null(sub_font$size)) 16 else sub_font$size) * 1.8
+    p$x$layout$title$y <- 1
+    p$x$layout$title$yref <- "container"
+    p$x$layout$title$yanchor <- "top"
+    # Plotly's "top" anchor sits above the first line's cap height
+    title_pad <- 0.85 * (if (has_title) title_size else sub_size)
+    p$x$layout$title$pad <- list(t = title_pad)
+    p$x$layout$margin$t <- p$x$layout$margin$t - gg_title_size + block_height + title_pad
   }
 
   # Axis line style (showline/linecolor/linewidth) is set by direct
