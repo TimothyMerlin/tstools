@@ -421,7 +421,8 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       yearly_x <- meta$global_x$yearly_tick_pos
       if (!is.null(yearly_x)) {
         tick_shapes <- lapply(
-          in_range(as.numeric(yearly_x)), tick_shape, height = 0.015,
+          in_range(as.numeric(yearly_x)), tick_shape,
+          height = 0.015,
           line = list(color = xa$tickcolor, width = xa$tickwidth)
         )
       }
@@ -431,7 +432,8 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       # ticks without a stray, hoverable data trace behind them.
       if (!is.null(qt)) {
         quarterly_shapes <- lapply(
-          in_range(as.numeric(qt$x)), tick_shape, height = qt$height_frac,
+          in_range(as.numeric(qt$x)), tick_shape,
+          height = qt$height_frac,
           line = if (is.null(qt_line)) list(color = xa$tickcolor, width = xa$tickwidth) else qt_line
         )
         tick_shapes <- c(tick_shapes, quarterly_shapes)
