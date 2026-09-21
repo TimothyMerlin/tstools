@@ -40,6 +40,8 @@ init_tsggplot_theme(
   sum_line_linewidth = 3,
   axis_x_label_dt = 1,
   axis_x_tick_dt = 1,
+  axis_x_pad = NULL,
+  axis_x_date_ticks = "auto",
   auto_bottom_margin = FALSE,
   band_fill_color = c(ETH_Petrol = colors$ETH_Petrol$`100`, ETH_Petrol_60 =
     colors$ETH_Petrol$`60`, ETH_Petrol_40 = colors$ETH_Petrol$`40`, ETH_Petrol_20 =
@@ -65,6 +67,7 @@ init_tsggplot_theme(
   highlight_window_end = NA,
   highlight_window_freq = 4,
   highlight_window_start = NA,
+  legend_all_left = FALSE,
   line_colors = c(ETH_Green_60 = colors$ETH_Green$`60`, ETH_Green_100 =
     colors$ETH_Green$`100`, ETH_Petrol_20 = colors$ETH_Petrol$`20`, ETH_Purple_60 =
     colors$ETH_Purple$`60`, ETH_Petrol_60 = colors$ETH_Petrol$`60`, ETH_Purple_100 =
@@ -190,6 +193,24 @@ years. Defaults to 2.}
 years. The first tick will always be at the start of the plotted time
 series. If neq 1 then quarterly ticks will not be shown. Defaults to 1.}
 
+\item{axis_x_pad}{numeric how far past the last data point (and before the
+first, symmetrically) the x-axis extends, in years. Defaults to NULL,
+which adds no margin when fill_year_with_nas == TRUE (the axis already
+ends with the filled-up year, as in tsplot) and otherwise scales the
+margin to the series' own span -- proportionally small for short series
+(so e.g. a few days of daily data isn't dwarfed by a fixed multi-month
+margin), capped at one quarter once the series spans a quarter or more.
+Set to a specific value (0 for none) to override.}
+
+\item{axis_x_date_ticks}{character, only relevant for daily/weekly xts
+series (which plot on a real Date x-axis). \code{"auto"} (the default)
+lets ggplot2 pick sensible day/week/month/year tick spacing from the
+series' own span -- necessary for short series, since the alternative is
+always year-spaced regardless of span (broken for anything shorter than
+a year, e.g. producing an \code{NA} tick). \code{"years"} keeps that
+fixed year-based spacing (using axis_x_label_dt), matching the numeric
+(ts/monthly/quarterly/annual) x-axis' own always-year-based convention.}
+
 \item{auto_bottom_margin}{logical Should the bottom margin be automatically
 calculated? This will be overridden if margins[1] is not NA. Default FALSE}
 
@@ -239,14 +260,32 @@ between 0 (transparent) and 1 (opaque), defaults to 0.55.}
 \item{highlight_window_color}{character hex color code of highlight
 background, defaults to "#e9e9e9".}
 
-\item{highlight_window_end}{integer vector highlight window start position,
-defaults to NA.,}
+\item{highlight_window_end}{for a \code{ts}/monthly/quarterly/annual xts
+series, an integer \code{c(year, period)} vector (or list of them, paired
+with \code{highlight_window_start}), interpreted using
+\code{highlight_window_freq}. For a daily/weekly/hourly xts series (which
+plot on a Date/datetime x-axis instead), a \code{Date}/\code{POSIXct}
+value (or anything \code{as.Date()}/\code{as.POSIXct()} accepts, e.g. a
+\code{"YYYY-MM-DD"} string) instead -- \code{highlight_window_freq} is
+not used in this case. Defaults to NA, which highlights up to the end of
+the plotted range.}
 
 \item{highlight_window_freq}{integer frequency of the highlight window
-definition, defaults to 4.}
+definition, defaults to 4. Only used for \code{ts}/monthly/quarterly/
+annual series -- see \code{highlight_window_start}/
+\code{highlight_window_end}.}
 
-\item{highlight_window_start}{integer vector highlight window start
-position, defaults to NA.}
+\item{highlight_window_start}{same format as \code{highlight_window_end}
+(see there), for the start of the window instead. Defaults to NA, which
+highlights starting 2 years before the end of the plotted range.}
+
+\item{legend_all_left}{logical When a \code{tsr} (right-axis) series is
+plotted, should all legend entries be merged into a single legend instead
+of two separately grouped ones (one for the left-axis series, one for the
+right-axis series) below the plot? Defaults to FALSE. Ignored when there
+is no \code{tsr}. Note this only
+affects static (print/save) output; \code{tsggplotly()} always renders a
+single merged legend regardless of this setting.}
 
 \item{line_colors}{character vector of hex colors for 6 lines.}
 

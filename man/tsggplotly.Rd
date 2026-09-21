@@ -7,7 +7,10 @@
 tsggplotly(p, ..., x_tick_mode = c("thin", "auto"))
 }
 \arguments{
-\item{p}{ggplot2 figure, as returned by \code{\link{tsggplot}}}
+\item{p}{ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
+a \code{tsr} (right-axis) series with the default split left/right
+legend (which can't be converted to plotly), the merged-legend
+equivalent \code{tsggplot()} built alongside it is used instead.}
 
 \item{...}{additional arguments passed on to \code{\link[plotly]{ggplotly}}}
 
@@ -16,17 +19,19 @@ in the interactive plot (see #13, #15). \code{"thin"} (the default)
 estimates which yearly labels would overlap at the given/assumed width
 and blanks them out, the same way the static \code{tsggplot()} plot
 does, while still drawing every tick mark. \code{"auto"} instead hands
-tick placement entirely to Plotly (\code{tickmode = "auto"}), which
-recomputes "nice" tick positions dynamically as the plot is resized or
-zoomed, at the cost of no longer aligning ticks to exact year starts.}
+tick placement entirely to Plotly (\code{tickmode = "auto"}) on a real
+date-typed x-axis, so Plotly recomputes "nice", properly date-formatted
+tick positions dynamically as the plot is resized or zoomed (e.g.
+month/day labels once zoomed in, instead of decimal years like
+2020.5), at the cost of no longer aligning ticks to exact year starts.}
 }
 \description{
 Convert ggplot2 time series object to plotly object
 }
 \details{
-If the theme's \code{text} font family is a single font name with no CSS
-fallback (e.g. \code{"Comic Sans MS"} rather than
-\code{"Comic Sans MS, cursive"}), this warns that the viewer's browser
-will silently substitute its own default font if that one isn't
-installed, rather than erroring -- give a full font stack to avoid it.
+If the theme's \code{text} font family is a single font name
+  with no CSS fallback (e.g. \code{"Comic Sans MS"} rather than
+  \code{"Comic Sans MS, cursive"}), this warns that the viewer's browser
+  will silently substitute its own default font if that one isn't
+  installed, rather than erroring -- give a full font stack to avoid it.
 }
