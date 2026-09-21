@@ -357,12 +357,12 @@ init_tsplot_print_theme <- function(
 #' years. Defaults to 2.
 #' @param axis_x_pad numeric how far past the last data point (and before the
 #' first, symmetrically) the x-axis extends, in years. Defaults to NULL,
-#' which scales the margin to the series' own span -- proportionally small
-#' for short series (so e.g. a few days of daily data isn't dwarfed by a
-#' fixed multi-month margin), capped at the classic one-quarter margin
-#' (~0.19 years when fill_year_with_nas == TRUE, ~0.25 otherwise) once the
-#' series spans a quarter or more. Set to a specific value (0 for none) to
-#' override.
+#' which adds no margin when fill_year_with_nas == TRUE (the axis already
+#' ends with the filled-up year, as in tsplot) and otherwise scales the
+#' margin to the series' own span -- proportionally small for short series
+#' (so e.g. a few days of daily data isn't dwarfed by a fixed multi-month
+#' margin), capped at one quarter once the series spans a quarter or more.
+#' Set to a specific value (0 for none) to override.
 #' @param axis_x_date_ticks character, only relevant for daily/weekly xts
 #' series (which plot on a real Date x-axis). \code{"auto"} (the default)
 #' lets ggplot2 pick sensible day/week/month/year tick spacing from the

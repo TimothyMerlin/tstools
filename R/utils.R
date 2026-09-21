@@ -190,15 +190,20 @@ getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, l
     global_x$x_range[1] <- trunc(global_x$x_range[1] * 4) / 4
 
     # How far past the last data point to extend the visible axis, in
-    # years. A user-supplied pad (theme's axis_x_pad) applies as-is;
-    # otherwise it scales to the series' own span, so a handful of days of
-    # data isn't dwarfed by a fixed multi-month margin, capped at the
-    # classic one-quarter margin (~0.19y when fill_year_with_nas == TRUE,
-    # ~0.25y otherwise) once the series spans a quarter or more --
-    # preserving prior behavior there.
+    # years. A user-supplied pad (theme's axis_x_pad) applies as-is.
+    # fill_year_with_nas already extends the series to the end of its year
+    # (like tsplot), so it needs no further margin by default. Otherwise the
+    # margin scales to the series' own span, so a handful of days of data
+    # isn't dwarfed by a fixed multi-month margin, capped at a quarter once
+    # the series spans a quarter or more.
     span <- diff(range(all_time))
-    default_cap <- if (fill_up) 0.19 else 0.25
-    x_pad <- if (is.null(pad)) min(default_cap, max(span * 0.25, 1 / 365)) else pad
+    x_pad <- if (!is.null(pad)) {
+      pad
+    } else if (fill_up) {
+      0
+    } else {
+      min(0.25, max(span * 0.25, 1 / 365))
+    }
     global_x$x_range[2] <- global_x$x_range[2] + x_pad
 
     # Tick positions and labels

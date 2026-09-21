@@ -11,7 +11,7 @@ test_that("getGlobalXInfo_tsggplot, ts", {
   )
 
   expected <- list(
-    x_range = c(1949, 1961.19),
+    x_range = c(1949, 1961),
     yearly_tick_pos = c(
       1949, 1950, 1951, 1952, 1953, 1954, 1955,
       1956, 1957, 1958, 1959, 1960, 1961
@@ -63,7 +63,7 @@ test_that("getGlobalXInfo_tsggplot, xts", {
 
   expected <-
     list(
-      x_range = structure(c(13514, 13947), class = "Date"),
+      x_range = structure(c(13514, 13878), class = "Date"),
       yearly_tick_pos = structure(c(13514, 13879), class = "Date"),
       year_labels_start = c(2007, 2008), min_year = 2007, max_year = 2008,
       quarterly_tick_pos = structure(c(
@@ -116,7 +116,7 @@ test_that("getGlobalXInfo_tsggplot, xts", {
   )
 
   expected <- list(
-    x_range = c(1949, 1981.19),
+    x_range = c(1949, 1981),
     yearly_tick_pos = c(
       1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960,
       1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972,
@@ -197,6 +197,29 @@ test_that("getGlobalXInfo_tsggplot adapts the trailing pad to the series span (a
   )
   expect_true(out_daily$x_range[2] > as.Date("2023-01-05"))
   expect_true(out_daily$x_range[2] < as.Date("2023-01-05") + 30)
+})
+
+test_that("getGlobalXInfo_tsggplot adds no trailing pad once the year is filled up (like tsplot)", {
+  theme <- init_tsggplot_theme()
+  expect_true(theme$fill_year_with_nas)
+
+  for (x in list(
+    ts(rnorm(24), end = c(2023, 4), frequency = 4),
+    ts(rnorm(24), end = c(2023, 2), frequency = 4),
+    ts(rnorm(60), end = c(2023, 6), frequency = 12)
+  )) {
+    out <- getGlobalXInfo_tsggplot(
+      list(A = x), NULL,
+      theme$fill_year_with_nas, theme$fill_up_start,
+      theme$axis_x_tick_dt, theme$axis_x_label_dt, NULL
+    )
+    expected <- getGlobalXInfo(
+      list(x), NULL,
+      theme$fill_year_with_nas, theme$fill_up_start, 1, NULL
+    )
+    expect_equal(out$x_range, expected$x_range)
+    expect_equal(out$x_range[2], 2024)
+  }
 })
 
 test_that("tsggplot doesn't error when the axis is too short for a quarterly tick", {
