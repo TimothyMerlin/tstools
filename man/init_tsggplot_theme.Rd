@@ -60,7 +60,7 @@ init_tsggplot_theme(
   grids_x_count = c(5, 6, 8, 10),
   grids_x_count_strict = FALSE,
   highlight_window = FALSE,
-  highlight_window_alpha = 0.1,
+  highlight_window_alpha = 0.55,
   highlight_window_color = colors$ETH_Grey$`20`,
   highlight_window_end = NA,
   highlight_window_freq = 4,
@@ -233,7 +233,8 @@ grid count? Defaults to FALSE.}
 \item{highlight_window}{logical should a particular time span be
 highlighted by different background color. Defaults to FALSE.}
 
-\item{highlight_window_alpha}{numeric for transparancy of highlight window.}
+\item{highlight_window_alpha}{numeric opacity of the highlight window
+between 0 (transparent) and 1 (opaque), defaults to 0.55.}
 
 \item{highlight_window_color}{character hex color code of highlight
 background, defaults to "#e9e9e9".}

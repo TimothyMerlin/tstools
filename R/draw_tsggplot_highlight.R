@@ -77,10 +77,10 @@ draw_tsggplot_highlight <- function(p, global_x, left_y, theme) {
       xmin = .data$xmin,
       xmax = .data$xmax,
       ymin = .data$ymin,
-      ymax = .data$ymax,
-      alpha = theme$highlight_window_alpha,
+      ymax = .data$ymax
     ),
     fill = theme$highlight_window_color,
+    alpha = theme$highlight_window_alpha,
     color = NA,
     inherit.aes = FALSE,
     show.legend = FALSE

@@ -842,3 +842,14 @@ test_that("zoo (#5)", {
   expect_equal(b_zoo$data[[1]]$x, b_xts$data[[1]]$x)
   expect_equal(b_zoo$data[[1]]$y, b_xts$data[[1]]$y)
 })
+
+test_that("tsggplot honours highlight_window_alpha", {
+  built_alpha <- function(alpha) {
+    theme <- init_tsggplot_theme(highlight_window = TRUE, highlight_window_alpha = alpha)
+    p <- tsggplot(list(AirPassengers = AirPassengers), theme = theme)
+    ix <- which(sapply(p$layers, function(l) inherits(l$geom, "GeomRect")))
+    unique(ggplot2::ggplot_build(p)$data[[ix]]$alpha)
+  }
+  expect_equal(built_alpha(0.1), 0.1)
+  expect_equal(built_alpha(0.9), 0.9)
+})
