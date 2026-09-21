@@ -160,6 +160,7 @@ fix_font_family_aliases <- function(x, aliases) {
 #'
 #' @importFrom ggplot2 calc_element
 #' @importFrom plotly ggplotly layout
+#' @importFrom utils modifyList
 #'
 #' @export
 tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
