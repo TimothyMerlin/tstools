@@ -626,7 +626,8 @@ tsggplot.list <- function(...,
   if (is.null(labs$x)) {
     theme_args$axis.title.x <- element_blank()
   }
-  if (is.null(labs$y)) {
+  # [[ ]]: labs$y would partial-match y_right
+  if (is.null(labs[["y"]])) {
     theme_args$axis.title.y <- element_blank()
   }
   if (!is.null(labs$y_right)) {

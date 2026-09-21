@@ -909,3 +909,19 @@ test_that("tsggplot keeps the sum line out of the right-axis legend", {
   fig <- plotly::plotly_build(tsggplotly(p))
   expect_true("Total" %in% vapply(fig$x$data, function(d) d$name %||% "", ""))
 })
+
+test_that("tsggplot only titles the left axis when labs$y is set, not y_right", {
+  tsl <- list(a = ts(1:8, start = c(2020, 1), frequency = 4))
+  tsr <- list(b = ts(8:1, start = c(2020, 1), frequency = 4))
+
+  p <- tsggplot(tsl, tsr = tsr, labs = list(y_right = "Right"))
+  expect_s3_class(p$theme$axis.title.y, "ggplot2::element_blank")
+  expect_s3_class(p$theme$axis.title.y.right, "ggplot2::element_text")
+
+  fig <- plotly::plotly_build(tsggplotly(p))
+  expect_equal(fig$x$layout$yaxis$title$text, "")
+  expect_equal(fig$x$layout$yaxis2$title$text, "Right")
+
+  p_y <- tsggplot(tsl, tsr = tsr, labs = list(y = "Left", y_right = "Right"))
+  expect_false(inherits(p_y$theme$axis.title.y, "ggplot2::element_blank"))
+})

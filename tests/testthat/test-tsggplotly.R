@@ -365,7 +365,7 @@ test_that("tsggplotly fixes font aliases on individual elements too, not just th
   # overrides the global layout$font default we set -- a real CSS font
   # stack has to reach these individually too.
   long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
-  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"))
+  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y = "left", y_right = "right"))
   built <- plotly::plotly_build(tsggplotly(p))
 
   not_sans <- function(family) !identical(family, "sans") && grepl("sans-serif", family)
