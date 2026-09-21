@@ -163,13 +163,30 @@ draw_sum_as_ggline <- function(p, x, theme = NULL, use_date_scale = FALSE) {
   )
   if (theme$line_to_middle) df$xx <- df$xx + getLineToMiddleShift(x, use_date_scale = use_date_scale)
 
+  if (is.null(theme$sum_legend)) {
+    # no label -> constant colour, no legend entry
+    return(p + geom_line(
+      data = df,
+      aes(
+        x = .data$xx,
+        y = .data$yy
+      ),
+      color = theme$sum_line_color,
+      linewidth = theme$sum_line_linewidth,
+      linetype = theme$sum_line_linetype
+    ))
+  }
+
+  # mapped colour gives the line a legend entry; the value is set by the
+  # caller's scale_color_manual() in tsggplot.list()
+  df$series <- theme$sum_legend
   p + geom_line(
     data = df,
     aes(
       x = .data$xx,
-      y = .data$yy
+      y = .data$yy,
+      color = .data$series
     ),
-    color = theme$sum_line_color,
     linewidth = theme$sum_line_linewidth,
     linetype = theme$sum_line_linetype
   )

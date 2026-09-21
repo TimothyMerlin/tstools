@@ -1022,9 +1022,11 @@ tsggplot.list <- function(...,
     p <- p + scale_fill_manual(
       values = setNames(fill_colors, names(tsl)),
     )
-    p <- p + scale_color_manual(
-      values = setNames(theme$line_colors, line_names)
-    )
+    color_values <- setNames(theme$line_colors[seq_along(line_names)], line_names)
+    if (left_as_bar && isTRUE(theme$sum_as_line) && !is.null(theme$sum_legend)) {
+      color_values <- c(color_values, setNames(unname(theme$sum_line_color), theme$sum_legend))
+    }
+    p <- p + scale_color_manual(values = color_values)
     if (auto_legend) {
       if (!is.null(tsr) && !isTRUE(theme$legend_all_left)) {
         # left series (bars/bands) and right series (lines) are already on

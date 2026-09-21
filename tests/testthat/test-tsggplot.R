@@ -868,3 +868,22 @@ test_that("tsggplot applies legend_col to bar legends", {
   p_r <- tsggplot(tsl[1:2], tsr = tsl[3], left_as_bar = TRUE, theme = theme)
   expect_equal(p_r$guides$guides$fill$params$ncol, 2)
 })
+
+test_that("tsggplot gives the sum line a legend entry", {
+  tsl <- list(
+    a = ts(1:8, start = c(2020, 1), frequency = 4),
+    b = ts(8:1, start = c(2020, 1), frequency = 4)
+  )
+  theme <- init_tsggplot_theme(sum_as_line = TRUE, sum_legend = "Total")
+  p <- tsggplot(tsl, left_as_bar = TRUE, theme = theme)
+  b <- ggplot2::ggplot_build(p)
+  sum_layer <- Filter(function(d) "colour" %in% names(d) && !"fill" %in% names(d), b$data)[[1]]
+  expect_equal(unique(sum_layer$colour), unname(theme$sum_line_color))
+  expect_equal(b$plot$scales$get_scales("colour")$get_labels(), "Total")
+
+  # NULL sum_legend: line stays, no legend entry
+  theme_none <- init_tsggplot_theme(sum_as_line = TRUE, sum_legend = NULL)
+  p_none <- tsggplot(tsl, left_as_bar = TRUE, theme = theme_none)
+  expect_true(any(vapply(p_none$layers, function(l) inherits(l$geom, "GeomLine"), logical(1))))
+  expect_length(ggplot2::ggplot_build(p_none)$plot$scales$get_scales("colour")$get_labels(), 0)
+})
