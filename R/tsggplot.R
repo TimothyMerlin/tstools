@@ -615,7 +615,7 @@ tsggplot.list <- function(...,
   # (geom_segment(), not a real ggplot2 axis element) gets added -- kept
   # around so tsggplotly() can find and strip the resulting trace, which
   # ggplotly() has no way to tell apart from real plotted data on its own.
-  quarterly_tick_mark_y_range <- NULL
+  quarterly_tick_marks <- NULL
 
   # Extract valid theme elements from the provided theme listents]
   # by matching their names with the formal arguments of ggplot2::theme
@@ -955,7 +955,13 @@ tsggplot.list <- function(...,
             y    = y_min,
             yend = y_min + tick_h
           )
-          quarterly_tick_mark_y_range <- c(y_min, y_min + tick_h)
+          quarterly_tick_marks <- list(
+            x = q_ticks,
+            y_range = range(y_min, y_min + tick_h),
+            # tick height as a fraction of the panel, so tsggplotly() can
+            # redraw the marks in plotly's own "y domain" units
+            height_frac = tick_h / y_rng
+          )
 
           geom_args <- c(
             list(
@@ -1078,7 +1084,7 @@ tsggplot.list <- function(...,
     # #16), so it transparently converts merged_legend_fallback instead.
     split_legend = split_legend,
     merged_legend_fallback = merged_legend_fallback,
-    quarterly_tick_mark_y_range = quarterly_tick_mark_y_range
+    quarterly_tick_marks = quarterly_tick_marks
   )
 
   if (output_format != "plot") {

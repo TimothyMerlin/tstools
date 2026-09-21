@@ -176,8 +176,16 @@ test_that("tsggplotly x_tick_mode (#15)", {
   # plain list like "shapes", so tsggplotly() assigns it directly).
   meta <- attr(p, "tsggplot_meta")
   built_thin <- plotly::plotly_build(fig_thin)
-  shape_x <- sort(vapply(built_thin$x$layout$shapes, function(s) s$x0, numeric(1)))
-  expect_equal(shape_x, sort(as.numeric(meta$global_x$yearly_tick_pos)))
+  shapes <- built_thin$x$layout$shapes
+  is_yearly <- vapply(shapes, function(s) isTRUE(all.equal(s$y1, 0.015)), logical(1))
+  shape_x <- function(sel) sort(vapply(shapes[sel], function(s) s$x0, numeric(1)))
+  expect_equal(shape_x(is_yearly), sort(as.numeric(meta$global_x$yearly_tick_pos)))
+
+  # ...and the small quarterly marks between them, which the static plot
+  # draws as a geom_segment() layer that ggplotly() would otherwise turn
+  # into a stray data trace (see the dedicated test below) -- redrawn as
+  # shapes here so thin mode keeps them.
+  expect_equal(shape_x(!is_yearly), sort(as.numeric(meta$quarterly_tick_marks$x)))
 
   # "auto" mode hands ticks to Plotly entirely -- no manual shapes needed
   built_auto <- plotly::plotly_build(fig_auto)
@@ -463,36 +471,50 @@ test_that("tsggplotly reflects custom data-line and gridline styling from the th
   expect_true(built$x$layout$yaxis$gridwidth > 2) # default is < 1
 })
 
-test_that("tsggplotly drops the static plot's quarterly-tick decoration layer", {
+test_that("tsggplotly turns the static plot's quarterly-tick layer into shapes (thin) or drops it (auto)", {
   # tsggplot()'s "mid" x-axis label positioning draws quarterly ticks as an
   # actual geom_segment() layer (a real ggplot2 workaround, since ggplot2's
   # native minor-tick support only covers yearly breaks), not a genuine
   # axis element. ggplotly() can't tell that apart from real plotted data,
-  # so without this fix it converts into an ordinary, fully visible trace
-  # -- extra tick-like marks scattered across the plot, in addition to
-  # Plotly's own native x-axis ticks, in both "thin" and "auto" mode (the
-  # bug isn't specific to "auto" -- it just happens to be more visually
-  # obvious there, since the marks don't line up with "auto"'s own,
-  # dynamically-recomputed tick positions the way they coincidentally can
-  # with "thin"'s fixed, year-aligned ones).
+  # so it converts it into an ordinary, hoverable data trace. In "thin"
+  # mode those small marks between the yearly ticks are part of the
+  # intended look, so they're redrawn as plain shapes (like the yearly
+  # ticks already are); in "auto" mode Plotly places its own ticks, which
+  # these fixed positions don't line up with -- they looked like stray,
+  # mixed-direction ticks there -- so they're dropped entirely.
   long_ts <- ts(runif(80), start = c(1990, 1), frequency = 4)
   p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"))
   meta <- attr(p, "tsggplot_meta")
-  expect_length(meta$quarterly_tick_mark_y_range, 2)
+  expect_length(meta$quarterly_tick_marks$y_range, 2)
 
-  for (fig in list(tsggplotly(p), tsggplotly(p, x_tick_mode = "auto"))) {
-    built <- plotly::plotly_build(fig)
-    names <- vapply(built$x$data, function(d) d$name %||% "", character(1))
+  built <- list(
+    thin = plotly::plotly_build(tsggplotly(p)),
+    auto = plotly::plotly_build(tsggplotly(p, x_tick_mode = "auto"))
+  )
+  for (b in built) {
+    names <- vapply(b$x$data, function(d) d$name %||% "", character(1))
     expect_setequal(names[nzchar(names)], c("A", "B"))
     # only the two real series plus the invisible yaxis2 marker -- no
-    # leftover, unnamed tick-decoration trace
-    expect_equal(length(built$x$data), 3)
+    # leftover, unnamed tick-decoration trace, in either mode
+    expect_equal(length(b$x$data), 3)
   }
 
+  # thin: yearly + quarterly marks are both still there, as shapes -- the
+  # quarterly ones match the static plot's own positions exactly
+  q_shapes <- Filter(function(s) !isTRUE(all.equal(s$y1, 0.015)), built$thin$x$layout$shapes)
+  expect_equal(
+    sort(vapply(q_shapes, function(s) s$x0, numeric(1))),
+    sort(as.numeric(meta$quarterly_tick_marks$x))
+  )
+  expect_true(all(vapply(q_shapes, function(s) s$y1, numeric(1)) > 0))
+
+  # auto: nothing of the sort -- Plotly's own ticks only
+  expect_equal(length(built$auto$x$layout$shapes), 0)
+
   # quarterly_ticks = FALSE never adds the layer in the first place --
-  # nothing for tsggplotly() to find or remove
+  # nothing for tsggplotly() to find, remove or redraw
   p_no_ticks <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(quarterly_ticks = FALSE))
-  expect_null(attr(p_no_ticks, "tsggplot_meta")$quarterly_tick_mark_y_range)
+  expect_null(attr(p_no_ticks, "tsggplot_meta")$quarterly_tick_marks)
   built_no_ticks <- plotly::plotly_build(tsggplotly(p_no_ticks))
   expect_equal(length(built_no_ticks$x$data), 1)
 })

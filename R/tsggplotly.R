@@ -315,31 +315,37 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   p$x$layout <- fix_font_family_aliases(p$x$layout, css_family_aliases)
   p$x$data <- fix_font_family_aliases(p$x$data, css_family_aliases)
 
-  if (!is.null(meta$quarterly_tick_mark_y_range)) {
+  qt <- meta$quarterly_tick_marks
+  if (!is.null(qt)) {
     # tsggplot()'s "mid" x-axis label positioning draws its quarterly ticks
     # as an actual geom_segment() layer (a real ggplot2 workaround, since
     # ggplot2's native minor-tick support only covers yearly breaks) rather
     # than a genuine axis element -- ggplotly() has no way to tell that
     # apart from real plotted data, so it converts it into an ordinary,
-    # fully visible trace. That shows up as extra tick-like marks scattered
-    # across the plot in addition to Plotly's own native x-axis ticks,
-    # rather than the subtle inward mark the static plot draws. Identify
-    # and drop it by the same y-range tsggplot.R built it at (y_min to
-    # y_min + tick_h) -- real data essentially never has every single point
-    # confined to that one, narrow, specific interval. Also require an
-    # empty trace name -- this layer is added with inherit.aes = FALSE and
-    # no colour/fill mapping, so it never gets one, unlike every real
-    # series (tsggplot() always names each one, even list elements left
-    # unnamed by the user get an auto-generated "series_N" name) -- an
-    # extra safeguard against the unlikely case of real data coincidentally
-    # falling entirely within that narrow interval too.
-    y_lo <- meta$quarterly_tick_mark_y_range[1] - 1e-6
-    y_hi <- meta$quarterly_tick_mark_y_range[2] + 1e-6
+    # fully visible trace (with hover, in the data, at trace level).
+    # Drop it here, then redraw the marks as plain shapes for "thin" mode
+    # only (below, next to the yearly tick shapes) -- "auto" mode hands tick
+    # placement to Plotly, whose own ticks these fixed positions don't line
+    # up with, which is what made them look like stray, mixed-direction
+    # ticks there. Identify the trace by the same y-range tsggplot.R built
+    # it at (y_min to y_min + tick_h) -- real data essentially never has
+    # every single point confined to that one, narrow, specific interval.
+    # Also require an empty trace name -- this layer is added with
+    # inherit.aes = FALSE and no colour/fill mapping, so it never gets one,
+    # unlike every real series (tsggplot() always names each one, even
+    # list elements left unnamed by the user get an auto-generated
+    # "series_N" name) -- an extra safeguard against the unlikely case of
+    # real data coincidentally falling entirely within that narrow interval.
+    y_lo <- qt$y_range[1] - 1e-6
+    y_hi <- qt$y_range[2] + 1e-6
     is_tick_mark_trace <- function(d) {
       y <- d$y[!is.na(d$y)]
       !nzchar(d$name %||% "") && length(y) > 0 && all(y >= y_lo & y <= y_hi)
     }
-    p$x$data <- p$x$data[!vapply(p$x$data, is_tick_mark_trace, logical(1))]
+    is_tm <- vapply(p$x$data, is_tick_mark_trace, logical(1))
+    # keep its line style so the redrawn marks (thin mode) look the same
+    qt_line <- if (any(is_tm)) p$x$data[[which(is_tm)[1]]]$line else NULL
+    p$x$data <- p$x$data[!is_tm]
   }
 
   xa <- p$x$layout$xaxis
@@ -402,25 +408,40 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
       # is drawn at each real year-start position (meta$global_x$
       # yearly_tick_pos) as a manual shape instead, matching what the
       # static plot's minor ticks show regardless of label thinning.
+      tick_shape <- function(xv, height, line) {
+        list(
+          type = "line",
+          xref = "x", yref = "y domain",
+          x0 = xv, x1 = xv, y0 = 0, y1 = height,
+          line = line
+        )
+      }
+      in_range <- function(x) x[x >= xa$range[1] & x <= xa$range[2]]
+      tick_shapes <- list()
       yearly_x <- meta$global_x$yearly_tick_pos
       if (!is.null(yearly_x)) {
-        yearly_x <- as.numeric(yearly_x)
-        yearly_x <- yearly_x[yearly_x >= xa$range[1] & yearly_x <= xa$range[2]]
-        tick_shapes <- lapply(yearly_x, function(xv) {
-          list(
-            type = "line",
-            xref = "x", yref = "y domain",
-            x0 = xv, x1 = xv, y0 = 0, y1 = 0.015,
-            line = list(color = xa$tickcolor, width = xa$tickwidth)
-          )
-        })
-        # plotly::layout()'s later merge (see layout_args below) only
-        # queues changes into p$x$layoutAttrs, applied at build/print time
-        # via a per-field merge that mishandles a plain (unnamed) list like
-        # this one -- direct assignment here, like the ticktext mutation
-        # above, actually sticks.
-        p$x$layout$shapes <- tick_shapes
+        tick_shapes <- lapply(
+          in_range(as.numeric(yearly_x)), tick_shape, height = 0.015,
+          line = list(color = xa$tickcolor, width = xa$tickwidth)
+        )
       }
+      # The small quarterly marks between the yearly ones (dropped as a
+      # trace above) -- redrawn as shapes too, in the style the static
+      # plot's own layer had, so thin mode keeps its year-and-quarter
+      # ticks without a stray, hoverable data trace behind them.
+      if (!is.null(qt)) {
+        quarterly_shapes <- lapply(
+          in_range(as.numeric(qt$x)), tick_shape, height = qt$height_frac,
+          line = if (is.null(qt_line)) list(color = xa$tickcolor, width = xa$tickwidth) else qt_line
+        )
+        tick_shapes <- c(tick_shapes, quarterly_shapes)
+      }
+      # plotly::layout()'s later merge (see layout_args below) only queues
+      # changes into p$x$layoutAttrs, applied at build/print time via a
+      # per-field merge that mishandles a plain (unnamed) list like this
+      # one -- direct assignment here, like the ticktext mutation above,
+      # actually sticks.
+      if (length(tick_shapes) > 0) p$x$layout$shapes <- tick_shapes
     }
   }
 
