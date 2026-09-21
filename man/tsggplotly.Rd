@@ -4,7 +4,7 @@
 \alias{tsggplotly}
 \title{Convert ggplot2 time series object to plotly object}
 \usage{
-tsggplotly(p, ..., x_tick_mode = c("thin", "auto"))
+tsggplotly(p, ..., x_tick_mode = c("thin", "auto"), axis_titles = FALSE)
 }
 \arguments{
 \item{p}{ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
@@ -24,6 +24,11 @@ date-typed x-axis, so Plotly recomputes "nice", properly date-formatted
 tick positions dynamically as the plot is resized or zoomed (e.g.
 month/day labels once zoomed in, instead of decimal years like
 2020.5), at the cost of no longer aligning ticks to exact year starts.}
+
+\item{axis_titles}{logical, show the axis titles set through
+\code{labs} (\code{x}, \code{y}, \code{y_right}) in the interactive
+plot? Defaults to \code{FALSE}, so the axes stay unnamed and the series
+are identified by the legend and the hover text.}
 }
 \description{
 Convert ggplot2 time series object to plotly object

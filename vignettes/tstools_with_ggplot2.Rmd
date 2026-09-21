@@ -533,12 +533,14 @@ Any `tsggplot` figure can be converted into an interactive `plotly` chart with
 ```{r,fig.width = 7,fig.height=6,echo=TRUE,message=FALSE}
 library(plotly)
 
-p <- tsggplot(KOF["kofbarometer"],
-  tsr = KOF["reference"],
-  labs = list(y_right = "Reference indicator")
+p <- tsggplot(list("KOF Barometer" = KOF$kofbarometer),
+  tsr = list("Reference indicator" = KOF$reference)
 )
 tsggplotly(p)
 ```
+
+The series are named in the legend, not on the axes. To show the axis titles
+set through `labs` (`x`, `y`, `y_right`), pass `axis_titles = TRUE`.
 
 Pass `x_tick_mode = "auto"` to let Plotly pick its own tick positions
 dynamically as you zoom, instead of tstools' default fixed yearly ticks.

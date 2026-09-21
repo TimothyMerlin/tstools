@@ -19,7 +19,7 @@ test_that("tsggplotly", {
   )
   expect_no_warning(p <- tsggplot(tsl, tsr = tsg, labs = labs, theme = theme))
 
-  fig <- tsggplotly(p)
+  fig <- tsggplotly(p, axis_titles = TRUE)
   expect_s3_class(fig, "plotly")
 
   built <- plotly::plotly_build(fig)
@@ -366,7 +366,7 @@ test_that("tsggplotly fixes font aliases on individual elements too, not just th
   # stack has to reach these individually too.
   long_ts <- ts(runif(30), start = c(2000, 1), frequency = 1)
   p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y = "left", y_right = "right"))
-  built <- plotly::plotly_build(tsggplotly(p))
+  built <- plotly::plotly_build(tsggplotly(p, axis_titles = TRUE))
 
   not_sans <- function(family) !identical(family, "sans") && grepl("sans-serif", family)
   expect_true(not_sans(built$x$layout$yaxis$title$font$family))
@@ -416,7 +416,7 @@ test_that("tsggplotly gives left, right and secondary axes matching, theme-deriv
     axis.text.y.right = ggplot2::element_text(size = 10)
   )
   p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"), theme = theme)
-  built <- plotly::plotly_build(tsggplotly(p))
+  built <- plotly::plotly_build(tsggplotly(p, axis_titles = TRUE))
 
   sizes <- vapply(
     list(built$x$layout$xaxis, built$x$layout$yaxis, built$x$layout$yaxis2),

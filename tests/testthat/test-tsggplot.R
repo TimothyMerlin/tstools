@@ -918,10 +918,26 @@ test_that("tsggplot only titles the left axis when labs$y is set, not y_right", 
   expect_s3_class(p$theme$axis.title.y, "ggplot2::element_blank")
   expect_s3_class(p$theme$axis.title.y.right, "ggplot2::element_text")
 
-  fig <- plotly::plotly_build(tsggplotly(p))
+  fig <- plotly::plotly_build(tsggplotly(p, axis_titles = TRUE))
   expect_equal(fig$x$layout$yaxis$title$text, "")
   expect_equal(fig$x$layout$yaxis2$title$text, "Right")
 
   p_y <- tsggplot(tsl, tsr = tsr, labs = list(y = "Left", y_right = "Right"))
   expect_false(inherits(p_y$theme$axis.title.y, "ggplot2::element_blank"))
+})
+
+test_that("tsggplotly leaves the axes unnamed unless axis_titles = TRUE", {
+  tsl <- list(a = ts(1:8, start = c(2020, 1), frequency = 4))
+  tsr <- list(b = ts(8:1, start = c(2020, 1), frequency = 4))
+  p <- tsggplot(tsl, tsr = tsr, labs = list(x = "Time", y = "Left", y_right = "Right"))
+
+  layout <- plotly::plotly_build(tsggplotly(p))$x$layout
+  expect_equal(layout$xaxis$title$text, "")
+  expect_equal(layout$yaxis$title$text, "")
+  expect_null(layout$yaxis2$title$text)
+
+  layout_on <- plotly::plotly_build(tsggplotly(p, axis_titles = TRUE))$x$layout
+  expect_equal(layout_on$xaxis$title$text, "Time")
+  expect_equal(layout_on$yaxis$title$text, "Left")
+  expect_equal(layout_on$yaxis2$title$text, "Right")
 })

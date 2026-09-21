@@ -152,6 +152,10 @@ fix_font_family_aliases <- function(x, aliases) {
 #'   tick positions dynamically as the plot is resized or zoomed (e.g.
 #'   month/day labels once zoomed in, instead of decimal years like
 #'   2020.5), at the cost of no longer aligning ticks to exact year starts.
+#' @param axis_titles logical, show the axis titles set through
+#'   \code{labs} (\code{x}, \code{y}, \code{y_right}) in the interactive
+#'   plot? Defaults to \code{FALSE}, so the axes stay unnamed and the series
+#'   are identified by the legend and the hover text.
 #' @details If the theme's \code{text} font family is a single font name
 #'   with no CSS fallback (e.g. \code{"Comic Sans MS"} rather than
 #'   \code{"Comic Sans MS, cursive"}), this warns that the viewer's browser
@@ -163,7 +167,7 @@ fix_font_family_aliases <- function(x, aliases) {
 #' @importFrom utils modifyList
 #'
 #' @export
-tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
+tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto"), axis_titles = FALSE) {
   x_tick_mode <- match.arg(x_tick_mode)
   dots <- list(...)
   meta <- attr(p, "tsggplot_meta")
@@ -606,6 +610,10 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   p$x$layout$yaxis$tickfont <- resolve_text_font("axis.text.y.left")
   p$x$layout$xaxis$title <- modifyList(p$x$layout$xaxis$title, list(font = resolve_text_font("axis.title.x")))
   p$x$layout$yaxis$title <- modifyList(p$x$layout$yaxis$title, list(font = resolve_text_font("axis.title.y")))
+  if (!axis_titles) {
+    p$x$layout$xaxis$title <- list(text = "")
+    p$x$layout$yaxis$title <- list(text = "")
+  }
 
   # The right-axis series are already rescaled into the left axis's numeric
   # range (the same trick ggplot2's sec_axis() relies on for a static plot),
@@ -619,7 +627,7 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     # former survives into the merged yaxis2 as a real list of NULLs, which
     # later crashes plotly_build()'s schema validation. Build it with only
     # the keys that actually have a value instead.
-    right_title <- if (is.null(meta$y_right_label)) {
+    right_title <- if (is.null(meta$y_right_label) || !axis_titles) {
       NULL
     } else {
       c(list(text = meta$y_right_label), maybe_list("font", resolve_text_font("axis.title.y.right")))
