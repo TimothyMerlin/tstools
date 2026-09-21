@@ -724,7 +724,12 @@ tsggplot.list <- function(...,
   # left series on a separate "fill" aesthetic, so those get a split legend
   # "for free" further down without needing this. Static (print/save) output
   # only: tsggplotly() still renders one merged legend for tsr charts.
-  split_legend <- !left_as_bar && !left_as_band && !is.null(tsr) && !isTRUE(theme$legend_all_left)
+  # The sum line of a bar chart is a colour-aesthetic entry too, so with a
+  # tsr it needs the same treatment to stay in the left-axis group.
+  sum_own_scale <- left_as_bar && isTRUE(theme$sum_as_line) && !is.null(theme$sum_legend) &&
+    !is.null(tsr) && !isTRUE(theme$legend_all_left)
+  split_legend <- sum_own_scale ||
+    (!left_as_bar && !left_as_band && !is.null(tsr) && !isTRUE(theme$legend_all_left))
 
   # tsggplotly() can't convert the split legend (ggnewscale's scale-renaming
   # trick breaks plotly::ggplotly()'s geom conversion), so build the merged-
@@ -767,6 +772,17 @@ tsggplot.list <- function(...,
     if (theme$sum_as_line) {
       reduced <- Reduce("+", tsl)
       p <- draw_sum_as_ggline(p, reduced, theme, use_date_scale = use_date_scale)
+      if (sum_own_scale) {
+        # the sum belongs to the left axis: own colour scale/guide, so it
+        # isn't listed with the right-axis lines (cf. the split legend below)
+        p <- p + scale_color_manual(
+          values = setNames(unname(theme$sum_line_color), theme$sum_legend)
+        )
+        if (auto_legend) {
+          p <- p + guides(color = guide_legend(ncol = theme$legend_col, position = "bottom", order = 2, override.aes = list(fill = NA)))
+        }
+        p <- p + ggnewscale::new_scale_color()
+      }
     }
   } else {
     # draw lineplot
@@ -1023,7 +1039,7 @@ tsggplot.list <- function(...,
       values = setNames(fill_colors, names(tsl)),
     )
     color_values <- setNames(theme$line_colors[seq_along(line_names)], line_names)
-    if (left_as_bar && isTRUE(theme$sum_as_line) && !is.null(theme$sum_legend)) {
+    if (left_as_bar && isTRUE(theme$sum_as_line) && !is.null(theme$sum_legend) && !sum_own_scale) {
       color_values <- c(color_values, setNames(unname(theme$sum_line_color), theme$sum_legend))
     }
     p <- p + scale_color_manual(values = color_values)
@@ -1034,8 +1050,8 @@ tsggplot.list <- function(...,
         # two separate guide boxes below the plot, no new_scale_color()
         # needed.
         p <- p + guides(
-          fill = guide_legend(ncol = theme$legend_col, position = "bottom"),
-          color = guide_legend(ncol = theme$legend_col, position = "bottom", override.aes = list(fill = NA))
+          fill = guide_legend(ncol = theme$legend_col, position = "bottom", order = 1),
+          color = guide_legend(ncol = theme$legend_col, position = "bottom", order = 3, override.aes = list(fill = NA))
         )
       } else {
         p <- p + guides(

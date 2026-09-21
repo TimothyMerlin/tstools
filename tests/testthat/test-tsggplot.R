@@ -887,3 +887,25 @@ test_that("tsggplot gives the sum line a legend entry", {
   expect_true(any(vapply(p_none$layers, function(l) inherits(l$geom, "GeomLine"), logical(1))))
   expect_length(ggplot2::ggplot_build(p_none)$plot$scales$get_scales("colour")$get_labels(), 0)
 })
+
+test_that("tsggplot keeps the sum line out of the right-axis legend", {
+  tsl <- list(
+    a = ts(1:8, start = c(2020, 1), frequency = 4),
+    b = ts(8:1, start = c(2020, 1), frequency = 4)
+  )
+  tsr <- list(c = ts(c(2, 1, 3, 2, 4, 3, 5, 4), start = c(2020, 1), frequency = 4))
+  theme <- init_tsggplot_theme(sum_as_line = TRUE, sum_legend = "Total")
+  p <- tsggplot(tsl, tsr = tsr, left_as_bar = TRUE, theme = theme)
+  scales <- ggplot2::ggplot_build(p)$plot$scales$scales
+  colour_labels <- lapply(
+    Filter(function(s) any(grepl("colou?r", s$aesthetics)), scales),
+    function(s) s$get_labels()
+  )
+  expect_length(colour_labels, 2)
+  expect_true(any(vapply(colour_labels, identical, logical(1), "Total")))
+  expect_true(any(vapply(colour_labels, identical, logical(1), "c")))
+
+  # tsggplotly() converts the merged-legend equivalent, sum line included
+  fig <- plotly::plotly_build(tsggplotly(p))
+  expect_true("Total" %in% vapply(fig$x$data, function(d) d$name %||% "", ""))
+})
