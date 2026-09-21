@@ -311,6 +311,9 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
     }
   }
 
+  # ggplotly() ignores labs(subtitle) altogether, added back below
+  subtitle <- p$labels$subtitle
+
   p <- plotly::ggplotly(p, ...)
   p$x$layout <- fix_font_family_aliases(p$x$layout, css_family_aliases)
   p$x$data <- fix_font_family_aliases(p$x$data, css_family_aliases)
@@ -471,6 +474,26 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   )
 
   p <- do.call(plotly::layout, layout_args)
+
+  # The bundled plotly.js has no native subtitle, so it becomes a second
+  # line of the title, sized/coloured from plot.subtitle. Assigned directly
+  # (like the axis styles below), since layout() only queues its changes.
+  if (!is.null(subtitle) && nzchar(subtitle)) {
+    sub_font <- resolve_text_font("plot.subtitle")
+    sub_style <- c(
+      if (!is.null(sub_font$size)) sprintf("font-size:%gpx", sub_font$size),
+      if (!is.null(sub_font$color)) sprintf("color:%s", sub_font$color)
+    )
+    sub_html <- sprintf("<span style=\"%s\">%s</span>", paste(sub_style, collapse = ";"), subtitle)
+    title_text <- p$x$layout$title$text
+    p$x$layout$title$text <- if (is.null(title_text) || !nzchar(trimws(title_text))) {
+      sub_html
+    } else {
+      paste0(title_text, "<br>", sub_html)
+    }
+    # room for the extra line, on top of the title's own
+    p$x$layout$margin$t <- p$x$layout$margin$t + (if (is.null(sub_font$size)) 16 else sub_font$size) * 1.8
+  }
 
   # Axis line style (showline/linecolor/linewidth) is set by direct
   # assignment, not via the layout_args/plotly::layout() call above --

@@ -546,3 +546,28 @@ test_that("tsggplotly converts stacked, grouped and sum_as_line bar charts", {
   expect_equal(length(Filter(function(d) identical(d$type, "bar"), built_sum$x$data)), 3)
   expect_true(length(Filter(function(d) identical(d$type, "scatter"), built_sum$x$data)) >= 1)
 })
+
+test_that("tsggplotly keeps the subtitle as a styled second title line", {
+  x <- ts(rnorm(20), start = c(2010, 1), frequency = 4)
+  theme <- init_tsggplot_theme(
+    plot.subtitle = ggplot2::element_text(size = 15, colour = "red")
+  )
+
+  built <- plotly::plotly_build(tsggplotly(
+    tsggplot(list(A = x), labs = list(title = "Main", subtitle = "Sub"), theme = theme)
+  ))
+  expect_match(built$x$layout$title$text, "Main.*<br><span[^>]*color:rgba\\(255,0,0,1\\)[^>]*>Sub</span>")
+
+  # extra top margin for the second line
+  built_no_sub <- plotly::plotly_build(tsggplotly(
+    tsggplot(list(A = x), labs = list(title = "Main"), theme = theme)
+  ))
+  expect_gt(built$x$layout$margin$t, built_no_sub$x$layout$margin$t)
+  expect_false(grepl("<br>", built_no_sub$x$layout$title$text))
+
+  # subtitle without a title
+  built_only_sub <- plotly::plotly_build(tsggplotly(
+    tsggplot(list(A = x), labs = list(subtitle = "Sub"), theme = theme)
+  ))
+  expect_match(built_only_sub$x$layout$title$text, "Sub</span>")
+})
