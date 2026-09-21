@@ -1,3 +1,11 @@
+Changes in development version
+ * tsggplot: with fill_year_with_nas = TRUE the trailing x margin now defaults to none (the filled-up year already ends the axis, like tsplot); an explicit axis_x_pad still applies
+ * tsggplot: highlight_window_alpha is now the actual opacity of the highlight window (default 0.55); it was previously mapped inside aes() and so had no effect on the value, so an explicitly set value now looks different
+ * tsggplot: the sum line of a stacked bar chart gets its own legend entry, grouped with the left-axis series when a tsr series is present
+ * tsggplotly: the highlight window is drawn as a shape below the traces, and only that layer is taken out of the plot (other geom_rect() layers are kept)
+ * tsggplotly: keeps the subtitle (as a line of the title, hidden when the theme hides it) and makes room for multi-line titles
+ * tsggplot: daily/weekly xts series with fill_year_with_nas keep the closing year tick on the axis in time zones ahead of UTC
+
 Changes in version 0.4.3
  * tsggplot: added support for zoo objects
  * tsggplot: added support for yearly and hourly xts frequencies, verified weekly/daily
