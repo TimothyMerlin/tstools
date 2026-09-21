@@ -571,3 +571,37 @@ test_that("tsggplotly keeps the subtitle as a styled second title line", {
   ))
   expect_match(built_only_sub$x$layout$title$text, "Sub</span>")
 })
+
+test_that("tsggplotly draws the highlight window as a shape below the traces", {
+  x <- ts(rnorm(24), start = c(2018, 1), frequency = 4)
+  theme <- init_tsggplot_theme(
+    highlight_window = TRUE,
+    highlight_window_start = c(2022, 1),
+    highlight_window_end = c(2023, 4),
+    highlight_window_color = "red",
+    highlight_window_alpha = 0.3
+  )
+  p <- tsggplot(list(A = x), left_as_bar = TRUE, theme = theme)
+
+  for (mode in c("thin", "auto")) {
+    built <- plotly::plotly_build(tsggplotly(p, x_tick_mode = mode))
+
+    # no filled scatter trace for the window (it would be drawn above bars)
+    expect_false(any(vapply(built$x$data, function(d) identical(d$fill, "toself"), logical(1))))
+    expect_equal(length(Filter(function(d) identical(d$type, "bar"), built$x$data)), 1)
+
+    shapes <- Filter(function(s) identical(s$layer, "below"), built$x$layout$shapes)
+    expect_length(shapes, 1)
+    expect_equal(shapes[[1]]$fillcolor, "rgba(255,0,0,0.3)")
+    expect_equal(c(shapes[[1]]$y0, shapes[[1]]$y1), c(0, 1))
+  }
+
+  # numeric x in thin mode, dates in auto mode
+  thin <- plotly::plotly_build(tsggplotly(p, x_tick_mode = "thin"))
+  s_thin <- Filter(function(s) identical(s$layer, "below"), thin$x$layout$shapes)[[1]]
+  expect_equal(s_thin$x0, 2022)
+  expect_equal(s_thin$x1, 2024)
+  auto <- plotly::plotly_build(tsggplotly(p, x_tick_mode = "auto"))
+  s_auto <- Filter(function(s) identical(s$layer, "below"), auto$x$layout$shapes)[[1]]
+  expect_match(as.character(s_auto$x0), "^2022-")
+})

@@ -314,6 +314,23 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   # ggplotly() ignores labs(subtitle) altogether, added back below
   subtitle <- p$labels$subtitle
 
+  # ggplotly() turns the highlight window (the only plain GeomRect layer,
+  # GeomCol inherits from it) into a filled scatter trace, which Plotly
+  # always draws above bar traces, so it would wash the bars out. Taken out
+  # here, redrawn below as layout shapes placed below the traces, like in
+  # the static plot.
+  highlight <- NULL
+  is_rect_layer <- vapply(p$layers, function(l) identical(class(l$geom)[1], "GeomRect"), logical(1))
+  if (any(is_rect_layer)) {
+    hl_layer <- p$layers[[which(is_rect_layer)[1]]]
+    highlight <- list(
+      data = hl_layer$data,
+      fill = hl_layer$aes_params$fill,
+      alpha = hl_layer$aes_params$alpha
+    )
+    p$layers <- p$layers[!is_rect_layer]
+  }
+
   p <- plotly::ggplotly(p, ...)
   p$x$layout <- fix_font_family_aliases(p$x$layout, css_family_aliases)
   p$x$data <- fix_font_family_aliases(p$x$data, css_family_aliases)
@@ -474,6 +491,31 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   )
 
   p <- do.call(plotly::layout, layout_args)
+
+  if (!is.null(highlight) && nrow(highlight$data) > 0) {
+    to_x <- function(v) {
+      if (identical(p$x$layout$xaxis$type, "date")) {
+        d <- if (is.numeric(v)) tsggplotly_numeric_x_to_date(v, meta$global_x$dominant_freq) else v
+        if (inherits(d, "POSIXct")) format(d, "%Y-%m-%d %H:%M:%S") else as.character(d)
+      } else {
+        as.numeric(v)
+      }
+    }
+    hl_rgb <- grDevices::col2rgb(highlight$fill)
+    hl_fill <- sprintf(
+      "rgba(%d,%d,%d,%s)", hl_rgb[1], hl_rgb[2], hl_rgb[3],
+      if (is.null(highlight$alpha)) 1 else highlight$alpha
+    )
+    highlight_shapes <- lapply(seq_len(nrow(highlight$data)), function(i) {
+      list(
+        type = "rect", layer = "below",
+        xref = "x", x0 = to_x(highlight$data$xmin[i]), x1 = to_x(highlight$data$xmax[i]),
+        yref = "paper", y0 = 0, y1 = 1,
+        fillcolor = hl_fill, line = list(width = 0)
+      )
+    })
+    p$x$layout$shapes <- c(p$x$layout$shapes, highlight_shapes)
+  }
 
   # The bundled plotly.js has no native subtitle, so it becomes a second
   # line of the title, sized/coloured from plot.subtitle. Assigned directly
