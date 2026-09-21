@@ -315,6 +315,33 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto")) {
   p$x$layout <- fix_font_family_aliases(p$x$layout, css_family_aliases)
   p$x$data <- fix_font_family_aliases(p$x$data, css_family_aliases)
 
+  if (!is.null(meta$quarterly_tick_mark_y_range)) {
+    # tsggplot()'s "mid" x-axis label positioning draws its quarterly ticks
+    # as an actual geom_segment() layer (a real ggplot2 workaround, since
+    # ggplot2's native minor-tick support only covers yearly breaks) rather
+    # than a genuine axis element -- ggplotly() has no way to tell that
+    # apart from real plotted data, so it converts it into an ordinary,
+    # fully visible trace. That shows up as extra tick-like marks scattered
+    # across the plot in addition to Plotly's own native x-axis ticks,
+    # rather than the subtle inward mark the static plot draws. Identify
+    # and drop it by the same y-range tsggplot.R built it at (y_min to
+    # y_min + tick_h) -- real data essentially never has every single point
+    # confined to that one, narrow, specific interval. Also require an
+    # empty trace name -- this layer is added with inherit.aes = FALSE and
+    # no colour/fill mapping, so it never gets one, unlike every real
+    # series (tsggplot() always names each one, even list elements left
+    # unnamed by the user get an auto-generated "series_N" name) -- an
+    # extra safeguard against the unlikely case of real data coincidentally
+    # falling entirely within that narrow interval too.
+    y_lo <- meta$quarterly_tick_mark_y_range[1] - 1e-6
+    y_hi <- meta$quarterly_tick_mark_y_range[2] + 1e-6
+    is_tick_mark_trace <- function(d) {
+      y <- d$y[!is.na(d$y)]
+      !nzchar(d$name %||% "") && length(y) > 0 && all(y >= y_lo & y <= y_hi)
+    }
+    p$x$data <- p$x$data[!vapply(p$x$data, is_tick_mark_trace, logical(1))]
+  }
+
   xa <- p$x$layout$xaxis
   if (identical(xa$tickmode, "array") && length(xa$tickvals) > 1) {
     if (x_tick_mode == "auto") {

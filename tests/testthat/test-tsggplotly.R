@@ -463,6 +463,40 @@ test_that("tsggplotly reflects custom data-line and gridline styling from the th
   expect_true(built$x$layout$yaxis$gridwidth > 2) # default is < 1
 })
 
+test_that("tsggplotly drops the static plot's quarterly-tick decoration layer", {
+  # tsggplot()'s "mid" x-axis label positioning draws quarterly ticks as an
+  # actual geom_segment() layer (a real ggplot2 workaround, since ggplot2's
+  # native minor-tick support only covers yearly breaks), not a genuine
+  # axis element. ggplotly() can't tell that apart from real plotted data,
+  # so without this fix it converts into an ordinary, fully visible trace
+  # -- extra tick-like marks scattered across the plot, in addition to
+  # Plotly's own native x-axis ticks, in both "thin" and "auto" mode (the
+  # bug isn't specific to "auto" -- it just happens to be more visually
+  # obvious there, since the marks don't line up with "auto"'s own,
+  # dynamically-recomputed tick positions the way they coincidentally can
+  # with "thin"'s fixed, year-aligned ones).
+  long_ts <- ts(runif(80), start = c(1990, 1), frequency = 4)
+  p <- tsggplot(list(A = long_ts), tsr = list(B = long_ts + 1), labs = list(y_right = "right"))
+  meta <- attr(p, "tsggplot_meta")
+  expect_length(meta$quarterly_tick_mark_y_range, 2)
+
+  for (fig in list(tsggplotly(p), tsggplotly(p, x_tick_mode = "auto"))) {
+    built <- plotly::plotly_build(fig)
+    names <- vapply(built$x$data, function(d) d$name %||% "", character(1))
+    expect_setequal(names[nzchar(names)], c("A", "B"))
+    # only the two real series plus the invisible yaxis2 marker -- no
+    # leftover, unnamed tick-decoration trace
+    expect_equal(length(built$x$data), 3)
+  }
+
+  # quarterly_ticks = FALSE never adds the layer in the first place --
+  # nothing for tsggplotly() to find or remove
+  p_no_ticks <- tsggplot(list(A = long_ts), theme = init_tsggplot_theme(quarterly_ticks = FALSE))
+  expect_null(attr(p_no_ticks, "tsggplot_meta")$quarterly_tick_mark_y_range)
+  built_no_ticks <- plotly::plotly_build(tsggplotly(p_no_ticks))
+  expect_equal(length(built_no_ticks$x$data), 1)
+})
+
 test_that("tsggplotly converts stacked, grouped and sum_as_line bar charts", {
   tsb1 <- ts(runif(20, -30, 20), start = c(2010, 1), frequency = 4)
   tsb2 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 4)

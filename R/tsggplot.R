@@ -611,6 +611,12 @@ tsggplot.list <- function(...,
     }
   }
 
+  # Set below (Global X-Axis section) if a quarterly-tick decoration layer
+  # (geom_segment(), not a real ggplot2 axis element) gets added -- kept
+  # around so tsggplotly() can find and strip the resulting trace, which
+  # ggplotly() has no way to tell apart from real plotted data on its own.
+  quarterly_tick_mark_y_range <- NULL
+
   # Extract valid theme elements from the provided theme listents]
   # by matching their names with the formal arguments of ggplot2::theme
   valid_theme_elements <- names(formals(ggplot2::theme))
@@ -949,6 +955,7 @@ tsggplot.list <- function(...,
             y    = y_min,
             yend = y_min + tick_h
           )
+          quarterly_tick_mark_y_range <- c(y_min, y_min + tick_h)
 
           geom_args <- c(
             list(
@@ -1070,7 +1077,8 @@ tsggplot.list <- function(...,
     # tsggplotly() can't convert the ggnewscale-based split legend (see
     # #16), so it transparently converts merged_legend_fallback instead.
     split_legend = split_legend,
-    merged_legend_fallback = merged_legend_fallback
+    merged_legend_fallback = merged_legend_fallback,
+    quarterly_tick_mark_y_range = quarterly_tick_mark_y_range
   )
 
   if (output_format != "plot") {
