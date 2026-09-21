@@ -1037,6 +1037,7 @@ tsggplot.list <- function(...,
         )
       } else {
         p <- p + guides(
+          fill = guide_legend(ncol = theme$legend_col),
           color = guide_legend(ncol = theme$legend_col, override.aes = list(fill = NA))
         )
       }

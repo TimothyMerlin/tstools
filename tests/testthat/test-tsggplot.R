@@ -853,3 +853,18 @@ test_that("tsggplot honours highlight_window_alpha", {
   expect_equal(built_alpha(0.1), 0.1)
   expect_equal(built_alpha(0.9), 0.9)
 })
+
+test_that("tsggplot applies legend_col to bar legends", {
+  tsl <- list(
+    a = ts(1:8, start = c(2020, 1), frequency = 4),
+    b = ts(8:1, start = c(2020, 1), frequency = 4),
+    c = ts(rep(2, 8), start = c(2020, 1), frequency = 4)
+  )
+  theme <- init_tsggplot_theme(legend_col = 2)
+
+  p <- tsggplot(tsl, left_as_bar = TRUE, theme = theme)
+  expect_equal(p$guides$guides$fill$params$ncol, 2)
+
+  p_r <- tsggplot(tsl[1:2], tsr = tsl[3], left_as_bar = TRUE, theme = theme)
+  expect_equal(p_r$guides$guides$fill$params$ncol, 2)
+})
