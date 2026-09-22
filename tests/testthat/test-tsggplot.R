@@ -720,6 +720,40 @@ test_that("tsggplot, confidence intervals", {
   )
 })
 
+test_that("tsggplot doesn't let a band/bar or second-axis CI collide with the CI fill scale (#14)", {
+  ts1 <- ts(1:8, start = c(2020, 1), frequency = 4)
+  ts2 <- ts(8:1, start = c(2020, 1), frequency = 4)
+
+  # left_as_band + ci on the band's own series: without its own scale
+  # generation, the band's fill scale added afterwards would silently
+  # replace the CI's, leaving the CI polygon's fill unmapped/invisible
+  ci <- list(A = list("80" = list(lb = ts1 - 1, ub = ts1 + 1)))
+  expect_no_message(p <- tsggplot(list(A = ts1, B = ts2), left_as_band = TRUE, ci = ci))
+  bd <- ggplot2::ggplot_build(p)
+  is_ci <- vapply(bd$plot$layers, function(l) inherits(l$geom, "GeomPolygon"), logical(1))
+  is_band <- vapply(bd$plot$layers, function(l) inherits(l$geom, "GeomRibbon"), logical(1))
+  ci_fill <- unique(bd$data[is_ci][[1]]$fill)
+  band_fills <- unique(unlist(lapply(bd$data[is_band], `[[`, "fill")))
+  expect_length(ci_fill, 1)
+  expect_false(anyNA(ci_fill))
+  expect_false(ci_fill %in% band_fills)
+
+  # ci on both axes: each axis' CI used to collide with the other's fill
+  # scale, and both ended up rendered with whichever scale was added last
+  tsr <- list(C = ts2 + 10)
+  ci2 <- list(
+    A = list("80" = list(lb = ts1 - 1, ub = ts1 + 1)),
+    C = list("80" = list(lb = ts2 + 9, ub = ts2 + 11))
+  )
+  expect_no_message(p2 <- tsggplot(list(A = ts1), tsr = tsr, ci = ci2))
+  bd2 <- ggplot2::ggplot_build(p2)
+  is_ci2 <- vapply(bd2$plot$layers, function(l) inherits(l$geom, "GeomPolygon"), logical(1))
+  ci_fills2 <- vapply(bd2$data[is_ci2], function(d) unique(d$fill)[1], character(1))
+  expect_length(ci_fills2, 2)
+  expect_length(unique(ci_fills2), 2)
+  expect_false(anyNA(ci_fills2))
+})
+
 test_that("tsggplot, confidence intervals don't add a stray fill box to the colour legend key", {
   # ggplot2 merges the CI's "fill" legend (draw_tsggplot_ci()) into the
   # series' "colour" legend since there's no separate colour scale for the

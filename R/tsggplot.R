@@ -749,17 +749,31 @@ tsggplot.list <- function(...,
     merged_legend_fallback <- do.call(tsggplot.list, c(list(tsl), fallback_args))
   }
 
-  if (!left_as_bar) {
-    ci_left <- ci[names(ci) %in% names(tsl)]
-    if (!is.null(ci_left)) {
-      p <- draw_tsggplot_ci(p, ci_left, theme, use_date_scale = use_date_scale)
+  # Each CI's shaded band is its own fill scale (scale_fill_manual(), keyed
+  # by CI group id) -- ggplot2 only allows one scale per aesthetic, so
+  # without ggnewscale a second fill consumer (the other axis' CI, or the
+  # band/bar fill scale added further down) would silently replace it,
+  # leaving the replaced band's fill unmapped/invisible (#14).
+  # new_scale_fill() starts a fresh "fill" generation for whatever comes
+  # next, but is only added when something actually follows -- calling it
+  # unconditionally would rename even a lone CI's scale away from plain
+  # "fill", breaking e.g. plot$scales$get_scales("fill") for a chart that
+  # never collides in the first place.
+  ci_left <- if (!left_as_bar) ci[names(ci) %in% names(tsl)] else NULL
+  ci_right <- if (!is.null(tsr)) ci[names(ci) %in% names(tsr)] else NULL
+  band_or_bar_fill <- left_as_band || left_as_bar
+
+  if (!is.null(ci_left)) {
+    p <- draw_tsggplot_ci(p, ci_left, theme, use_date_scale = use_date_scale)
+    if (!is.null(ci_right) || band_or_bar_fill) {
+      p <- p + ggnewscale::new_scale_fill()
     }
   }
 
-  if (!is.null(tsr)) {
-    ci_right <- ci[names(ci) %in% names(tsr)]
-    if (!is.null(ci_right)) {
-      p <- draw_tsggplot_ci(p, ci_right, tt_r, use_date_scale = use_date_scale)
+  if (!is.null(ci_right)) {
+    p <- draw_tsggplot_ci(p, ci_right, tt_r, use_date_scale = use_date_scale)
+    if (band_or_bar_fill) {
+      p <- p + ggnewscale::new_scale_fill()
     }
   }
 

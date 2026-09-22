@@ -1,4 +1,5 @@
 Changes in development version
+ * tsggplot: fixed a CI's shaded band silently disappearing (or, with CIs on both axes, both taking on the same colours) when combined with left_as_band/left_as_bar or a second-axis CI -- each used to add its own fill scale, and ggplot2 only keeps the last one added (#14)
  * tsggplot: with fill_year_with_nas = TRUE the trailing x margin now defaults to none (the filled-up year already ends the axis, like tsplot); an explicit axis_x_pad still applies
  * tsggplot: highlight_window_alpha is now the actual opacity of the highlight window (default 0.55); it was previously mapped inside aes() and so had no effect on the value, so an explicitly set value now looks different
  * tsggplot: the sum line of a stacked bar chart gets its own legend entry, grouped with the left-axis series when a tsr series is present
