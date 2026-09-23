@@ -816,6 +816,12 @@ test_that("daily xts", {
   expect_equal(length(line_x), length(x$Open))
   expect_equal(length(unique(line_x)), length(x$Open))
   expect_false(anyNA(line_x))
+  # the actual values plotted, not just their count/uniqueness -- the
+  # sub-day line_to_middle shift is absorbed by scale_x_date(), so each
+  # point still lands on its own observation's calendar day
+  expect_equal(b$data[[1]]$y, as.numeric(x$Open))
+  idx <- zoo::index(x$Open)
+  expect_equal(as.Date(line_x, origin = "1970-01-01"), as.Date(idx, tz = attr(idx, "tzone") %||% ""))
 })
 
 test_that("weekly xts (#2)", {
@@ -830,6 +836,9 @@ test_that("weekly xts (#2)", {
   expect_equal(length(line_x), length(idx))
   expect_equal(length(unique(line_x)), length(idx))
   expect_false(anyNA(line_x))
+  expect_equal(b$data[[1]]$y, as.numeric(x))
+  # line_to_middle centers each point mid-week (half the 7-day spacing)
+  expect_equal(as.Date(line_x, origin = "1970-01-01"), idx + 3.5)
 })
 
 test_that("yearly xts (#6)", {
@@ -844,6 +853,11 @@ test_that("yearly xts (#6)", {
   expect_equal(length(line_x), 6)
   expect_equal(length(unique(line_x)), 6)
   expect_false(anyNA(line_x))
+  expect_equal(b$data[[1]]$y, as.numeric(x))
+  # "annual" isn't a Date-scale frequency (unlike daily/weekly/hourly), so
+  # this plots on the numeric decimal-year axis -- centered mid-year
+  # (+0.5), same as an annual ts
+  expect_equal(line_x, as.numeric(format(idx, "%Y")) + 0.5)
   # x positions fall within the built panel's x range
   panel_range <- b$layout$panel_params[[1]]$x.range
   expect_true(all(line_x >= panel_range[1] & line_x <= panel_range[2]))
@@ -866,6 +880,12 @@ test_that("hourly xts (#7)", {
   # collapsed onto the same day, which was the #7 bug)
   expect_equal(length(unique(line_x)), length(idx))
   expect_false(anyNA(line_x))
+  expect_equal(b$data[[1]]$y, as.numeric(x))
+  # hourly uses a real datetime axis (scale_x_datetime, no day-level
+  # truncation), so the half-period (30 min = 1800s) shift stays visible --
+  # getLineToMiddleShift() must get this right, not just "sub-day and
+  # therefore irrelevant" like the Date-scale cases above
+  expect_equal(line_x, as.numeric(idx) + 1800)
 })
 
 test_that("xts", {
@@ -893,6 +913,25 @@ test_that("xts", {
     ci = ci,
     theme = theme
   )
+
+  expect_s3_class(p, "ggplot")
+  b <- ggplot2::ggplot_build(p)
+  is_ci <- vapply(b$plot$layers, function(l) inherits(l$geom, "GeomPolygon"), logical(1))
+  is_line <- vapply(b$plot$layers, function(l) inherits(l$geom, "GeomLine"), logical(1))
+  line_data <- b$data[is_line][[1]]
+  ci_data <- b$data[is_ci][[1]]
+
+  expect_equal(line_data$y, as.numeric(x$Open))
+  idx <- zoo::index(x$Open)
+  expect_equal(as.Date(line_data$x, origin = "1970-01-01"), as.Date(idx, tz = attr(idx, "tzone") %||% ""))
+
+  # the CI polygon is xmin/xmax as c(x, rev(x)), ymin/ymax as
+  # c(lb, rev(ub)) -- its first half should be the lower bound, in order,
+  # and its second half the upper bound, reversed
+  n <- nrow(x)
+  expect_equal(nrow(ci_data), 2 * n)
+  expect_equal(ci_data$y[1:n], as.numeric(x$Low))
+  expect_equal(ci_data$y[(n + 1):(2 * n)], rev(as.numeric(x$High)))
 })
 
 test_that("zoo (#5)", {

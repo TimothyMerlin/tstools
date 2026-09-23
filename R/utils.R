@@ -141,27 +141,27 @@ getNumericTimeIndex <- function(x, use_date_scale = FALSE) {
 #' Half-period shift used to center a line/ci band within its period
 #'
 #' \code{frequency()} is unreliable for xts objects (e.g. it can return a
-#' minuscule fraction based on second-level spacing), so on the numeric
-#' decimal-year x-axis (\code{use_date_scale = FALSE}) the shift is instead
-#' derived from the median spacing of the same numeric index
+#' minuscule fraction based on second-level spacing), so for any xts input
+#' the shift is instead derived from the median spacing of the same index
 #' (\code{getNumericTimeIndex}) used to plot the data, keeping units
-#' consistent. For ts objects, and for the Date-based x-axis
-#' (\code{use_date_scale = TRUE}), \code{frequency()} remains the basis for
-#' the shift, unchanged from previous behavior (there, any such shift is
-#' sub-day and gets absorbed by \code{scale_x_date}'s Date coercion anyway).
+#' consistent whichever axis it ends up on: decimal-year numbers on the
+#' numeric axis (\code{use_date_scale = FALSE}), or native Date/POSIXct
+#' arithmetic (days/seconds respectively) on the Date-based axis
+#' (\code{use_date_scale = TRUE}). \code{frequency()} remains the basis for
+#' the shift only for genuine \code{ts} objects, where it's always exact.
 #'
 #' @param x object of class ts or xts
 #' @param use_date_scale logical, is this plotted on a Date-based x-axis?
 #' @noRd
 getLineToMiddleShift <- function(x, use_date_scale = FALSE) {
-  if (use_date_scale || inherits(x, "ts")) {
+  if (inherits(x, "ts")) {
     return((1 / frequency(x)) / 2)
   }
-  xx <- getNumericTimeIndex(x)
+  xx <- getNumericTimeIndex(x, use_date_scale = use_date_scale)
   if (length(xx) < 2) {
     return(0)
   }
-  stats::median(diff(xx)) / 2
+  stats::median(diff(as.numeric(xx))) / 2
 }
 
 getGlobalXInfo_tsggplot <- function(tsl, tsr, fill_up, fill_up_start, tick_dt, label_dt, manual_ticks, pad = NULL) {
