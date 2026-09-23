@@ -4,8 +4,6 @@ output: github_document
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# 🚧 Work in progress – not ready for public use.
-
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
