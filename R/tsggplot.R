@@ -50,9 +50,9 @@
 #'        is not "plot". See [ggplot2::ggsave]] for list of arguments.
 #'
 #' @importFrom ggplot2 aes coord_cartesian element_blank element_line element_text geom_rect geom_segment ggplot
-#' ggplot_build ggsave guides guide_axis guide_legend margin sec_axis scale_color_manual
-#' scale_fill_manual scale_x_continuous scale_y_continuous waiver .data
-#' scale_x_date scale_x_datetime
+#' @importFrom ggplot2 ggplot_build ggsave guides guide_axis guide_legend margin sec_axis scale_color_manual
+#' @importFrom ggplot2 scale_fill_manual scale_x_continuous scale_y_continuous waiver .data
+#' @importFrom ggplot2 scale_x_date scale_x_datetime
 #'
 #' @seealso [ggplot2::labs()] for information on labels (title, subtitle,
 #'          caption, tag)
@@ -1114,9 +1114,17 @@ tsggplot.list <- function(...,
     left_y = left_y,
     right_y = if (!is.null(tsr)) right_y else NULL,
     y_right_label = labs$y_right,
-    # tsggplotly() can't convert the ggnewscale-based split legend (see
-    # #16), so it transparently converts merged_legend_fallback instead.
+    # tsggplotly() can't convert the ggnewscale-based split legend directly
+    # (ggplotly() drops the split-off geom's data), so it converts
+    # merged_legend_fallback instead and re-splits the resulting plotly
+    # traces into two plotly legends using these series names -- computed
+    # here (not on merged_legend_fallback, whose own split_legend is always
+    # FALSE) since it's the same tsl/tsr split either way.
     split_legend = split_legend,
+    legend_groups = list(
+      left = c(names(tsl), if (sum_own_scale) theme$sum_legend),
+      right = names(tsr)
+    ),
     merged_legend_fallback = merged_legend_fallback,
     quarterly_tick_marks = quarterly_tick_marks
   )

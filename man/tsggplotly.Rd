@@ -9,8 +9,11 @@ tsggplotly(p, ..., x_tick_mode = c("thin", "auto"), axis_titles = FALSE)
 \arguments{
 \item{p}{ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
 a \code{tsr} (right-axis) series with the default split left/right
-legend (which can't be converted to plotly), the merged-legend
-equivalent \code{tsggplot()} built alongside it is used instead.}
+legend (a \code{ggnewscale}-based split, which can't be converted to
+plotly directly), the merged-legend equivalent \code{tsggplot()} built
+alongside it is converted instead, then its traces are re-split into
+two plotly legends by series name, so the interactive plot still shows
+the same two left-/right-axis groups as the static one.}
 
 \item{...}{additional arguments passed on to \code{\link[plotly]{ggplotly}}}
 

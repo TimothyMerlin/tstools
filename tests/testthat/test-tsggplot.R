@@ -498,6 +498,39 @@ test_that("tsggplotly converts a split-legend plot via its merged-legend fallbac
   expect_no_error(tsggplotly(p_merged))
 })
 
+test_that("tsggplotly re-splits the merged-legend fallback into two plotly legends (#16)", {
+  # Plain lines on both axes.
+  p <- tsggplot(list(a = AirPassengers), tsr = list(b = JohnsonJohnson))
+  built <- plotly::plotly_build(tsggplotly(p))
+  traces <- setNames(built$x$data, vapply(built$x$data, function(d) d$name %||% "", ""))
+  expect_null(traces[["a"]][["legend"]]) # default "legend"
+  expect_equal(traces[["b"]][["legend"]], "legend2")
+  expect_true(!is.null(built$x$layout$legend2))
+  expect_lt(built$x$layout$legend$x, built$x$layout$legend2$x)
+  # no stray "series" (the colour aes name) shown as either box's title
+  expect_equal(built$x$layout$legend$title$text, "")
+  expect_equal(built$x$layout$legend2$title$text, "")
+
+  # Bar chart with a tsr and a sum line: the sum line gets its own colour
+  # scale (see #14/legend ordering commit), so this also goes through the
+  # split-legend path even though the bars themselves are on a separate,
+  # untouched fill aesthetic.
+  tsb1 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 4)
+  tsb2 <- ts(runif(20, 0, 50), start = c(2010, 1), frequency = 4)
+  tsb3 <- ts(runif(20, 0, 5), start = c(2010, 1), frequency = 4)
+  p_bar <- tsggplot(list(a = tsb1, b = tsb2),
+    tsr = list(c = tsb3), left_as_bar = TRUE,
+    theme = init_tsggplot_theme(sum_as_line = TRUE)
+  )
+  expect_true(attr(p_bar, "tsggplot_meta")$split_legend)
+  built_bar <- plotly::plotly_build(tsggplotly(p_bar))
+  traces_bar <- setNames(built_bar$x$data, vapply(built_bar$x$data, function(d) d$name %||% "", ""))
+  expect_null(traces_bar[["a"]][["legend"]])
+  expect_null(traces_bar[["b"]][["legend"]])
+  expect_null(traces_bar[["sum"]][["legend"]])
+  expect_equal(traces_bar[["c"]][["legend"]], "legend2")
+})
+
 test_that("tsggplot modify the legend", {
   # Modify the legend title
   theme <- init_tsggplot_theme(

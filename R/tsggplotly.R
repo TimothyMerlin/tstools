@@ -139,8 +139,11 @@ fix_font_family_aliases <- function(x, aliases) {
 #'
 #' @param p ggplot2 figure, as returned by \code{\link{tsggplot}}. If it has
 #'   a \code{tsr} (right-axis) series with the default split left/right
-#'   legend (which can't be converted to plotly), the merged-legend
-#'   equivalent \code{tsggplot()} built alongside it is used instead.
+#'   legend (a \code{ggnewscale}-based split, which can't be converted to
+#'   plotly directly), the merged-legend equivalent \code{tsggplot()} built
+#'   alongside it is converted instead, then its traces are re-split into
+#'   two plotly legends by series name, so the interactive plot still shows
+#'   the same two left-/right-axis groups as the static one.
 #' @param ... additional arguments passed on to \code{\link[plotly]{ggplotly}}
 #' @param x_tick_mode character, how to avoid overlapping x-axis tick labels
 #'   in the interactive plot (see #13, #15). \code{"thin"} (the default)
@@ -172,11 +175,17 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto"), axis_titles = FA
   dots <- list(...)
   meta <- attr(p, "tsggplot_meta")
 
-  # tsggplotly() can't convert the ggnewscale-based split legend (the
-  # split-off geom silently loses its data in plotly::ggplotly()) -- use
-  # the merged-legend equivalent tsggplot() already built for this instead,
-  # transparently.
-  if (isTRUE(meta$split_legend) && !is.null(meta$merged_legend_fallback)) {
+  # tsggplotly() can't convert the ggnewscale-based split legend directly
+  # (the split-off geom silently loses its data in plotly::ggplotly()) --
+  # convert the merged-legend equivalent tsggplot() already built for this
+  # instead, then re-split its traces into two plotly legends below (#16).
+  # split_legend/legend_groups are captured before the swap: on
+  # merged_legend_fallback itself, split_legend is always FALSE (that's the
+  # point of it), but its legend_groups (same tsl/tsr either way) are what
+  # the re-split needs.
+  split_legend <- isTRUE(meta$split_legend)
+  legend_groups <- meta$legend_groups
+  if (split_legend && !is.null(meta$merged_legend_fallback)) {
     p <- meta$merged_legend_fallback
     meta <- attr(p, "tsggplot_meta")
   }
@@ -691,6 +700,34 @@ tsggplotly <- function(p, ..., x_tick_mode = c("thin", "auto"), axis_titles = FA
 
       p$x$data[[i]]$name <- name
     }
+  }
+
+  if (split_legend && !is.null(legend_groups)) {
+    # Re-split the merged legend built above into two plotly legends (#16),
+    # by series name, matching the static plot's separate left-/right-axis
+    # guide-boxes. plotly.js supports more than one legend per figure via a
+    # trace's "legend" field ("legend"/"legend2"/...) plus a matching
+    # layout$legend2 -- unlike ggplot2, there's no native fill-vs-colour
+    # guide split to piggyback on, so traces are assigned to a legend by
+    # matching their name (just cleaned up above) against tsl/tsr (+ the
+    # sum line). Has to run after that cleanup: ggplotly() names a grouped
+    # geom's trace (e.g. a bar series) "(a,1)", not the plain series name.
+    is_right <- vapply(p$x$data, function(d) !is.null(d$name) && d$name %in% legend_groups$right, logical(1))
+    for (i in which(is_right)) p$x$data[[i]]$legend <- "legend2"
+
+    # Both boxes keep the single legend's derived position/style (always
+    # "bottom" -- the only position tsggplot() ever uses for a split
+    # legend, see guide_legend(position = "bottom") in tsggplot.R) and grow
+    # outward from the plot's horizontal center, mirroring the static
+    # plot's legend.spacing.x gap between its two guide-boxes. The empty
+    # title set via layout_args above is only resolved into p$x$layout$legend
+    # at build time (plotly::layout() just queues it into p$x$layoutAttrs,
+    # like the axis line styling elsewhere in this function) -- legend2
+    # doesn't exist yet at that point to receive the same reconciliation,
+    # so it's set directly here.
+    base_legend <- modifyList(p$x$layout$legend, list(title = list(text = "")))
+    p$x$layout$legend <- modifyList(base_legend, list(x = 0.48, xanchor = "right"))
+    p$x$layout$legend2 <- modifyList(base_legend, list(x = 0.52, xanchor = "left"))
   }
 
   risky_families <- collect_risky_families(p$x$layout)
